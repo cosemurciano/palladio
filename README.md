@@ -6,7 +6,7 @@ Palladio trasforma un sito WordPress in un sistema di regia completo per la vend
 
 ## Stato
 
-**Versione 0.1.0 — scaffold del modulo Core.** Il plugin è installabile e attivabile: registra il modello dati (CPT, tassonomie, meta) descritto nella §3 del documento di progetto. I moduli AI, i18n, Presenter, Regia e Feeds sono ancora da implementare (cfr. Roadmap §7).
+**Versione 0.2.0 — Core + Presenter (frontend) con integrazione PoeTheme.** Il plugin è installabile e attivabile: registra il modello dati (CPT, tassonomie, meta) e renderizza le pagine di edificio e unità sul front-end, integrandosi nativamente con [PoeTheme](https://github.com/cosemurciano/PoeTheme). I moduli AI, i18n, Regia e Feeds sono ancora da implementare (cfr. Roadmap §7).
 
 ### Cosa fa già
 
@@ -19,6 +19,20 @@ Palladio trasforma un sito WordPress in un sistema di regia completo per la vend
 - **Meta strutturati** (`includes/core/class-meta.php`) per edificio e unità, tutti `show_in_rest` (headless-ready) con sanitizzazione e `auth_callback`.
 - **Scenari** (`includes/core/class-scenario.php`): meta bundle/split + hook della regola di coerenza (`palladio/unit_status_changed`).
 - **Attivazione** (`includes/class-activator.php`): registra i CPT prima del flush delle rewrite rules, popola i termini di stato, assegna le capability `manage_palladio` / `edit_palladio_content` all'administrator.
+- **Presenter / frontend** (`includes/frontend/`):
+  - `class-templates.php` — instrada i template dei CPT lasciando la **precedenza al tema** (override via `{tema}/palladio/single-pll_unita.php`).
+  - `class-assets.php` — carica CSS/JS solo sulle viste del plugin, versionati con `filemtime()`.
+  - `class-shortcodes.php` — `[palladio_edifici]` per inserire la griglia degli edifici in qualsiasi pagina.
+  - `template-functions.php` — helper di presentazione (prezzo, badge di stato, card unità, specifiche).
+  - Template: `templates/single-pll_edificio.php` (hero + fatti chiave + griglia unità filtrabile), `single-pll_unita.php` (prezzo, stato, tabella caratteristiche, CTA, unità correlate), `archive-pll_edificio.php`.
+
+### Integrazione con PoeTheme
+
+Il Presenter è progettato per essere **perfettamente integrabile con PoeTheme** (ma funziona su qualsiasi tema):
+
+- I template chiamano `get_header()` / `get_footer()`, quindi ereditano automaticamente **header, subheader (breadcrumb + titolo) e footer** del tema. Il contenuto è renderizzato direttamente nel `<main>`, che su PoeTheme è già il container con larghezza e padding — nessun doppio wrapper.
+- Lo stile (`assets/css/palladio.css`) è **autosufficiente per il layout** (nessuna dipendenza dalle utility Tailwind purgate del tema) ma consuma le **variabili di palette** di PoeTheme (`--poetheme-content-*`, `--poetheme-cta-*`, `--poetheme-heading-*`) con fallback neutri: card, prezzi, tabelle e pulsanti adottano automaticamente i colori della palette attiva in Style Studio.
+- Feature-detection via `palladio_is_poetheme()` / `palladio_header_owns_title()`: nessun errore né titolo duplicato quando il tema gestisce già il titolo di pagina.
 
 ### Architettura
 
@@ -26,15 +40,27 @@ Palladio trasforma un sito WordPress in un sistema di regia completo per la vend
 palladio/
 ├── palladio.php                     ← bootstrap, costanti, hook
 ├── uninstall.php                    ← cleanup opzioni/capability (non i contenuti)
+├── assets/
+│   ├── css/palladio.css             ← stili frontend (palette-aware)
+│   └── js/palladio.js               ← filtro unità (progressive enhancement)
+├── templates/                       ← template override-abili dal tema
+│   ├── single-pll_edificio.php
+│   ├── single-pll_unita.php
+│   └── archive-pll_edificio.php
 └── includes/
     ├── class-autoloader.php         ← autoloader Palladio_*
     ├── class-palladio.php           ← orchestratore, carica i moduli
     ├── class-activator.php          ← attivazione
     ├── class-deactivator.php        ← disattivazione
-    └── core/                        ← MODULO CORE
-        ├── class-cpt.php            ← CPT + tassonomie
-        ├── class-meta.php           ← register_post_meta (show_in_rest)
-        └── class-scenario.php       ← bundle/split + regola di coerenza
+    ├── core/                        ← MODULO CORE
+    │   ├── class-cpt.php            ← CPT + tassonomie
+    │   ├── class-meta.php           ← register_post_meta (show_in_rest)
+    │   └── class-scenario.php       ← bundle/split + regola di coerenza
+    └── frontend/                    ← MODULO PRESENTER
+        ├── class-templates.php      ← routing template (override dal tema)
+        ├── class-assets.php         ← enqueue condizionale CSS/JS
+        ├── class-shortcodes.php     ← [palladio_edifici]
+        └── template-functions.php   ← helper di presentazione
 ```
 
 I moduli sono attivabili/disattivabili via filtro `palladio/modules`, per installazioni leggere.
