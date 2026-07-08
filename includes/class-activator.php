@@ -30,6 +30,11 @@ class Palladio_Activator {
 			self::seed_stato_terms();
 		}
 
+		// Tabella lead (modulo Regia).
+		if ( class_exists( 'Palladio_Leads_Store' ) ) {
+			Palladio_Leads_Store::install();
+		}
+
 		self::add_capabilities();
 
 		update_option( 'palladio_version', PALLADIO_VERSION );

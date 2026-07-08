@@ -432,3 +432,91 @@
 .palladio-empty {
 	color: var(--pll-muted);
 }
+
+/* ---------------------------------------------------------------------------
+ * Form lead (modulo Regia)
+ * ------------------------------------------------------------------------- */
+.palladio-lead-form {
+	margin-top: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.palladio-lead-form__grid {
+	display: grid;
+	gap: 1rem;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+}
+
+.palladio-field {
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+}
+
+.palladio-field label {
+	font-size: 0.9rem;
+	font-weight: 600;
+	color: var(--pll-text);
+}
+
+.palladio-field input[type="text"],
+.palladio-field input[type="email"],
+.palladio-field input[type="tel"],
+.palladio-field select,
+.palladio-field textarea {
+	width: 100%;
+	padding: 0.6rem 0.75rem;
+	border: 1px solid var(--pll-border);
+	border-radius: 0.5rem;
+	background: var(--pll-surface);
+	color: var(--pll-text);
+	font: inherit;
+}
+
+.palladio-field input:focus,
+.palladio-field select:focus,
+.palladio-field textarea:focus {
+	outline: 2px solid var(--pll-cta-bg);
+	outline-offset: 1px;
+	border-color: var(--pll-cta-bg);
+}
+
+.palladio-field--consent label {
+	flex-direction: row;
+	align-items: flex-start;
+	gap: 0.5rem;
+	font-weight: 400;
+}
+
+.palladio-field--consent input {
+	margin-top: 0.25rem;
+}
+
+/* Honeypot: nascosto agli utenti, visibile ai bot */
+.palladio-hp {
+	position: absolute !important;
+	left: -9999px !important;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+}
+
+.palladio-notice {
+	padding: 0.75rem 1rem;
+	border-radius: 0.5rem;
+	margin: 0;
+	font-weight: 600;
+}
+
+.palladio-notice--ok {
+	background: color-mix(in srgb, #16a34a 15%, transparent);
+	color: #15803d;
+}
+
+.palladio-notice--error {
+	background: color-mix(in srgb, #b91c1c 15%, transparent);
+	color: #b91c1c;
+}

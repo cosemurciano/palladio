@@ -6,7 +6,7 @@ Palladio trasforma un sito WordPress in un sistema di regia completo per la vend
 
 ## Stato
 
-**Versione 0.2.0 — Core + Presenter (frontend) con integrazione PoeTheme.** Il plugin è installabile e attivabile: registra il modello dati (CPT, tassonomie, meta) e renderizza le pagine di edificio e unità sul front-end, integrandosi nativamente con [PoeTheme](https://github.com/cosemurciano/PoeTheme). I moduli AI, i18n, Regia e Feeds sono ancora da implementare (cfr. Roadmap §7).
+**Versione 0.3.0 — Core + Presenter + Regia (lead).** Il plugin è installabile e attivabile: registra il modello dati, renderizza le pagine di edificio e unità (integrandosi nativamente con [PoeTheme](https://github.com/cosemurciano/PoeTheme)), cattura i lead da form e fornisce una cabina di regia con dashboard e pipeline. I moduli AI, i18n e Feeds sono ancora da implementare (cfr. Roadmap §7).
 
 ### Cosa fa già
 
@@ -25,6 +25,13 @@ Palladio trasforma un sito WordPress in un sistema di regia completo per la vend
   - `class-shortcodes.php` — `[palladio_edifici]` per inserire la griglia degli edifici in qualsiasi pagina.
   - `template-functions.php` — helper di presentazione (prezzo, badge di stato, card unità, specifiche).
   - Template: `templates/single-pll_edificio.php` (hero + fatti chiave + griglia unità filtrabile), `single-pll_unita.php` (prezzo, stato, tabella caratteristiche, CTA, unità correlate), `archive-pll_edificio.php`.
+- **Regia / lead** (`includes/leads/`, `includes/admin/`):
+  - `leads/class-store.php` — data layer sulla tabella custom `{prefix}palladio_leads` (§3.4): creazione/upgrade schema, inserimento sanitizzato, cambio stato, query e conteggi aggregati.
+  - `leads/class-form.php` — form di cattura lead (shortcode `[palladio_lead_form]` + iniezione automatica nel pannello contatti dell'unità), con nonce, honeypot, consenso GDPR versionato e notifica email alla regia/agenzia.
+  - `admin/class-regia.php` — menu **Palladio → Regia** (dashboard KPI: totali, pipeline per stato, fonti, ultimi lead) e **Palladio → Lead** (pipeline).
+  - `admin/class-leads-list-table.php` — `WP_List_Table` dei lead con filtri per stato, ricerca, paginazione e transizioni di stato (row actions con nonce).
+  - Stati lead (§3.4): `nuovo`, `qualificato`, `inviato_agenzia`, `visita`, `trattativa`, `chiuso_vinto`, `chiuso_perso`.
+  - Event bus: `palladio/lead_created`, `palladio/lead_status_changed`.
 
 ### Integrazione con PoeTheme
 
@@ -42,6 +49,7 @@ palladio/
 ├── uninstall.php                    ← cleanup opzioni/capability (non i contenuti)
 ├── assets/
 │   ├── css/palladio.css             ← stili frontend (palette-aware)
+│   ├── css/palladio-admin.css       ← stili dashboard regia
 │   └── js/palladio.js               ← filtro unità (progressive enhancement)
 ├── templates/                       ← template override-abili dal tema
 │   ├── single-pll_edificio.php
@@ -56,11 +64,17 @@ palladio/
     │   ├── class-cpt.php            ← CPT + tassonomie
     │   ├── class-meta.php           ← register_post_meta (show_in_rest)
     │   └── class-scenario.php       ← bundle/split + regola di coerenza
-    └── frontend/                    ← MODULO PRESENTER
-        ├── class-templates.php      ← routing template (override dal tema)
-        ├── class-assets.php         ← enqueue condizionale CSS/JS
-        ├── class-shortcodes.php     ← [palladio_edifici]
-        └── template-functions.php   ← helper di presentazione
+    ├── frontend/                    ← MODULO PRESENTER
+    │   ├── class-templates.php      ← routing template (override dal tema)
+    │   ├── class-assets.php         ← enqueue condizionale CSS/JS
+    │   ├── class-shortcodes.php     ← [palladio_edifici]
+    │   └── template-functions.php   ← helper di presentazione
+    ├── leads/                       ← MODULO REGIA (dati + form)
+    │   ├── class-store.php          ← tabella lead + query
+    │   └── class-form.php           ← form cattura lead + notifica
+    └── admin/                       ← MODULO REGIA (admin)
+        ├── class-regia.php          ← menu + dashboard + azioni
+        └── class-leads-list-table.php ← pipeline lead (WP_List_Table)
 ```
 
 I moduli sono attivabili/disattivabili via filtro `palladio/modules`, per installazioni leggere.
