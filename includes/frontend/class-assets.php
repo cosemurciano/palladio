@@ -69,7 +69,10 @@ class Palladio_Frontend_Assets {
 
 		// Presente uno shortcode del plugin nel contenuto.
 		$post = get_post();
-		if ( $post instanceof WP_Post && has_shortcode( $post->post_content, 'palladio_edifici' ) ) {
+		if ( $post instanceof WP_Post && (
+			has_shortcode( $post->post_content, 'palladio_edifici' )
+			|| has_shortcode( $post->post_content, 'palladio_lead_form' )
+		) ) {
 			return true;
 		}
 
