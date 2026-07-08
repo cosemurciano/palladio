@@ -520,3 +520,33 @@
 	background: color-mix(in srgb, #b91c1c 15%, transparent);
 	color: #b91c1c;
 }
+
+/* ---------------------------------------------------------------------------
+ * Switcher lingua (modulo Lingue)
+ * ------------------------------------------------------------------------- */
+.palladio-lang-switcher {
+	display: inline-flex;
+	gap: 0.25rem;
+	align-items: center;
+}
+
+.palladio-lang {
+	display: inline-block;
+	padding: 0.2rem 0.55rem;
+	border-radius: 0.4rem;
+	font-size: 0.85rem;
+	font-weight: 600;
+	text-decoration: none;
+	color: var(--pll-link);
+	border: 1px solid var(--pll-border);
+}
+
+.palladio-lang.is-current {
+	background: var(--pll-cta-bg);
+	color: var(--pll-cta-text);
+	border-color: var(--pll-cta-bg);
+}
+
+.palladio-lang:hover:not(.is-current) {
+	border-color: var(--pll-cta-bg);
+}

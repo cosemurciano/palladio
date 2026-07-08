@@ -99,6 +99,8 @@ final class Palladio {
 				'leads_store'         => 'Palladio_Leads_Store',
 				'leads_form'          => 'Palladio_Leads_Form',
 				'admin_regia'         => 'Palladio_Admin_Regia',
+				'i18n_languages'      => 'Palladio_I18n_Languages',
+				'admin_translations'  => 'Palladio_Admin_Translations',
 			)
 		);
 
