@@ -90,9 +90,12 @@ final class Palladio {
 		$modules = apply_filters(
 			'palladio/modules',
 			array(
-				'core_cpt'      => 'Palladio_Core_CPT',
-				'core_meta'     => 'Palladio_Core_Meta',
-				'core_scenario' => 'Palladio_Core_Scenario',
+				'core_cpt'            => 'Palladio_Core_CPT',
+				'core_meta'           => 'Palladio_Core_Meta',
+				'core_scenario'       => 'Palladio_Core_Scenario',
+				'frontend_templates'  => 'Palladio_Frontend_Templates',
+				'frontend_assets'     => 'Palladio_Frontend_Assets',
+				'frontend_shortcodes' => 'Palladio_Frontend_Shortcodes',
 			)
 		);
 
