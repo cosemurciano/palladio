@@ -6,7 +6,7 @@ Palladio trasforma un sito WordPress in un sistema di regia completo per la vend
 
 ## Stato
 
-**Versione 0.3.0 — Core + Presenter + Regia (lead).** Il plugin è installabile e attivabile: registra il modello dati, renderizza le pagine di edificio e unità (integrandosi nativamente con [PoeTheme](https://github.com/cosemurciano/PoeTheme)), cattura i lead da form e fornisce una cabina di regia con dashboard e pipeline. I moduli AI, i18n e Feeds sono ancora da implementare (cfr. Roadmap §7).
+**Versione 0.4.0 — Core + Presenter + Regia + i18n contenuti.** Il plugin è installabile e attivabile: registra il modello dati, renderizza le pagine di edificio e unità (integrandosi nativamente con [PoeTheme](https://github.com/cosemurciano/PoeTheme)), cattura i lead con dashboard e pipeline, e serve i contenuti multilingua in modalità nativa (IT sorgente + EN/DE/FR). I moduli AI/Composer, Agent e Feeds sono ancora da implementare (cfr. Roadmap §7).
 
 ### Cosa fa già
 
@@ -32,6 +32,11 @@ Palladio trasforma un sito WordPress in un sistema di regia completo per la vend
   - `admin/class-leads-list-table.php` — `WP_List_Table` dei lead con filtri per stato, ricerca, paginazione e transizioni di stato (row actions con nonce).
   - Stati lead (§3.4): `nuovo`, `qualificato`, `inviato_agenzia`, `visita`, `trattativa`, `chiuso_vinto`, `chiuso_perso`.
   - Event bus: `palladio/lead_created`, `palladio/lead_status_changed`.
+- **Lingue / i18n contenuti** (`includes/i18n/`, `includes/admin/class-translations.php`) — modalità nativa a zero dipendenze (§5.4.A):
+  - `i18n/class-languages.php` — configurazione lingua sorgente + lingue attive (IT/EN/DE/FR), pagina **Palladio → Lingue**, rilevamento lingua corrente da `?lang=xx`, applicazione traduzioni sul frontend (titolo/contenuto/riassunto), **hreflang** e shortcode `[palladio_lang_switcher]`.
+  - `i18n/class-translator.php` — data layer traduzioni: storage `_pll_i18n_{lang}` (json) + stato `_pll_i18n_status_{lang}` (`assente`/`generata`/`revisionata`/`pubblicata`), risoluzione con fallback alla sorgente.
+  - `admin/class-translations.php` — metabox di traduzione affiancata sui CPT (titolo, riassunto, contenuto + meta traducibili) con stato per lingua.
+  - Il sito serve una traduzione solo se marcata **“Pubblicata”**; altrimenti fallback alla lingua sorgente. Predisposto per la generazione AI (Composer) in Fase 1 tramite il filtro `palladio/i18n/meta_fields` e il data layer condiviso.
 
 ### Integrazione con PoeTheme
 
@@ -72,9 +77,13 @@ palladio/
     ├── leads/                       ← MODULO REGIA (dati + form)
     │   ├── class-store.php          ← tabella lead + query
     │   └── class-form.php           ← form cattura lead + notifica
-    └── admin/                       ← MODULO REGIA (admin)
-        ├── class-regia.php          ← menu + dashboard + azioni
-        └── class-leads-list-table.php ← pipeline lead (WP_List_Table)
+    ├── admin/                       ← MODULO REGIA + LINGUE (admin)
+    │   ├── class-regia.php          ← menu + dashboard + azioni
+    │   ├── class-leads-list-table.php ← pipeline lead (WP_List_Table)
+    │   └── class-translations.php   ← metabox traduzioni
+    └── i18n/                        ← MODULO LINGUE
+        ├── class-languages.php      ← config, routing ?lang=, hreflang, switcher
+        └── class-translator.php     ← storage e risoluzione traduzioni
 ```
 
 I moduli sono attivabili/disattivabili via filtro `palladio/modules`, per installazioni leggere.
