@@ -45,6 +45,11 @@ class Palladio_Activator {
 
 		self::add_capabilities();
 
+		// Registra la rewrite del feed prima del flush.
+		if ( class_exists( 'Palladio_Feeds_Manager' ) ) {
+			( new Palladio_Feeds_Manager() )->rewrite();
+		}
+
 		update_option( 'palladio_version', PALLADIO_VERSION );
 
 		flush_rewrite_rules();

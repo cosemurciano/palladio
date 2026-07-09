@@ -107,6 +107,7 @@ final class Palladio {
 				'agent_chats'         => 'Palladio_Agent_Chats',
 				'agent_rest'          => 'Palladio_Agent_Rest',
 				'agent_widget'        => 'Palladio_Agent_Widget',
+				'feeds_manager'       => 'Palladio_Feeds_Manager',
 			)
 		);
 
