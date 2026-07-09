@@ -6,7 +6,7 @@ Palladio trasforma un sito WordPress in un sistema di regia completo per la vend
 
 ## Stato
 
-**Versione 0.6.0 — Core + Presenter + Regia + i18n + AI/Composer + Agent.** Il plugin registra il modello dati, renderizza le pagine (integrandosi con [PoeTheme](https://github.com/cosemurciano/PoeTheme)), cattura i lead con dashboard e pipeline, serve i contenuti multilingua, genera schede e traduzioni via OpenAI e — con l'agent attivo — offre un concierge conversazionale (RAG + function calling) che qualifica i lead 24/7. Resta da implementare il modulo Feeds portali (cfr. Roadmap §7).
+**Versione 0.7.0 — perimetro dei moduli completo.** Sono implementati tutti i moduli previsti dall'architettura del documento di progetto (§4): Core, Presenter (integrato con [PoeTheme](https://github.com/cosemurciano/PoeTheme)), Regia (lead + dashboard), Lingue (i18n nativo), AI/Composer, Agent conversazionale e Feeds portali. Le voci residue sono affinamenti di Fase 1 (scenari bundle/split completi, planimetrie SVG interattive, dossier PDF, `request_visit`/`handoff_human`, scoring lead, adapter Polylang/WPML).
 
 ### Cosa fa già
 
@@ -50,6 +50,12 @@ Palladio trasforma un sito WordPress in un sistema di regia completo per la vend
   - `agent/class-rest.php` — endpoint `POST /palladio/v1/agent/chat`: retrieval top-k + chat completion con system prompt parametrico, **loop di tool**, **rate limiting** per IP e **guardrail** (risponde solo dal contesto/tool, disclaimer, consenso prima di salvare dati).
   - `agent/class-widget.php` + `assets/js/agent-widget.js` — widget chat embeddabile che **dichiara la natura AI** (trasparenza, AI Act) e parla solo con l'endpoint REST; nessuna chiave o chiamata AI lato browser. Stili palette-aware in `assets/css/palladio-agent.css`.
   - Impostazioni Agent (abilitazione, top-k, rate limit, disclaimer, system prompt) nella pagina **Palladio → AI**.
+- **Feeds portali** (`includes/feeds/`) — distribuzione verso i portali (§5.8):
+  - `feeds/class-manager.php` — endpoint pubblico del feed **protetto da token** (`hash_equals`), **cache** con TTL filtrabile e **cron orario** di rigenerazione; pagina **Palladio → Feeds** con gli URL e le azioni (rigenera / reset token).
+  - `feeds/class-adapter.php` — base astratta che mappa i campi Palladio → campi portale (query delle unità in vendita, immagini, geo dall'edificio).
+  - `feeds/class-kyero.php` — export **Kyero v3 (XML)**, formato aperto accettato da Gate-away.com, Kyero e Idealista international (costruito con DOMDocument).
+  - `feeds/class-csv.php` — export **CSV generico** portabile.
+  - I tracciati proprietari (es. Immobiliare.it) si aggiungono estendendo `Palladio_Feeds_Adapter` e registrandoli via il filtro `palladio/feeds/adapters`.
 
 ### Integrazione con PoeTheme
 
@@ -103,12 +109,17 @@ palladio/
     │   ├── class-settings.php       ← impostazioni AI + Agent + uso/costi
     │   ├── class-openai.php         ← client HTTP (chat + tools + embeddings)
     │   └── class-composer.php       ← generazione schede + traduzioni
-    └── agent/                       ← MODULO AGENT (RAG + chat)
-        ├── class-kb.php             ← knowledge base + ricerca semantica
-        ├── class-chats.php          ← log conversazioni
-        ├── class-tools.php          ← function calling
-        ├── class-rest.php           ← endpoint /agent/chat + orchestrazione
-        └── class-widget.php         ← widget frontend
+    ├── agent/                       ← MODULO AGENT (RAG + chat)
+    │   ├── class-kb.php             ← knowledge base + ricerca semantica
+    │   ├── class-chats.php          ← log conversazioni
+    │   ├── class-tools.php          ← function calling
+    │   ├── class-rest.php           ← endpoint /agent/chat + orchestrazione
+    │   └── class-widget.php         ← widget frontend
+    └── feeds/                       ← MODULO FEEDS (distribuzione)
+        ├── class-manager.php        ← endpoint token + cache + cron + admin
+        ├── class-adapter.php        ← base astratta (mappatura campi)
+        ├── class-kyero.php          ← export Kyero v3 (XML)
+        └── class-csv.php            ← export CSV generico
 ```
 
 I moduli sono attivabili/disattivabili via filtro `palladio/modules`, per installazioni leggere.

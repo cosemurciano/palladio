@@ -14,7 +14,24 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
-delete_option( 'palladio_version' );
+$options = array(
+	'palladio_version',
+	'palladio_db_version',
+	'palladio_kb_db_version',
+	'palladio_chats_db_version',
+	'palladio_languages',
+	'palladio_ai',
+	'palladio_ai_key',
+	'palladio_ai_usage',
+	'palladio_agent',
+	'palladio_feeds_token',
+	'palladio_gdpr_text',
+);
+foreach ( $options as $option ) {
+	delete_option( $option );
+}
+
+wp_clear_scheduled_hook( 'palladio_feeds_regen' );
 
 $role = get_role( 'administrator' );
 if ( $role ) {
