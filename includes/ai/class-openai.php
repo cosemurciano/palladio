@@ -112,9 +112,10 @@ class Palladio_AI_Openai {
 		self::record_usage( $args['model'], $usage );
 
 		return array(
-			'content' => (string) ( $message['content'] ?? '' ),
-			'message' => $message,
-			'usage'   => $usage,
+			'content'       => (string) ( $message['content'] ?? '' ),
+			'message'       => $message,
+			'usage'         => $usage,
+			'finish_reason' => (string) ( $response['choices'][0]['finish_reason'] ?? '' ),
 		);
 	}
 
