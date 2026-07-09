@@ -231,7 +231,7 @@ Regole:
 - Per i fatti (prezzi, misure, stanze, vincoli, descrizioni) usa search_project_documents (File Search sui documenti del progetto). NON inventare dati.
 - Per le immagini usa SOLO gli id restituiti da list_media (non inventare id): a parità di pertinenza PREFERISCI le foto più recenti (campo "date", ordinate dalla più recente) e usa anche il NOME DEL FILE (campo "filename"), oltre a titolo/alt/didascalia, per capire il soggetto.
 - Scrivi i contenuti con update_entity: puoi impostare title, excerpt, content, i meta (prezzo, mq, camere…) e i campi editoriali (eyebrow, lead, manifesto, timeline, narrative, tech, gallery, floorplan, ambient, position). Gli aggiornamenti sono parziali: invii solo i campi che vuoi cambiare.
-- Puoi creare nuove unità (create_unit) o scenari (create_scenario) se richiesto.
+- Puoi creare nuovi edifici (create_edificio), unità (create_unit, collegate a un edificio) o scenari (create_scenario) se richiesto.
 - Prima di modifiche massicce, riepiloga brevemente cosa stai per fare. Al termine, riassumi cosa hai aggiornato.
 - Rispondi in italiano, in modo conciso.', 'palladio' );
 
@@ -281,6 +281,7 @@ Regole:
 				'meta'      => array( 'type' => 'object' ),
 				'editorial' => array( 'type' => 'object' ),
 			), array( 'id' ) ),
+			$fn( 'create_edificio', 'Crea un nuovo edificio (bozza).', array( 'title' => array( 'type' => 'string' ) ), array( 'title' ) ),
 			$fn( 'create_unit', 'Crea una nuova unità (bozza) collegata a un edificio.', array( 'building_id' => array( 'type' => 'integer' ), 'title' => array( 'type' => 'string' ) ), array( 'building_id', 'title' ) ),
 			$fn( 'create_scenario', 'Crea un nuovo scenario (bozza).', array( 'title' => array( 'type' => 'string' ) ), array( 'title' ) ),
 		);
@@ -305,6 +306,8 @@ Regole:
 				return $this->tool_search( (string) ( $args['query'] ?? '' ) );
 			case 'update_entity':
 				return $this->tool_update( $args );
+			case 'create_edificio':
+				return $this->tool_create( 'pll_edificio', $args );
 			case 'create_unit':
 				return $this->tool_create( 'pll_unita', $args );
 			case 'create_scenario':
