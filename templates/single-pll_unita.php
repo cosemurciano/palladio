@@ -80,7 +80,7 @@ while ( have_posts() ) :
 				<img class="pll-e-hero__img" src="<?php echo esc_url( $hero ); ?>" alt="" itemprop="image">
 			<?php endif; ?>
 			<div class="pll-e-hero__inner">
-				<p class="pll-e-eyebrow"><?php echo esc_html( $eyebrow ); ?> <?php echo do_shortcode( '[palladio_lang_switcher]' ); ?></p>
+				<p class="pll-e-eyebrow"><?php echo esc_html( $eyebrow ); ?></p>
 				<h1 class="pll-e-hero__title" itemprop="name"><?php the_title(); ?></h1>
 				<?php if ( $lead ) : ?>
 					<p class="pll-e-hero__lead"><?php echo esc_html( $lead ); ?></p>

@@ -283,15 +283,17 @@ class Palladio_I18n_Languages {
 
 		$items = array();
 		foreach ( $active as $lang ) {
-			$label = $catalog[ $lang ] ?? strtoupper( $lang );
+			// Codice breve (IT/EN/DE/FR) per lo switcher; nome esteso come title.
+			$label = strtoupper( $lang );
+			$title = $catalog[ $lang ] ?? $label;
 			$url   = self::post_url( $lang );
 
 			if ( $lang === $current ) {
-				$items[] = sprintf( '<span class="palladio-lang is-current" aria-current="true">%s</span>', esc_html( $label ) );
+				$items[] = sprintf( '<span class="palladio-lang is-current" aria-current="true" title="%2$s">%1$s</span>', esc_html( $label ), esc_attr( $title ) );
 			} elseif ( '' !== $url ) {
-				$items[] = sprintf( '<a class="palladio-lang" href="%s">%s</a>', esc_url( $url ), esc_html( $label ) );
+				$items[] = sprintf( '<a class="palladio-lang" href="%1$s" title="%3$s">%2$s</a>', esc_url( $url ), esc_html( $label ), esc_attr( $title ) );
 			} else {
-				$items[] = sprintf( '<span class="palladio-lang is-missing" aria-disabled="true">%s</span>', esc_html( $label ) );
+				$items[] = sprintf( '<span class="palladio-lang is-missing" aria-disabled="true" title="%2$s">%1$s</span>', esc_html( $label ), esc_attr( $title ) );
 			}
 		}
 

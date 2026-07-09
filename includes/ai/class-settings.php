@@ -90,8 +90,16 @@ class Palladio_AI_Settings {
 	 * @return bool
 	 */
 	public static function is_ready() {
-		$config = self::config();
-		return $config['enabled'] && '' !== self::api_key();
+		if ( '' === self::api_key() ) {
+			return false;
+		}
+		// La chiave definita in wp-config.php è un opt-in esplicito: attiva l'AI
+		// anche senza spuntare "Abilita AI" (altrimenti la chiave non risulta
+		// rilevata pur essendo presente nel file di configurazione).
+		if ( self::key_is_constant() ) {
+			return true;
+		}
+		return ! empty( self::config()['enabled'] );
 	}
 
 	/**
@@ -165,9 +173,12 @@ class Palladio_AI_Settings {
 						<th scope="row"><?php esc_html_e( 'Abilita AI', 'palladio' ); ?></th>
 						<td>
 							<label>
-								<input type="checkbox" name="enabled" value="1" <?php checked( $config['enabled'] ); ?>>
+								<input type="checkbox" name="enabled" value="1" <?php checked( $config['enabled'] || self::key_is_constant() ); ?> <?php disabled( self::key_is_constant() ); ?>>
 								<?php esc_html_e( 'Attiva la generazione contenuti e le traduzioni via OpenAI.', 'palladio' ); ?>
 							</label>
+							<?php if ( self::key_is_constant() ) : ?>
+								<p class="description"><?php esc_html_e( 'Chiave presente in wp-config.php: l’AI è attiva automaticamente.', 'palladio' ); ?></p>
+							<?php endif; ?>
 						</td>
 					</tr>
 					<tr>
@@ -262,8 +273,12 @@ class Palladio_AI_Settings {
 
 		check_admin_referer( 'palladio_ai_settings' );
 
+		// Con la chiave da wp-config il checkbox è disabilitato (non inviato):
+		// preserva il valore salvato invece di azzerarlo.
+		$enabled = self::key_is_constant() ? ! empty( self::config()['enabled'] ) : ! empty( $_POST['enabled'] );
+
 		$config = array(
-			'enabled'         => ! empty( $_POST['enabled'] ),
+			'enabled'         => $enabled,
 			'model'           => isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : 'gpt-4.1-mini',
 			'translate_model' => isset( $_POST['translate_model'] ) ? sanitize_text_field( wp_unslash( $_POST['translate_model'] ) ) : 'gpt-4.1-mini',
 			'vector_store'    => isset( $_POST['vector_store'] ) ? sanitize_text_field( wp_unslash( $_POST['vector_store'] ) ) : '',
