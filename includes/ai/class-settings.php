@@ -39,10 +39,13 @@ class Palladio_AI_Settings {
 	 */
 	public static function config() {
 		$defaults = array(
-			'enabled'         => false,
-			'model'           => 'gpt-4.1-mini',
-			'translate_model' => 'gpt-4.1-mini',
-			'vector_store'    => '',
+			'enabled'          => false,
+			'model'            => 'gpt-4.1-mini',
+			'translate_model'  => 'gpt-4.1-mini',
+			'vector_store'     => '',
+			'tokens_generate'  => 3000,
+			'tokens_translate' => 2000,
+			'tokens_agent'     => 1500,
 		);
 
 		$config = get_option( 'palladio_ai', array() );
@@ -60,6 +63,26 @@ class Palladio_AI_Settings {
 	 */
 	public static function vector_store() {
 		return (string) self::config()['vector_store'];
+	}
+
+	/**
+	 * Limite token di output per contesto d'uso.
+	 *
+	 * @param string $context 'generate' | 'translate' | 'agent'.
+	 * @return int
+	 */
+	public static function max_tokens( $context ) {
+		$config = self::config();
+		$map    = array(
+			'generate'  => 'tokens_generate',
+			'translate' => 'tokens_translate',
+			'agent'     => 'tokens_agent',
+		);
+		$key   = $map[ $context ] ?? 'tokens_agent';
+		$value = isset( $config[ $key ] ) ? absint( $config[ $key ] ) : 0;
+
+		// Clamp difensivo: 100–32000.
+		return max( 100, min( 32000, $value ? $value : 1500 ) );
 	}
 
 	/**
@@ -211,6 +234,24 @@ class Palladio_AI_Settings {
 							<p class="description"><?php esc_html_e( 'ID del vector store su platform.openai.com/storage usato dal File Search per popolare le pagine con i documenti del progetto (dossier, planimetrie, atti).', 'palladio' ); ?></p>
 						</td>
 					</tr>
+					<tr>
+						<th scope="row"><label for="pll-ai-tok-gen"><?php esc_html_e( 'Token massimi — generazione contenuti', 'palladio' ); ?></label></th>
+						<td>
+							<input type="number" id="pll-ai-tok-gen" name="tokens_generate" min="100" max="32000" step="100" value="<?php echo esc_attr( (int) $config['tokens_generate'] ); ?>">
+							<p class="description"><?php esc_html_e( 'Lunghezza massima della risposta per la generazione schede e la costruzione da Storage + Media.', 'palladio' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="pll-ai-tok-tr"><?php esc_html_e( 'Token massimi — traduzione', 'palladio' ); ?></label></th>
+						<td><input type="number" id="pll-ai-tok-tr" name="tokens_translate" min="100" max="32000" step="100" value="<?php echo esc_attr( (int) $config['tokens_translate'] ); ?>"></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="pll-ai-tok-ag"><?php esc_html_e( 'Token massimi — agente (chat)', 'palladio' ); ?></label></th>
+						<td>
+							<input type="number" id="pll-ai-tok-ag" name="tokens_agent" min="100" max="32000" step="100" value="<?php echo esc_attr( (int) $config['tokens_agent'] ); ?>">
+							<p class="description"><?php esc_html_e( 'Vale per l’Agente AI in amministrazione e per il widget di chat sul sito.', 'palladio' ); ?></p>
+						</td>
+					</tr>
 				</table>
 
 				<h2><?php esc_html_e( 'Agent conversazionale', 'palladio' ); ?></h2>
@@ -277,11 +318,19 @@ class Palladio_AI_Settings {
 		// preserva il valore salvato invece di azzerarlo.
 		$enabled = self::key_is_constant() ? ! empty( self::config()['enabled'] ) : ! empty( $_POST['enabled'] );
 
+		$tok = static function ( $key, $default ) {
+			$v = isset( $_POST[ $key ] ) ? absint( wp_unslash( $_POST[ $key ] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			return max( 100, min( 32000, $v ? $v : $default ) );
+		};
+
 		$config = array(
-			'enabled'         => $enabled,
-			'model'           => isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : 'gpt-4.1-mini',
-			'translate_model' => isset( $_POST['translate_model'] ) ? sanitize_text_field( wp_unslash( $_POST['translate_model'] ) ) : 'gpt-4.1-mini',
-			'vector_store'    => isset( $_POST['vector_store'] ) ? sanitize_text_field( wp_unslash( $_POST['vector_store'] ) ) : '',
+			'enabled'          => $enabled,
+			'model'            => isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : 'gpt-4.1-mini',
+			'translate_model'  => isset( $_POST['translate_model'] ) ? sanitize_text_field( wp_unslash( $_POST['translate_model'] ) ) : 'gpt-4.1-mini',
+			'vector_store'     => isset( $_POST['vector_store'] ) ? sanitize_text_field( wp_unslash( $_POST['vector_store'] ) ) : '',
+			'tokens_generate'  => $tok( 'tokens_generate', 3000 ),
+			'tokens_translate' => $tok( 'tokens_translate', 2000 ),
+			'tokens_agent'     => $tok( 'tokens_agent', 1500 ),
 		);
 
 		update_option( 'palladio_ai', $config );

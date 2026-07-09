@@ -57,6 +57,7 @@ class Palladio_AI_Composer {
 			array(
 				'json'        => true,
 				'temperature' => 0.7,
+				'max_tokens'  => Palladio_AI_Settings::max_tokens( 'generate' ),
 			)
 		);
 
@@ -175,6 +176,7 @@ class Palladio_AI_Composer {
 				'model'       => Palladio_AI_Settings::translate_model(),
 				'json'        => true,
 				'temperature' => 0.3,
+				'max_tokens'  => Palladio_AI_Settings::max_tokens( 'translate' ),
 			)
 		);
 
@@ -345,7 +347,7 @@ class Palladio_AI_Composer {
 			array(
 				'vector_store_ids' => $vector_store ? array( $vector_store ) : array(),
 				'json'             => true,
-				'max_tokens'       => 3000,
+				'max_tokens'       => Palladio_AI_Settings::max_tokens( 'generate' ),
 			)
 		);
 

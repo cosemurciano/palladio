@@ -183,7 +183,7 @@ class Palladio_Agent_Rest {
 				array(
 					'tools'       => $tools,
 					'temperature' => 0.4,
-					'max_tokens'  => 900,
+					'max_tokens'  => Palladio_AI_Settings::max_tokens( 'agent' ),
 				)
 			);
 
@@ -216,7 +216,7 @@ class Palladio_Agent_Rest {
 		}
 
 		// Fallback se supera i round: chiede una risposta senza tool.
-		$final = Palladio_AI_Openai::chat( $messages, array( 'temperature' => 0.4, 'max_tokens' => 700 ) );
+		$final = Palladio_AI_Openai::chat( $messages, array( 'temperature' => 0.4, 'max_tokens' => Palladio_AI_Settings::max_tokens( 'agent' ) ) );
 		if ( is_wp_error( $final ) ) {
 			return $final;
 		}
