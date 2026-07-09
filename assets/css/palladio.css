@@ -1,0 +1,552 @@
+/**
+ * Palladio — stili frontend.
+ *
+ * Layout autosufficiente (nessuna dipendenza da utility del tema), ma i
+ * colori seguono le variabili di palette di PoeTheme quando presenti, con
+ * fallback neutri per gli altri temi. Le variabili --poetheme-* sono mappate
+ * su token interni --pll-* così l'intero foglio è coerente e sovrascrivibile.
+ */
+
+.palladio {
+	--pll-surface: var(--poetheme-content-background-color, #ffffff);
+	--pll-text: var(--poetheme-content-text-color, #111827);
+	--pll-muted: color-mix(in srgb, var(--poetheme-content-text-color, #111827) 62%, transparent);
+	--pll-link: var(--poetheme-content-link-color, var(--poetheme-general-link-color, #2563eb));
+	--pll-heading: var(--poetheme-heading-h2-color, var(--poetheme-content-text-color, #111827));
+	--pll-cta-bg: var(--poetheme-cta-background-color, #2563eb);
+	--pll-cta-text: var(--poetheme-cta-text-color, #ffffff);
+	--pll-border: color-mix(in srgb, var(--poetheme-content-text-color, #111827) 12%, transparent);
+	--pll-radius: 0.75rem;
+	--pll-gap: 1.5rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * Struttura di base
+ * ------------------------------------------------------------------------- */
+.palladio-single {
+	display: flex;
+	flex-direction: column;
+	gap: 2rem;
+	color: var(--pll-text);
+}
+
+.palladio-panel {
+	background: var(--pll-surface);
+	color: var(--pll-text);
+	border: 1px solid var(--pll-border);
+	border-radius: var(--pll-radius);
+	padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.palladio-content {
+	line-height: 1.7;
+}
+
+.palladio-content > * + * {
+	margin-top: 1rem;
+}
+
+.palladio-single h1,
+.palladio-single h2,
+.palladio-single h3 {
+	color: var(--pll-heading);
+}
+
+/* ---------------------------------------------------------------------------
+ * Edificio — hero e fatti chiave
+ * ------------------------------------------------------------------------- */
+.palladio-edificio__header {
+	text-align: left;
+}
+
+.palladio-edificio__title {
+	font-size: clamp(1.75rem, 4vw, 2.5rem);
+	line-height: 1.15;
+	margin: 0;
+}
+
+.palladio-edificio__claim {
+	font-size: 1.125rem;
+	color: var(--pll-muted);
+	margin: 0.5rem 0 0;
+}
+
+.palladio-edificio__hero {
+	display: grid;
+	gap: var(--pll-gap);
+}
+
+@media (min-width: 768px) {
+	.palladio-edificio__hero {
+		grid-template-columns: 1.4fr 1fr;
+		align-items: center;
+	}
+}
+
+.palladio-edificio__media {
+	margin: 0;
+}
+
+.palladio-edificio__media img {
+	width: 100%;
+	height: auto;
+	border-radius: calc(var(--pll-radius) - 0.25rem);
+	display: block;
+}
+
+.palladio-edificio__address {
+	font-weight: 600;
+	margin: 0 0 1rem;
+}
+
+.palladio-facts {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1rem;
+	margin: 0;
+}
+
+.palladio-facts__item dt {
+	font-size: 0.8125rem;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--pll-muted);
+}
+
+.palladio-facts__item dd {
+	margin: 0.15rem 0 0;
+	font-size: 1.25rem;
+	font-weight: 700;
+}
+
+/* ---------------------------------------------------------------------------
+ * Filtri
+ * ------------------------------------------------------------------------- */
+.palladio-units__heading {
+	font-size: 1.5rem;
+	margin: 0 0 1rem;
+}
+
+.palladio-filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-bottom: 1.25rem;
+}
+
+.palladio-filters__chip {
+	font: inherit;
+	cursor: pointer;
+	padding: 0.4rem 0.9rem;
+	border-radius: 999px;
+	border: 1px solid var(--pll-border);
+	background: transparent;
+	color: var(--pll-text);
+	transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.palladio-filters__chip:hover {
+	border-color: var(--pll-cta-bg);
+}
+
+.palladio-filters__chip.is-active {
+	background: var(--pll-cta-bg);
+	color: var(--pll-cta-text);
+	border-color: var(--pll-cta-bg);
+}
+
+.palladio-filters__chip:focus-visible {
+	outline: 2px solid var(--pll-cta-bg);
+	outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Griglia unità e card
+ * ------------------------------------------------------------------------- */
+.palladio-units-grid,
+.palladio-buildings-grid {
+	display: grid;
+	gap: var(--pll-gap);
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+}
+
+.palladio-unit-card,
+.palladio-building-card {
+	background: var(--pll-surface);
+	border: 1px solid var(--pll-border);
+	border-radius: var(--pll-radius);
+	overflow: hidden;
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.palladio-unit-card:hover,
+.palladio-building-card:hover {
+	transform: translateY(-3px);
+	box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.35);
+}
+
+.palladio-unit-card__link,
+.palladio-building-card__link {
+	display: block;
+	color: inherit;
+	text-decoration: none;
+}
+
+.palladio-unit-card__media,
+.palladio-building-card__media {
+	position: relative;
+	aspect-ratio: 4 / 3;
+	background: color-mix(in srgb, var(--pll-text) 8%, var(--pll-surface));
+}
+
+.palladio-unit-card__media img,
+.palladio-building-card__media img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.palladio-unit-card__placeholder,
+.palladio-building-card__placeholder {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+.palladio-unit-card__body,
+.palladio-building-card__body {
+	padding: 1rem 1.15rem 1.25rem;
+}
+
+.palladio-unit-card__title,
+.palladio-building-card__title {
+	font-size: 1.125rem;
+	margin: 0 0 0.35rem;
+	color: var(--pll-heading);
+}
+
+.palladio-unit-card__price {
+	font-size: 1.25rem;
+	font-weight: 700;
+	color: var(--pll-text);
+	margin: 0 0 0.75rem;
+}
+
+.palladio-building-card__claim,
+.palladio-building-card__meta {
+	color: var(--pll-muted);
+	margin: 0.25rem 0 0;
+}
+
+.palladio-unit-card__specs {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem 1.25rem;
+}
+
+.palladio-unit-card__specs li {
+	display: flex;
+	flex-direction: column;
+	line-height: 1.2;
+}
+
+.palladio-unit-card__spec-value {
+	font-weight: 700;
+}
+
+.palladio-unit-card__spec-label {
+	font-size: 0.75rem;
+	color: var(--pll-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Badge di stato (colori semantici, indipendenti dal brand)
+ * ------------------------------------------------------------------------- */
+.palladio-badge {
+	position: absolute;
+	top: 0.75rem;
+	left: 0.75rem;
+	font-size: 0.75rem;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	padding: 0.25rem 0.6rem;
+	border-radius: 999px;
+	color: #ffffff;
+	background: #6b7280;
+}
+
+/* Nel contesto della topline (non sovrapposto all'immagine). */
+.palladio-unita__topline .palladio-badge {
+	position: static;
+}
+
+.palladio-badge--disponibile { background: #16a34a; }
+.palladio-badge--riservata { background: #d97706; }
+.palladio-badge--in_trattativa { background: #2563eb; }
+.palladio-badge--venduta { background: #b91c1c; }
+.palladio-badge--non_in_vendita { background: #475569; }
+
+/* ---------------------------------------------------------------------------
+ * Unità — topline, layout, specifiche, CTA
+ * ------------------------------------------------------------------------- */
+.palladio-unita__title {
+	font-size: clamp(1.6rem, 3.5vw, 2.25rem);
+	margin: 0;
+}
+
+.palladio-unita__topline {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 0.75rem 1.25rem;
+}
+
+.palladio-price {
+	font-size: 1.75rem;
+	font-weight: 800;
+	margin: 0;
+	color: var(--pll-text);
+}
+
+.palladio-unita__building-link {
+	margin-left: auto;
+	color: var(--pll-link);
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.palladio-unita__building-link:hover {
+	text-decoration: underline;
+}
+
+.palladio-unita__layout {
+	display: grid;
+	gap: var(--pll-gap);
+}
+
+@media (min-width: 900px) {
+	.palladio-unita__layout {
+		grid-template-columns: 1.7fr 1fr;
+		align-items: start;
+	}
+}
+
+.palladio-unita__main,
+.palladio-unita__aside {
+	display: flex;
+	flex-direction: column;
+	gap: var(--pll-gap);
+}
+
+.palladio-unita__media {
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+}
+
+.palladio-unita__media img {
+	width: 100%;
+	height: auto;
+	display: block;
+	border-radius: var(--pll-radius);
+}
+
+.palladio-specs__heading {
+	font-size: 1.25rem;
+	margin: 0 0 1rem;
+}
+
+.palladio-specs__list {
+	margin: 0;
+}
+
+.palladio-specs__row {
+	display: flex;
+	justify-content: space-between;
+	gap: 1rem;
+	padding: 0.6rem 0;
+	border-bottom: 1px solid var(--pll-border);
+}
+
+.palladio-specs__row:last-child {
+	border-bottom: 0;
+}
+
+.palladio-specs__row dt {
+	color: var(--pll-muted);
+}
+
+.palladio-specs__row dd {
+	margin: 0;
+	font-weight: 600;
+	text-align: right;
+}
+
+/* ---------------------------------------------------------------------------
+ * CTA (usa i colori CTA della palette)
+ * ------------------------------------------------------------------------- */
+.palladio-cta {
+	display: inline-block;
+	background: var(--pll-cta-bg);
+	color: var(--pll-cta-text);
+	font-weight: 600;
+	text-decoration: none;
+	padding: 0.7rem 1.25rem;
+	border-radius: 0.5rem;
+	transition: filter 0.15s ease;
+}
+
+.palladio-cta:hover {
+	filter: brightness(0.92);
+}
+
+.palladio-cta--ghost {
+	background: transparent;
+	color: var(--pll-link);
+	border: 1px solid var(--pll-border);
+}
+
+.palladio-unita__media-links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+}
+
+.palladio-unita__contact p {
+	color: var(--pll-muted);
+	margin: 0.25rem 0 1rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * Archivio
+ * ------------------------------------------------------------------------- */
+.palladio-archive__title {
+	font-size: clamp(1.75rem, 4vw, 2.5rem);
+	margin: 0 0 1.5rem;
+}
+
+.palladio-empty {
+	color: var(--pll-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Form lead (modulo Regia)
+ * ------------------------------------------------------------------------- */
+.palladio-lead-form {
+	margin-top: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.palladio-lead-form__grid {
+	display: grid;
+	gap: 1rem;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+}
+
+.palladio-field {
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+}
+
+.palladio-field label {
+	font-size: 0.9rem;
+	font-weight: 600;
+	color: var(--pll-text);
+}
+
+.palladio-field input[type="text"],
+.palladio-field input[type="email"],
+.palladio-field input[type="tel"],
+.palladio-field select,
+.palladio-field textarea {
+	width: 100%;
+	padding: 0.6rem 0.75rem;
+	border: 1px solid var(--pll-border);
+	border-radius: 0.5rem;
+	background: var(--pll-surface);
+	color: var(--pll-text);
+	font: inherit;
+}
+
+.palladio-field input:focus,
+.palladio-field select:focus,
+.palladio-field textarea:focus {
+	outline: 2px solid var(--pll-cta-bg);
+	outline-offset: 1px;
+	border-color: var(--pll-cta-bg);
+}
+
+.palladio-field--consent label {
+	flex-direction: row;
+	align-items: flex-start;
+	gap: 0.5rem;
+	font-weight: 400;
+}
+
+.palladio-field--consent input {
+	margin-top: 0.25rem;
+}
+
+/* Honeypot: nascosto agli utenti, visibile ai bot */
+.palladio-hp {
+	position: absolute !important;
+	left: -9999px !important;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+}
+
+.palladio-notice {
+	padding: 0.75rem 1rem;
+	border-radius: 0.5rem;
+	margin: 0;
+	font-weight: 600;
+}
+
+.palladio-notice--ok {
+	background: color-mix(in srgb, #16a34a 15%, transparent);
+	color: #15803d;
+}
+
+.palladio-notice--error {
+	background: color-mix(in srgb, #b91c1c 15%, transparent);
+	color: #b91c1c;
+}
+
+/* ---------------------------------------------------------------------------
+ * Switcher lingua (modulo Lingue)
+ * ------------------------------------------------------------------------- */
+.palladio-lang-switcher {
+	display: inline-flex;
+	gap: 0.25rem;
+	align-items: center;
+}
+
+.palladio-lang {
+	display: inline-block;
+	padding: 0.2rem 0.55rem;
+	border-radius: 0.4rem;
+	font-size: 0.85rem;
+	font-weight: 600;
+	text-decoration: none;
+	color: var(--pll-link);
+	border: 1px solid var(--pll-border);
+}
+
+.palladio-lang.is-current {
+	background: var(--pll-cta-bg);
+	color: var(--pll-cta-text);
+	border-color: var(--pll-cta-bg);
+}
+
+.palladio-lang:hover:not(.is-current) {
+	border-color: var(--pll-cta-bg);
+}

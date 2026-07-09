@@ -1,0 +1,657 @@
+/**
+ * Palladio — sistema editoriale "Sambiasi".
+ *
+ * Direzione visiva aristocratica e cartacea: palette calda, serif da display
+ * (Cormorant Garamond / Marcellus), narrazione asimmetrica, barra dati sticky.
+ * I token sono locali (--pll-e-*) così le pagine mantengono questo stile a
+ * prescindere dal tema; se PoeTheme espone la palette "Sambiasi", header e
+ * footer risultano coerenti.
+ */
+
+.palladio-editorial {
+	--pll-e-paper: #f7f2e7;
+	--pll-e-paper-2: #f3ecdd;
+	--pll-e-surface: #fffdf8;
+	--pll-e-ink: #2e2a23;
+	--pll-e-wine: #6e2b2b;
+	--pll-e-gold: #a4906a;
+	--pll-e-gold-2: #c2a878;
+	--pll-e-taupe: #7a6f57;
+	--pll-e-line: #d8caa8;
+	--pll-e-display: 'Cormorant Garamond', 'Marcellus', Georgia, 'Times New Roman', serif;
+	--pll-e-sans: 'Hanken Grotesk', ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+	color: var(--pll-e-ink);
+	font-family: var(--pll-e-sans);
+	background: var(--pll-e-paper);
+	line-height: 1.65;
+}
+
+/* Estende lo sfondo carta a tutta la vista, dietro al contenuto. */
+.palladio-editorial::before {
+	content: "";
+	position: fixed;
+	inset: 0;
+	background: var(--pll-e-paper);
+	z-index: -1;
+}
+
+.palladio-editorial h1,
+.palladio-editorial h2,
+.palladio-editorial h3 {
+	font-family: var(--pll-e-display);
+	font-weight: 500;
+	color: var(--pll-e-ink);
+	line-height: 1.08;
+	letter-spacing: 0.01em;
+}
+
+.palladio-editorial p {
+	margin: 0 0 1rem;
+}
+
+.pll-e-wrap {
+	width: min(72rem, 100%);
+	margin-inline: auto;
+	padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.pll-e-eyebrow {
+	font-family: var(--pll-e-sans);
+	text-transform: uppercase;
+	letter-spacing: 0.22em;
+	font-size: 0.72rem;
+	font-weight: 600;
+	color: var(--pll-e-gold);
+	margin: 0 0 0.75rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * Hero full-bleed
+ * ------------------------------------------------------------------------- */
+.pll-e-hero {
+	position: relative;
+	width: 100vw;
+	margin-left: calc(50% - 50vw);
+	min-height: min(80vh, 46rem);
+	display: flex;
+	align-items: flex-end;
+	color: #f7f2e7;
+	overflow: hidden;
+	background: #2a2620;
+}
+
+.pll-e-hero__img {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	opacity: 0.82;
+}
+
+.pll-e-hero::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(to top, rgba(20, 16, 12, 0.78) 0%, rgba(20, 16, 12, 0.15) 55%, rgba(20, 16, 12, 0.35) 100%);
+}
+
+.pll-e-hero__inner {
+	position: relative;
+	z-index: 1;
+	width: min(72rem, 100%);
+	margin-inline: auto;
+	padding: clamp(2rem, 6vw, 5rem) clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.pll-e-hero .pll-e-eyebrow {
+	color: var(--pll-e-gold-2);
+}
+
+.pll-e-hero__title {
+	font-size: clamp(2.75rem, 8vw, 6rem);
+	color: #fbf7ee;
+	margin: 0;
+}
+
+.pll-e-hero__lead {
+	max-width: 40rem;
+	margin-top: 1rem;
+	font-family: var(--pll-e-display);
+	font-size: clamp(1.15rem, 2.5vw, 1.6rem);
+	font-style: italic;
+	color: #efe6d3;
+}
+
+/* ---------------------------------------------------------------------------
+ * Barra dati sticky
+ * ------------------------------------------------------------------------- */
+.pll-e-sticky {
+	position: sticky;
+	top: 0;
+	z-index: 20;
+	width: 100vw;
+	margin-left: calc(50% - 50vw);
+	background: rgba(247, 242, 231, 0.92);
+	backdrop-filter: saturate(1.1) blur(6px);
+	border-bottom: 1px solid var(--pll-e-line);
+}
+
+.pll-e-sticky__inner {
+	width: min(72rem, 100%);
+	margin-inline: auto;
+	padding: 0.7rem clamp(1.25rem, 4vw, 2.5rem);
+	display: flex;
+	align-items: center;
+	gap: 1.5rem;
+	flex-wrap: wrap;
+}
+
+.pll-e-sticky__facts {
+	display: flex;
+	align-items: baseline;
+	gap: 1.25rem;
+	flex-wrap: wrap;
+	flex: 1;
+}
+
+.pll-e-sticky__price {
+	font-family: var(--pll-e-display);
+	font-size: 1.6rem;
+	font-weight: 600;
+	color: var(--pll-e-wine);
+	white-space: nowrap;
+}
+
+.pll-e-fact {
+	display: inline-flex;
+	flex-direction: column;
+	line-height: 1.1;
+}
+
+.pll-e-fact b {
+	font-weight: 600;
+	font-size: 1rem;
+	color: var(--pll-e-ink);
+}
+
+.pll-e-fact span {
+	font-size: 0.68rem;
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
+	color: var(--pll-e-taupe);
+}
+
+/* ---------------------------------------------------------------------------
+ * CTA
+ * ------------------------------------------------------------------------- */
+.pll-e-cta {
+	display: inline-block;
+	font-family: var(--pll-e-sans);
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	text-decoration: none;
+	padding: 0.7rem 1.4rem;
+	border-radius: 2px;
+	background: var(--pll-e-wine);
+	color: #f7f2e7;
+	border: 1px solid var(--pll-e-wine);
+	transition: background-color 0.15s ease, color 0.15s ease;
+	white-space: nowrap;
+}
+
+.pll-e-cta:hover {
+	background: transparent;
+	color: var(--pll-e-wine);
+}
+
+.pll-e-cta--ghost {
+	background: transparent;
+	color: var(--pll-e-wine);
+}
+
+.pll-e-cta--ghost:hover {
+	background: var(--pll-e-wine);
+	color: #f7f2e7;
+}
+
+/* ---------------------------------------------------------------------------
+ * Sezioni e narrazione asimmetrica
+ * ------------------------------------------------------------------------- */
+.pll-e-section {
+	padding-block: clamp(3rem, 8vw, 6rem);
+}
+
+.pll-e-section + .pll-e-section {
+	border-top: 1px solid var(--pll-e-line);
+}
+
+.pll-e-kicker {
+	font-family: var(--pll-e-sans);
+	text-transform: uppercase;
+	letter-spacing: 0.2em;
+	font-size: 0.72rem;
+	color: var(--pll-e-gold);
+	margin-bottom: 0.5rem;
+}
+
+.pll-e-h {
+	font-size: clamp(1.9rem, 4vw, 3rem);
+	margin: 0 0 1.5rem;
+}
+
+.pll-e-narrative {
+	display: grid;
+	gap: clamp(1.5rem, 4vw, 3rem);
+	grid-template-columns: 1fr;
+	align-items: center;
+}
+
+@media (min-width: 820px) {
+	.pll-e-narrative--right {
+		grid-template-columns: 1.05fr 0.95fr;
+	}
+	.pll-e-narrative--left {
+		grid-template-columns: 0.95fr 1.05fr;
+	}
+	.pll-e-narrative--left .pll-e-narrative__media {
+		order: -1;
+	}
+}
+
+.pll-e-narrative__media img {
+	width: 100%;
+	height: auto;
+	display: block;
+	border: 1px solid var(--pll-e-line);
+}
+
+.pll-e-narrative__text {
+	font-size: 1.08rem;
+	color: #3a352c;
+}
+
+.pll-e-prose {
+	font-size: 1.1rem;
+	color: #3a352c;
+	max-width: 42rem;
+}
+
+.pll-e-prose h2,
+.pll-e-prose h3 {
+	margin-top: 2rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * Scheda tecnica tipografica
+ * ------------------------------------------------------------------------- */
+.pll-e-tech {
+	background: var(--pll-e-paper-2);
+	width: 100vw;
+	margin-left: calc(50% - 50vw);
+}
+
+.pll-e-tech__grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+	gap: 0;
+	border-top: 1px solid var(--pll-e-line);
+	border-left: 1px solid var(--pll-e-line);
+}
+
+.pll-e-tech__row {
+	padding: 1rem 1.25rem;
+	border-bottom: 1px solid var(--pll-e-line);
+	border-right: 1px solid var(--pll-e-line);
+}
+
+.pll-e-tech__row dt {
+	font-size: 0.68rem;
+	text-transform: uppercase;
+	letter-spacing: 0.14em;
+	color: var(--pll-e-taupe);
+	margin-bottom: 0.35rem;
+}
+
+.pll-e-tech__row dd {
+	margin: 0;
+	font-family: var(--pll-e-display);
+	font-size: 1.5rem;
+	color: var(--pll-e-ink);
+}
+
+/* ---------------------------------------------------------------------------
+ * Tour full-width
+ * ------------------------------------------------------------------------- */
+.pll-e-tour {
+	position: relative;
+	width: 100vw;
+	margin-left: calc(50% - 50vw);
+	min-height: 24rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: #241f19 center/cover no-repeat;
+	color: #f7f2e7;
+	text-align: center;
+	padding: 4rem 1.5rem;
+}
+
+.pll-e-tour::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: rgba(20, 16, 12, 0.45);
+}
+
+.pll-e-tour__inner {
+	position: relative;
+	z-index: 1;
+}
+
+/* ---------------------------------------------------------------------------
+ * Unità sorelle
+ * ------------------------------------------------------------------------- */
+.pll-e-sisters {
+	display: grid;
+	gap: 1.5rem;
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+}
+
+.pll-e-sister {
+	background: var(--pll-e-surface);
+	border: 1px solid var(--pll-e-line);
+	text-decoration: none;
+	color: inherit;
+	display: block;
+	transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.pll-e-sister:hover {
+	transform: translateY(-3px);
+	box-shadow: 0 16px 34px -18px rgba(46, 42, 35, 0.5);
+}
+
+.pll-e-sister__media {
+	aspect-ratio: 3 / 2;
+	background: var(--pll-e-paper-2);
+	overflow: hidden;
+}
+
+.pll-e-sister__media img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.pll-e-sister__body {
+	padding: 1rem 1.25rem 1.35rem;
+}
+
+.pll-e-sister__eyebrow {
+	font-size: 0.68rem;
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
+	color: var(--pll-e-taupe);
+}
+
+.pll-e-sister__title {
+	font-family: var(--pll-e-display);
+	font-size: 1.5rem;
+	margin: 0.2rem 0 0.4rem;
+}
+
+.pll-e-sister__desc {
+	display: block;
+	margin: 0.4rem 0 0.6rem;
+	color: var(--pll-e-taupe);
+	font-size: 0.95rem;
+	line-height: 1.5;
+}
+
+.pll-e-sister__price {
+	color: var(--pll-e-wine);
+	font-weight: 600;
+}
+
+.pll-e-residenze-range {
+	font-family: var(--pll-e-display);
+	font-size: 1.25rem;
+	color: var(--pll-e-wine);
+	margin-top: -0.5rem;
+	margin-bottom: 1.5rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * Dossier
+ * ------------------------------------------------------------------------- */
+.pll-e-dossier {
+	background: var(--pll-e-ink);
+	color: #f2ead9;
+	width: 100vw;
+	margin-left: calc(50% - 50vw);
+}
+
+.pll-e-dossier .pll-e-kicker {
+	color: var(--pll-e-gold-2);
+}
+
+.pll-e-dossier .pll-e-h {
+	color: #fbf7ee;
+}
+
+.pll-e-dossier .pll-e-prose {
+	color: #d9cfba;
+}
+
+/* Adatta il form lead (iniettato via hook) al fondo scuro. */
+.pll-e-dossier .palladio-lead-form label {
+	color: #f2ead9;
+}
+
+.pll-e-dossier .palladio-lead-form input,
+.pll-e-dossier .palladio-lead-form select,
+.pll-e-dossier .palladio-lead-form textarea {
+	background: #37322a;
+	border-color: #4b453a;
+	color: #f7f2e7;
+}
+
+.pll-e-dossier .palladio-cta {
+	background: var(--pll-e-gold-2);
+	color: #2e2a23;
+}
+
+/* ---------------------------------------------------------------------------
+ * Switcher lingua editoriale
+ * ------------------------------------------------------------------------- */
+.palladio-editorial .palladio-lang-switcher {
+	gap: 0.4rem;
+}
+
+.palladio-editorial .palladio-lang {
+	border: 0;
+	color: var(--pll-e-taupe);
+	padding: 0.1rem 0.4rem;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	font-size: 0.72rem;
+}
+
+.palladio-editorial .palladio-lang.is-current {
+	background: transparent;
+	color: var(--pll-e-wine);
+	text-decoration: underline;
+	text-underline-offset: 4px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Landing Edificio — manifesto, timeline, ambient, filtri, galleria
+ * ------------------------------------------------------------------------- */
+
+/* Reveal allo scroll (progressive enhancement: senza JS tutto visibile) */
+.pll-reveal { opacity: 1; }
+.js-reveal .pll-reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.js-reveal .pll-reveal.is-in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+	.js-reveal .pll-reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* Manifesto */
+.pll-e-manifesto {
+	text-align: center;
+	max-width: 54rem;
+}
+.pll-e-manifesto__rule {
+	display: block;
+	width: 3rem;
+	height: 1px;
+	background: var(--pll-e-gold);
+	margin: 0 auto 2.5rem;
+}
+.pll-e-manifesto__line {
+	font-family: var(--pll-e-display);
+	font-size: clamp(1.6rem, 4vw, 2.6rem);
+	line-height: 1.25;
+	color: var(--pll-e-ink);
+	margin: 0 0 2rem;
+}
+.pll-e-manifesto__line em {
+	color: var(--pll-e-wine);
+	font-style: italic;
+}
+
+/* Timeline / scroll-telling */
+.pll-e-timeline__index {
+	display: flex;
+	gap: 1.5rem;
+	flex-wrap: wrap;
+	padding-top: 2.5rem;
+	color: var(--pll-e-gold);
+	font-weight: 600;
+	letter-spacing: 0.08em;
+}
+.pll-e-timeline__row {
+	display: grid;
+	gap: clamp(1.5rem, 4vw, 3rem);
+	grid-template-columns: 1fr;
+	align-items: start;
+	padding-block: clamp(2rem, 5vw, 4rem);
+}
+@media (min-width: 880px) {
+	.pll-e-timeline__row { grid-template-columns: 1fr 1fr; }
+	.pll-e-timeline__media { position: sticky; top: 4rem; }
+}
+.pll-e-timeline__media {
+	margin: 0;
+	background: var(--pll-e-paper-2);
+	aspect-ratio: 4 / 3;
+	overflow: hidden;
+}
+.pll-e-timeline__media img { width: 100%; height: 100%; object-fit: cover; }
+.pll-e-timeline__year {
+	font-family: var(--pll-e-display);
+	font-size: clamp(3rem, 8vw, 5.5rem);
+	line-height: 1;
+	color: var(--pll-e-gold);
+	margin: 0.5rem 0 0.5rem;
+}
+
+/* Ambient loop */
+.pll-e-ambient {
+	position: relative;
+	width: 100vw;
+	margin-left: calc(50% - 50vw);
+	min-height: min(52vh, 30rem);
+	background-color: #b39a6f;
+	background-size: cover;
+	background-position: center;
+	display: flex;
+	align-items: flex-start;
+}
+.pll-e-ambient__caption {
+	margin: 1.25rem;
+	padding: 0.4rem 0.9rem;
+	border-radius: 999px;
+	background: rgba(46, 42, 35, 0.65);
+	color: #f2ead9;
+	font-size: 0.72rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	font-weight: 600;
+}
+
+/* Testata sezione con filtri */
+.pll-e-units-head {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 1.5rem;
+	flex-wrap: wrap;
+	margin-bottom: 1.25rem;
+}
+.pll-e-units-head .pll-e-h { margin-bottom: 0; }
+.pll-e-gallery-note { max-width: 22rem; margin: 0; font-size: 0.95rem; }
+
+/* Chip filtri */
+.pll-e-filters { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.pll-e-chip {
+	font: inherit;
+	cursor: pointer;
+	padding: 0.5rem 1.1rem;
+	border-radius: 999px;
+	border: 1px solid var(--pll-e-line);
+	background: transparent;
+	color: var(--pll-e-ink);
+	white-space: nowrap;
+}
+.pll-e-chip:hover { border-color: var(--pll-e-wine); }
+.pll-e-chip.is-active { background: var(--pll-e-wine); color: #f7f2e7; border-color: var(--pll-e-wine); }
+.pll-e-chip:focus-visible { outline: 2px solid var(--pll-e-wine); outline-offset: 2px; }
+
+/* Card unità: scatto e badge in overlay */
+.pll-e-sister__media { position: relative; }
+.pll-e-unit-card__shot {
+	position: absolute;
+	left: 0; right: 0; bottom: 0;
+	padding: 0.6rem 0.9rem;
+	background: linear-gradient(to top, rgba(20,16,12,0.6), transparent);
+	color: #f2ead9;
+	font-size: 0.68rem;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+.pll-e-sister__media .palladio-badge { top: 0.85rem; right: 0.85rem; left: auto; }
+
+/* Galleria asimmetrica (masonry via CSS columns) */
+.pll-e-gallery { column-count: 3; column-gap: 1rem; }
+@media (max-width: 900px) { .pll-e-gallery { column-count: 2; } }
+@media (max-width: 560px) { .pll-e-gallery { column-count: 1; } }
+.pll-e-gallery__item {
+	position: relative;
+	margin: 0 0 1rem;
+	break-inside: avoid;
+	overflow: hidden;
+	background: var(--pll-e-paper-2);
+}
+.pll-e-gallery__item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pll-e-gallery__item figcaption {
+	position: absolute;
+	left: 0; right: 0; bottom: 0;
+	padding: 0.6rem 0.8rem;
+	background: linear-gradient(to top, rgba(20,16,12,0.6), transparent);
+	color: #f2ead9;
+	font-size: 0.66rem;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+}
+.pll-e-gallery-more { margin-top: 1.5rem; text-align: center; }
+.pll-e-gallery-more a {
+	color: var(--pll-e-wine);
+	font-weight: 600;
+	text-decoration: none;
+	border-bottom: 1px solid currentColor;
+	padding-bottom: 2px;
+}

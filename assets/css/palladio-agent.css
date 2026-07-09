@@ -1,0 +1,146 @@
+/**
+ * Palladio — widget agent (frontend).
+ *
+ * Autosufficiente per il layout; i colori seguono la palette di PoeTheme
+ * (variabili --poetheme-*) con fallback neutri.
+ */
+
+#palladio-agent-root {
+	--pll-surface: var(--poetheme-content-background-color, #ffffff);
+	--pll-text: var(--poetheme-content-text-color, #111827);
+	--pll-cta-bg: var(--poetheme-cta-background-color, #2563eb);
+	--pll-cta-text: var(--poetheme-cta-text-color, #ffffff);
+	--pll-border: color-mix(in srgb, var(--poetheme-content-text-color, #111827) 12%, transparent);
+
+	position: fixed;
+	right: 1.25rem;
+	bottom: 1.25rem;
+	z-index: 9999;
+}
+
+.palladio-agent__toggle {
+	width: 3.5rem;
+	height: 3.5rem;
+	border-radius: 50%;
+	border: 0;
+	background: var(--pll-cta-bg);
+	color: var(--pll-cta-text);
+	font-size: 1.5rem;
+	cursor: pointer;
+	box-shadow: 0 10px 25px -10px rgba(0, 0, 0, 0.5);
+}
+
+.palladio-agent__toggle:focus-visible {
+	outline: 3px solid var(--pll-cta-bg);
+	outline-offset: 2px;
+}
+
+.palladio-agent__panel {
+	position: absolute;
+	right: 0;
+	bottom: 4.25rem;
+	width: min(23rem, calc(100vw - 2.5rem));
+	height: min(32rem, calc(100vh - 8rem));
+	display: flex;
+	flex-direction: column;
+	background: var(--pll-surface);
+	color: var(--pll-text);
+	border: 1px solid var(--pll-border);
+	border-radius: 1rem;
+	overflow: hidden;
+	box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.55);
+}
+
+.palladio-agent__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.85rem 1rem;
+	background: var(--pll-cta-bg);
+	color: var(--pll-cta-text);
+}
+
+.palladio-agent__title {
+	font-weight: 700;
+}
+
+.palladio-agent__close {
+	background: transparent;
+	border: 0;
+	color: inherit;
+	font-size: 1.5rem;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.palladio-agent__disclaimer {
+	margin: 0;
+	padding: 0.5rem 1rem;
+	font-size: 0.75rem;
+	background: color-mix(in srgb, var(--pll-text) 6%, var(--pll-surface));
+	color: var(--pll-text);
+	border-bottom: 1px solid var(--pll-border);
+}
+
+.palladio-agent__log {
+	flex: 1;
+	overflow-y: auto;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.6rem;
+}
+
+.palladio-agent__msg {
+	max-width: 85%;
+	padding: 0.55rem 0.8rem;
+	border-radius: 0.9rem;
+	line-height: 1.45;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+}
+
+.palladio-agent__msg--assistant {
+	align-self: flex-start;
+	background: color-mix(in srgb, var(--pll-text) 8%, var(--pll-surface));
+	border-bottom-left-radius: 0.25rem;
+}
+
+.palladio-agent__msg--user {
+	align-self: flex-end;
+	background: var(--pll-cta-bg);
+	color: var(--pll-cta-text);
+	border-bottom-right-radius: 0.25rem;
+}
+
+.palladio-agent__form {
+	display: flex;
+	gap: 0.5rem;
+	padding: 0.75rem;
+	border-top: 1px solid var(--pll-border);
+}
+
+.palladio-agent__input {
+	flex: 1;
+	padding: 0.6rem 0.75rem;
+	border: 1px solid var(--pll-border);
+	border-radius: 0.5rem;
+	background: var(--pll-surface);
+	color: var(--pll-text);
+	font: inherit;
+}
+
+.palladio-agent__input:focus {
+	outline: 2px solid var(--pll-cta-bg);
+	outline-offset: 1px;
+}
+
+.palladio-agent__send {
+	padding: 0.6rem 1rem;
+	border: 0;
+	border-radius: 0.5rem;
+	background: var(--pll-cta-bg);
+	color: var(--pll-cta-text);
+	font-weight: 600;
+	cursor: pointer;
+}
