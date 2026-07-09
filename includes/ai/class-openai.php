@@ -267,7 +267,7 @@ class Palladio_AI_Openai {
 		$response = wp_remote_post(
 			self::base_url() . '/files',
 			array(
-				'timeout' => 60,
+				'timeout' => Palladio_AI_Settings::http_timeout(),
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $key,
 					'Content-Type'  => 'multipart/form-data; boundary=' . $boundary,
@@ -344,12 +344,13 @@ class Palladio_AI_Openai {
 	private static function request( $path, array $body, $key ) {
 		$url      = self::base_url() . $path;
 		$attempts = 3;
+		$timeout  = Palladio_AI_Settings::http_timeout();
 
 		for ( $i = 0; $i < $attempts; $i++ ) {
 			$response = wp_remote_post(
 				$url,
 				array(
-					'timeout' => 60,
+					'timeout' => $timeout,
 					'headers' => array(
 						'Authorization' => 'Bearer ' . $key,
 						'Content-Type'  => 'application/json',
@@ -359,7 +360,19 @@ class Palladio_AI_Openai {
 			);
 
 			if ( is_wp_error( $response ) ) {
-				// Errore di rete: riprova con backoff.
+				// Timeout: non ha senso riprovare (ogni tentativo dura già
+				// $timeout secondi); restituisci un errore con istruzioni.
+				if ( false !== stripos( $response->get_error_message(), 'timed out' ) || false !== strpos( $response->get_error_message(), 'error 28' ) ) {
+					return new WP_Error(
+						'palladio_ai_timeout',
+						sprintf(
+							/* translators: %d: timeout in secondi. */
+							__( 'La richiesta a OpenAI ha superato %d secondi. Aumenta “Timeout richiesta API” in Palladio → AI, oppure usa un modello più veloce / riduci i token massimi.', 'palladio' ),
+							$timeout
+						)
+					);
+				}
+				// Altro errore di rete: riprova con backoff.
 				if ( $i < $attempts - 1 ) {
 					sleep( (int) pow( 2, $i ) );
 					continue;

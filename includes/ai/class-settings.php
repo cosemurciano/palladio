@@ -46,6 +46,7 @@ class Palladio_AI_Settings {
 			'tokens_generate'  => 3000,
 			'tokens_translate' => 2000,
 			'tokens_agent'     => 4000,
+			'http_timeout'     => 180,
 		);
 
 		$config = get_option( 'palladio_ai', array() );
@@ -83,6 +84,16 @@ class Palladio_AI_Settings {
 
 		// Clamp difensivo: 100–32000.
 		return max( 100, min( 32000, $value ? $value : 1500 ) );
+	}
+
+	/**
+	 * Timeout (secondi) delle richieste HTTP verso OpenAI.
+	 *
+	 * @return int
+	 */
+	public static function http_timeout() {
+		$value = absint( self::config()['http_timeout'] ?? 0 );
+		return max( 30, min( 600, $value ? $value : 180 ) );
 	}
 
 	/**
@@ -252,6 +263,13 @@ class Palladio_AI_Settings {
 							<p class="description"><?php esc_html_e( 'Vale per l’Agente AI in amministrazione e per il widget di chat sul sito.', 'palladio' ); ?></p>
 						</td>
 					</tr>
+					<tr>
+						<th scope="row"><label for="pll-ai-timeout"><?php esc_html_e( 'Timeout richiesta API (secondi)', 'palladio' ); ?></label></th>
+						<td>
+							<input type="number" id="pll-ai-timeout" name="http_timeout" min="30" max="600" step="10" value="<?php echo esc_attr( (int) $config['http_timeout'] ); ?>">
+							<p class="description"><?php esc_html_e( 'Tempo massimo di attesa per ogni chiamata a OpenAI. I modelli reasoning con molti token possono richiedere 120–300 secondi. Verifica che anche max_execution_time del PHP lo consenta.', 'palladio' ); ?></p>
+						</td>
+					</tr>
 				</table>
 
 				<h2><?php esc_html_e( 'Agent conversazionale', 'palladio' ); ?></h2>
@@ -331,6 +349,7 @@ class Palladio_AI_Settings {
 			'tokens_generate'  => $tok( 'tokens_generate', 3000 ),
 			'tokens_translate' => $tok( 'tokens_translate', 2000 ),
 			'tokens_agent'     => $tok( 'tokens_agent', 4000 ),
+			'http_timeout'     => isset( $_POST['http_timeout'] ) ? max( 30, min( 600, absint( wp_unslash( $_POST['http_timeout'] ) ) ) ) : 180,
 		);
 
 		update_option( 'palladio_ai', $config );
