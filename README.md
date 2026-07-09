@@ -6,7 +6,11 @@ Palladio trasforma un sito WordPress in un sistema di regia completo per la vend
 
 ## Stato
 
-**Versione 0.8.0 — perimetro completo + i18n a pagine clone.** Sono implementati tutti i moduli previsti dall'architettura del documento di progetto (§4): Core, Presenter (integrato con [PoeTheme](https://github.com/cosemurciano/PoeTheme)), Regia (lead + dashboard), Lingue (i18n nativo **a pagine clone per lingua**), AI/Composer, Agent conversazionale e Feeds portali. Le voci residue sono affinamenti di Fase 1 (scenari bundle/split completi, planimetrie SVG interattive, dossier PDF, `request_visit`/`handoff_human`, scoring lead, adapter Polylang/WPML).
+**Versione 0.9.0 — perimetro completo + i18n a pagine clone + direzione visiva editoriale.** Sono implementati tutti i moduli previsti dall'architettura del documento di progetto (§4): Core, Presenter (integrato con [PoeTheme](https://github.com/cosemurciano/PoeTheme)), Regia (lead + dashboard), Lingue (i18n nativo **a pagine clone per lingua**), AI/Composer, Agent conversazionale e Feeds portali. Le schede di edificio e unità adottano una **direzione visiva editoriale "Sambiasi"** (palette calda, serif da display, hero full-bleed, barra dati sticky, narrazione asimmetrica, scheda tecnica tipografica, unità sorelle, dossier). Le voci residue sono affinamenti di Fase 1 (scenari bundle/split completi, planimetrie SVG interattive, dossier PDF, `request_visit`/`handoff_human`, scoring lead, adapter Polylang/WPML).
+
+### Direzione visiva editoriale
+
+I template `single-pll_unita.php` e `single-pll_edificio.php` implementano lo stile editoriale (`assets/css/palladio-editorial.css`, font Cormorant Garamond / Marcellus / Hanken Grotesk): hero fotografico full-bleed, **barra sticky** con prezzo e dati chiave + CTA, narrazione, **scheda tecnica** tipografica, virtual tour, posizione nell'edificio, **unità sorelle** e **dossier** (form lead). Disattivabile via filtro `palladio/editorial/enabled`. Il tema [PoeTheme](https://github.com/cosemurciano/PoeTheme) offre una **palette + abbinamento font "Sambiasi"** coordinati per header/footer.
 
 ### Cosa fa già
 
