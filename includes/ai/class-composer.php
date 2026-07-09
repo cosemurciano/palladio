@@ -287,4 +287,307 @@ class Palladio_AI_Composer {
 
 		return $out;
 	}
+
+	/**
+	 * Costruisce la pagina dai contenuti su OpenAI Storage (File Search) e dai
+	 * media del sito, popolando i campi strutturati (_pll_editorial + meta).
+	 *
+	 * @param int $post_id ID post (edificio o unità).
+	 * @return array|WP_Error Riepilogo campi popolati.
+	 */
+	public static function build_from_sources( $post_id ) {
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return new WP_Error( 'palladio_ai_no_post', __( 'Post non trovato.', 'palladio' ) );
+		}
+
+		$vector_store = Palladio_AI_Settings::vector_store();
+		$media        = self::media_context( $post_id );
+
+		$is_unit = 'pll_unita' === $post->post_type;
+
+		$schema = wp_json_encode(
+			array(
+				'title'     => 'string',
+				'excerpt'   => 'string',
+				'meta'      => $is_unit
+					? array( 'prezzo' => 'number', 'mq_commerciali' => 'number', 'mq_coperti' => 'number', 'camere' => 'int', 'bagni' => 'int', 'vani' => 'number', 'esposizione' => 'string', 'classe_energetica' => 'string', 'millesimi' => 'number', 'spese_condominiali' => 'number', 'terrazza_mq' => 'number', 'giardino_mq' => 'number', 'stato_consegna' => 'string', 'destinazione_uso' => 'string' )
+					: array( 'anno_costruzione' => 'int', 'mq_totali' => 'number', 'num_piani' => 'int', 'num_unita_vendita' => 'int', 'indirizzo' => 'string', 'claim' => 'string' ),
+				'editorial' => array(
+					'eyebrow'         => 'string',
+					'lead'            => 'string',
+					'walkthrough_url' => 'string',
+					'hero_image'      => 'attachment_id (dalla lista media)',
+					'chapters'        => array( array( 'time' => 'string', 'label' => 'string' ) ),
+					'narrative'       => array( array( 'kicker' => 'string', 'heading' => 'string', 'body' => 'html', 'image' => 'attachment_id', 'caption' => 'string', 'layout' => 'left|right' ) ),
+					'tech'            => array( array( 'label' => 'string', 'value' => 'string' ) ),
+					'gallery'         => array( array( 'image' => 'attachment_id', 'caption' => 'string', 'ratio' => '3:2|4:3|4:5|1:1' ) ),
+					'floorplan'       => array( 'image' => 'attachment_id', 'caption' => 'string', 'notes' => 'string' ),
+					'position'        => array( 'heading' => 'string', 'text' => 'string' ),
+				),
+			)
+		);
+
+		$instructions = __( 'Sei l’editor immobiliare del progetto. Costruisci la scheda usando SOLO fatti verificati: cerca prezzi, misure, stanze, vincoli e descrizioni nei documenti del progetto tramite file search. Non inventare dati. Per le immagini scegli ESCLUSIVAMENTE gli id presenti nella lista media fornita (non inventare id). Rispondi con un unico oggetto JSON valido conforme allo schema.', 'palladio' );
+
+		$input = sprintf(
+			/* translators: 1: tipo, 2: titolo, 3: schema json, 4: lista media json. */
+			__( "Tipo: %1\$s. Titolo attuale: %2\$s.\n\nSchema JSON richiesto:\n%3\$s\n\nMedia disponibili (usa questi id):\n%4\$s", 'palladio' ),
+			$post->post_type,
+			get_the_title( $post ),
+			$schema,
+			wp_json_encode( $media )
+		);
+
+		$result = Palladio_AI_Openai::responses(
+			$instructions,
+			$input,
+			array(
+				'vector_store_ids' => $vector_store ? array( $vector_store ) : array(),
+				'json'             => true,
+				'max_tokens'       => 3000,
+			)
+		);
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		$data = json_decode( $result['text'], true );
+		if ( ! is_array( $data ) ) {
+			return new WP_Error( 'palladio_ai_bad_json', __( 'Risposta AI non valida.', 'palladio' ) );
+		}
+
+		return self::apply_built( $post_id, $data, $media );
+	}
+
+	/**
+	 * Applica al post i dati costruiti (meta, immagini, editoriale).
+	 *
+	 * @param int   $post_id ID post.
+	 * @param array $data    Dati dal modello.
+	 * @param array $media   Lista media valida (id => info).
+	 * @return array Riepilogo.
+	 */
+	private static function apply_built( $post_id, $data, $media ) {
+		$valid_ids = wp_list_pluck( $media, 'id' );
+
+		$vid = static function ( $id ) use ( $valid_ids ) {
+			$id = absint( $id );
+			return in_array( $id, $valid_ids, true ) ? $id : 0;
+		};
+
+		// Testi principali.
+		$update = array( 'ID' => $post_id );
+		if ( ! empty( $data['title'] ) ) {
+			$update['post_title'] = sanitize_text_field( $data['title'] );
+		}
+		if ( ! empty( $data['excerpt'] ) ) {
+			$update['post_excerpt'] = sanitize_textarea_field( $data['excerpt'] );
+		}
+		if ( count( $update ) > 1 ) {
+			wp_update_post( $update );
+		}
+
+		// Meta strutturati (numeri/stringhe).
+		if ( ! empty( $data['meta'] ) && is_array( $data['meta'] ) ) {
+			foreach ( $data['meta'] as $key => $value ) {
+				$key = sanitize_key( $key );
+				if ( is_numeric( $value ) ) {
+					update_post_meta( $post_id, '_pll_' . $key, (float) $value );
+				} else {
+					update_post_meta( $post_id, '_pll_' . $key, sanitize_text_field( (string) $value ) );
+				}
+			}
+		}
+
+		$ed = isset( $data['editorial'] ) && is_array( $data['editorial'] ) ? $data['editorial'] : array();
+
+		// Immagine in evidenza (hero).
+		$hero = $vid( $ed['hero_image'] ?? 0 );
+		if ( $hero ) {
+			set_post_thumbnail( $post_id, $hero );
+		}
+
+		$editorial = array(
+			'eyebrow'         => sanitize_text_field( $ed['eyebrow'] ?? '' ),
+			'lead'            => sanitize_textarea_field( $ed['lead'] ?? '' ),
+			'walkthrough_url' => esc_url_raw( $ed['walkthrough_url'] ?? '' ),
+			'chapters'        => array(),
+			'narrative'       => array(),
+			'tech'            => array(),
+			'gallery'         => array(),
+			'floorplan'       => array(
+				'image'   => $vid( $ed['floorplan']['image'] ?? 0 ),
+				'caption' => sanitize_text_field( $ed['floorplan']['caption'] ?? '' ),
+				'notes'   => sanitize_textarea_field( $ed['floorplan']['notes'] ?? '' ),
+			),
+			'position'        => array(
+				'heading' => sanitize_text_field( $ed['position']['heading'] ?? '' ),
+				'text'    => sanitize_textarea_field( $ed['position']['text'] ?? '' ),
+			),
+		);
+
+		foreach ( (array) ( $ed['chapters'] ?? array() ) as $c ) {
+			if ( ! is_array( $c ) ) {
+				continue;
+			}
+			$editorial['chapters'][] = array(
+				'time'  => sanitize_text_field( $c['time'] ?? '' ),
+				'label' => sanitize_text_field( $c['label'] ?? '' ),
+			);
+		}
+		foreach ( (array) ( $ed['narrative'] ?? array() ) as $n ) {
+			if ( ! is_array( $n ) ) {
+				continue;
+			}
+			$editorial['narrative'][] = array(
+				'kicker'  => sanitize_text_field( $n['kicker'] ?? '' ),
+				'heading' => sanitize_text_field( $n['heading'] ?? '' ),
+				'body'    => wp_kses_post( $n['body'] ?? '' ),
+				'image'   => $vid( $n['image'] ?? 0 ),
+				'caption' => sanitize_text_field( $n['caption'] ?? '' ),
+				'layout'  => ( 'left' === ( $n['layout'] ?? '' ) ) ? 'left' : 'right',
+			);
+		}
+		foreach ( (array) ( $ed['tech'] ?? array() ) as $t ) {
+			if ( ! is_array( $t ) ) {
+				continue;
+			}
+			$editorial['tech'][] = array(
+				'label' => sanitize_text_field( $t['label'] ?? '' ),
+				'value' => sanitize_text_field( $t['value'] ?? '' ),
+			);
+		}
+		foreach ( (array) ( $ed['gallery'] ?? array() ) as $g ) {
+			if ( ! is_array( $g ) ) {
+				continue;
+			}
+			$img = $vid( $g['image'] ?? 0 );
+			if ( ! $img ) {
+				continue;
+			}
+			$editorial['gallery'][] = array(
+				'image'   => $img,
+				'caption' => sanitize_text_field( $g['caption'] ?? '' ),
+				'ratio'   => in_array( $g['ratio'] ?? '', array( '3:2', '4:3', '4:5', '1:1' ), true ) ? $g['ratio'] : '4:3',
+			);
+		}
+
+		update_post_meta( $post_id, '_pll_editorial', $editorial );
+
+		return array(
+			'narrative' => count( $editorial['narrative'] ),
+			'gallery'   => count( $editorial['gallery'] ),
+			'tech'      => count( $editorial['tech'] ),
+			'hero'      => (bool) $hero,
+		);
+	}
+
+	/**
+	 * Raccoglie il contesto dei media del sito (immagini) per la scelta AI.
+	 *
+	 * @param int $post_id ID post.
+	 * @param int $limit   Numero massimo di media.
+	 * @return array<int,array{id:int,title:string,alt:string,caption:string}>
+	 */
+	private static function media_context( $post_id, $limit = 40 ) {
+		// Priorità ai media allegati al post, poi ai più recenti.
+		$ids = get_posts(
+			array(
+				'post_type'      => 'attachment',
+				'post_mime_type' => 'image',
+				'post_status'    => 'inherit',
+				'post_parent'    => (int) $post_id,
+				'posts_per_page' => $limit,
+				'fields'         => 'ids',
+				'no_found_rows'  => true,
+			)
+		);
+
+		if ( count( $ids ) < $limit ) {
+			$recent = get_posts(
+				array(
+					'post_type'      => 'attachment',
+					'post_mime_type' => 'image',
+					'post_status'    => 'inherit',
+					'posts_per_page' => $limit - count( $ids ),
+					'post__not_in'   => $ids ? $ids : array( 0 ),
+					'fields'         => 'ids',
+					'orderby'        => 'date',
+					'order'          => 'DESC',
+					'no_found_rows'  => true,
+				)
+			);
+			$ids = array_merge( $ids, $recent );
+		}
+
+		$media = array();
+		foreach ( $ids as $id ) {
+			$media[] = array(
+				'id'      => (int) $id,
+				'title'   => get_the_title( $id ),
+				'alt'     => (string) get_post_meta( $id, '_wp_attachment_image_alt', true ),
+				'caption' => wp_get_attachment_caption( $id ) ? wp_get_attachment_caption( $id ) : '',
+			);
+		}
+
+		return $media;
+	}
+
+	/**
+	 * Carica i documenti allegati al post (PDF/doc) su OpenAI Storage e li
+	 * aggiunge al vector store configurato (creandolo se assente).
+	 *
+	 * @param int $post_id ID post.
+	 * @return array|WP_Error Riepilogo (vector store, file caricati).
+	 */
+	public static function upload_documents( $post_id ) {
+		$config = Palladio_AI_Settings::config();
+		$vs     = $config['vector_store'];
+
+		if ( '' === $vs ) {
+			$created = Palladio_AI_Openai::create_vector_store( 'Palladio — ' . get_bloginfo( 'name' ) );
+			if ( is_wp_error( $created ) ) {
+				return $created;
+			}
+			$vs               = $created;
+			$config['vector_store'] = $vs;
+			update_option( 'palladio_ai', $config );
+		}
+
+		$docs = get_posts(
+			array(
+				'post_type'      => 'attachment',
+				'post_mime_type' => array( 'application/pdf', 'text/plain' ),
+				'post_status'    => 'inherit',
+				'post_parent'    => (int) $post_id,
+				'posts_per_page' => 20,
+				'fields'         => 'ids',
+				'no_found_rows'  => true,
+			)
+		);
+
+		$uploaded = 0;
+		foreach ( $docs as $id ) {
+			$path = get_attached_file( $id );
+			if ( ! $path ) {
+				continue;
+			}
+			$file_id = Palladio_AI_Openai::upload_file( $path );
+			if ( is_wp_error( $file_id ) ) {
+				continue;
+			}
+			$added = Palladio_AI_Openai::vector_store_add_file( $vs, $file_id );
+			if ( ! is_wp_error( $added ) ) {
+				$uploaded++;
+			}
+		}
+
+		return array(
+			'vector_store' => $vs,
+			'uploaded'     => $uploaded,
+			'total'        => count( $docs ),
+		);
+	}
 }
