@@ -47,6 +47,8 @@ class Palladio_AI_Openai {
 				'temperature' => 0.7,
 				'json'        => false,
 				'max_tokens'  => 1500,
+				'tools'       => array(),
+				'tool_choice' => 'auto',
 			)
 		);
 
@@ -61,18 +63,24 @@ class Palladio_AI_Openai {
 			$body['response_format'] = array( 'type' => 'json_object' );
 		}
 
+		if ( ! empty( $args['tools'] ) ) {
+			$body['tools']       = $args['tools'];
+			$body['tool_choice'] = $args['tool_choice'];
+		}
+
 		$response = self::request( '/chat/completions', $body, $key );
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
 
-		$content = $response['choices'][0]['message']['content'] ?? '';
+		$message = $response['choices'][0]['message'] ?? array();
 		$usage   = $response['usage'] ?? array();
 
 		self::record_usage( $args['model'], $usage );
 
 		return array(
-			'content' => (string) $content,
+			'content' => (string) ( $message['content'] ?? '' ),
+			'message' => $message,
 			'usage'   => $usage,
 		);
 	}
