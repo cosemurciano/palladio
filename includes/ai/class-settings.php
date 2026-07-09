@@ -58,7 +58,20 @@ class Palladio_AI_Settings {
 	 * @return string
 	 */
 	public static function api_key() {
+		// Priorità a wp-config.php: define( 'PALLADIO_OPENAI_API_KEY', 'sk-...' );
+		if ( defined( 'PALLADIO_OPENAI_API_KEY' ) && '' !== (string) PALLADIO_OPENAI_API_KEY ) {
+			return (string) PALLADIO_OPENAI_API_KEY;
+		}
 		return Palladio_AI_Crypto::decrypt( get_option( 'palladio_ai_key', '' ) );
+	}
+
+	/**
+	 * Indica se la chiave è definita in wp-config.php (non modificabile da UI).
+	 *
+	 * @return bool
+	 */
+	public static function key_is_constant() {
+		return defined( 'PALLADIO_OPENAI_API_KEY' ) && '' !== (string) PALLADIO_OPENAI_API_KEY;
 	}
 
 	/**
@@ -152,7 +165,14 @@ class Palladio_AI_Settings {
 						<td>
 							<input type="password" id="pll-ai-key" name="api_key" class="regular-text" autocomplete="off"
 								placeholder="<?php echo $has_key ? esc_attr__( '•••••••• (impostata — lascia vuoto per non cambiarla)', 'palladio' ) : 'sk-…'; ?>">
-							<p class="description"><?php esc_html_e( 'Salvata cifrata nel database e usata solo lato server.', 'palladio' ); ?></p>
+							<?php if ( self::key_is_constant() ) : ?>
+								<p class="description"><strong><?php esc_html_e( 'Definita in wp-config.php', 'palladio' ); ?></strong> (<code>PALLADIO_OPENAI_API_KEY</code>) — <?php esc_html_e( 'questo campo viene ignorato.', 'palladio' ); ?></p>
+							<?php else : ?>
+								<p class="description">
+									<?php esc_html_e( 'Salvata cifrata nel database e usata solo lato server. Per maggiore sicurezza puoi definirla in wp-config.php:', 'palladio' ); ?>
+									<code>define( 'PALLADIO_OPENAI_API_KEY', 'sk-...' );</code>
+								</p>
+							<?php endif; ?>
 						</td>
 					</tr>
 					<tr>
@@ -243,8 +263,8 @@ class Palladio_AI_Settings {
 		);
 		update_option( 'palladio_agent', $agent );
 
-		// Aggiorna la chiave solo se fornita (non ristampiamo mai quella salvata).
-		if ( isset( $_POST['api_key'] ) && '' !== trim( (string) wp_unslash( $_POST['api_key'] ) ) ) {
+		// Aggiorna la chiave solo se fornita e se non è gestita da wp-config.php.
+		if ( ! self::key_is_constant() && isset( $_POST['api_key'] ) && '' !== trim( (string) wp_unslash( $_POST['api_key'] ) ) ) {
 			$key = sanitize_text_field( wp_unslash( $_POST['api_key'] ) );
 			update_option( 'palladio_ai_key', Palladio_AI_Crypto::encrypt( $key ), false );
 		}

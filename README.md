@@ -44,7 +44,7 @@ I template `single-pll_unita.php` e `single-pll_edificio.php` implementano lo st
   - La traduzione AI (Composer) **crea e popola la pagina clone** come bozza da rivedere.
 - **AI / Composer** (`includes/ai/`, `includes/admin/class-ai.php`) — richiede una chiave OpenAI (§5.3, §6):
   - `ai/class-crypto.php` — cifratura della chiave API con **libsodium** (chiave derivata dai salt WP, mai memorizzata); fallback offuscato se libsodium assente.
-  - `ai/class-settings.php` — pagina **Palladio → AI**: chiave cifrata (mai ristampata in chiaro), modelli configurabili, abilitazione e **riepilogo uso/costi stimati**.
+  - `ai/class-settings.php` — pagina **Palladio → AI**: chiave API, modelli configurabili, abilitazione e **riepilogo uso/costi stimati**. La chiave può essere definita in **`wp-config.php`** con `define( 'PALLADIO_OPENAI_API_KEY', 'sk-...' );` (opzione più sicura, ha priorità e rende il campo di sola lettura); in alternativa è salvata cifrata nel database.
   - `ai/class-openai.php` — client HTTP server-side (Chat Completions + Embeddings) con **retry** su errori transitori e log token/costo. La chiave non lascia mai il server.
   - `ai/class-composer.php` — genera la scheda (titolo, abstract, descrizione, meta description, FAQ) **dai dati strutturati** come bozza rivedibile (`_pll_ai_draft`), la applica su richiesta, e **traduce** titolo/riassunto/contenuto salvando nel data layer i18n con stato `generata`.
   - `admin/class-ai.php` — metabox con pulsanti *Genera scheda / Applica bozza / Genera traduzione* via **AJAX** (nonce + capability `edit_post`); nessuna chiamata AI dal browser.
