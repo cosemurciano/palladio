@@ -103,9 +103,10 @@ class Palladio_Admin_Studio {
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'palladio_studio' ),
 				'i18n'    => array(
-					'working' => __( 'L’agente sta lavorando…', 'palladio' ),
-					'error'   => __( 'Errore', 'palladio' ),
-					'send'    => __( 'Invia', 'palladio' ),
+					'working'      => __( 'L’agente sta lavorando…', 'palladio' ),
+					'error'        => __( 'Errore', 'palladio' ),
+					'send'         => __( 'Invia', 'palladio' ),
+					'tooManySteps' => __( 'troppi passi: riprova con una richiesta più semplice.', 'palladio' ),
 				),
 			)
 		);
@@ -163,51 +164,73 @@ class Palladio_Admin_Studio {
 			wp_send_json_error( array( 'message' => __( 'Modulo AI non configurato.', 'palladio' ) ), 400 );
 		}
 
-		$message = isset( $_POST['message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['message'] ) ) : '';
-		$history = isset( $_POST['history'] ) ? json_decode( wp_unslash( $_POST['history'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidationSanitization.InputNotSanitized
-		$focus   = isset( $_POST['focus'] ) ? absint( wp_unslash( $_POST['focus'] ) ) : 0;
-
-		// Modalità progettazione (default): senza "Applica modifiche" i tool di
-		// scrittura sono bloccati, così si può progettare prima di costruire.
-		$this->apply = ! empty( $_POST['apply'] );
-
-		if ( '' === $message ) {
-			wp_send_json_error( array( 'message' => __( 'Messaggio vuoto.', 'palladio' ) ), 400 );
-		}
-
-		// Il loop dell'agente può richiedere diverse chiamate API consecutive:
-		// alza il limite di esecuzione dove l'hosting lo consente.
+		// Ogni richiesta esegue UN solo passo (una chiamata al modello): così la
+		// risposta HTTP resta breve ed evita i timeout del web server/proxy che
+		// troncavano la risposta (Content-Length exceeds body).
 		if ( function_exists( 'set_time_limit' ) ) {
-			@set_time_limit( 300 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			@set_time_limit( 120 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 		}
+
+		$turn = isset( $_POST['turn'] ) ? sanitize_key( wp_unslash( $_POST['turn'] ) ) : '';
+
+		if ( $turn ) {
+			// Continua un turno in corso: carica lo stato dal transient.
+			$state = get_transient( 'palladio_studio_' . $turn );
+			if ( ! is_array( $state ) || (int) ( $state['user'] ?? 0 ) !== get_current_user_id() ) {
+				wp_send_json_error( array( 'message' => __( 'Sessione dell’agente scaduta. Reinvia il messaggio.', 'palladio' ) ), 410 );
+			}
+		} else {
+			// Nuovo turno: costruisce lo stato iniziale.
+			$message = isset( $_POST['message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['message'] ) ) : '';
+			if ( '' === $message ) {
+				wp_send_json_error( array( 'message' => __( 'Messaggio vuoto.', 'palladio' ) ), 400 );
+			}
+			$history = isset( $_POST['history'] ) ? json_decode( wp_unslash( $_POST['history'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidationSanitization.InputNotSanitized
+			$focus   = isset( $_POST['focus'] ) ? absint( wp_unslash( $_POST['focus'] ) ) : 0;
+
+			$state = array(
+				'user'     => get_current_user_id(),
+				'apply'    => ! empty( $_POST['apply'] ),
+				'rounds'   => 0,
+				'messages' => $this->build_messages( $message, is_array( $history ) ? $history : array(), $focus ),
+			);
+			$turn = wp_generate_password( 20, false );
+		}
+
+		$this->apply = ! empty( $state['apply'] );
 
 		try {
-			$reply = $this->run( $message, is_array( $history ) ? $history : array(), $focus );
+			$step = $this->step( $state );
 		} catch ( Throwable $t ) {
+			delete_transient( 'palladio_studio_' . $turn );
 			wp_send_json_error( array( 'message' => $t->getMessage() ) );
 		}
 
-		if ( is_wp_error( $reply ) ) {
-			$msg = $reply->get_error_message();
-			wp_send_json_error( array( 'message' => $msg ? $msg : $reply->get_error_code() ) );
+		if ( is_wp_error( $step ) ) {
+			delete_transient( 'palladio_studio_' . $turn );
+			$msg = $step->get_error_message();
+			wp_send_json_error( array( 'message' => $msg ? $msg : $step->get_error_code() ) );
 		}
 
-		if ( '' === trim( (string) $reply ) ) {
-			wp_send_json_error( array( 'message' => __( 'Il modello ha restituito una risposta vuota (probabilmente troncata dai token di ragionamento). Aumenta “Token massimi — agente (chat)” in Palladio → AI, ad es. 4000+ per i modelli reasoning.', 'palladio' ) ) );
+		if ( ! empty( $step['done'] ) ) {
+			delete_transient( 'palladio_studio_' . $turn );
+			wp_send_json_success( array( 'done' => true, 'reply' => (string) $step['reply'] ) );
 		}
 
-		wp_send_json_success( array( 'reply' => $reply ) );
+		// Passo intermedio: salva lo stato e chiedi al client di proseguire.
+		set_transient( 'palladio_studio_' . $turn, $state, 15 * MINUTE_IN_SECONDS );
+		wp_send_json_success( array( 'done' => false, 'turn' => $turn, 'status' => (string) $step['status'] ) );
 	}
 
 	/**
-	 * Esegue il loop dell'agente (RAG storage + function calling).
+	 * Costruisce l'array messaggi iniziale (system + storico + messaggio).
 	 *
 	 * @param string $message Messaggio utente.
 	 * @param array  $history Storico [{role,content}].
-	 * @param int    $focus   Post a fuoco (opzionale).
-	 * @return string|WP_Error
+	 * @param int    $focus   Post a fuoco.
+	 * @return array
 	 */
-	private function run( $message, $history, $focus ) {
+	private function build_messages( $message, $history, $focus ) {
 		$messages = array( array( 'role' => 'system', 'content' => $this->system_prompt( $focus ) ) );
 		foreach ( array_slice( $history, -12 ) as $m ) {
 			if ( isset( $m['role'], $m['content'] ) && in_array( $m['role'], array( 'user', 'assistant' ), true ) ) {
@@ -215,53 +238,67 @@ class Palladio_Admin_Studio {
 			}
 		}
 		$messages[] = array( 'role' => 'user', 'content' => $message );
+		return $messages;
+	}
 
-		$tools  = $this->tool_definitions();
-		$rounds = 0;
+	/**
+	 * Esegue un singolo passo dell'agente: una chiamata al modello, poi
+	 * eventuali tool. Aggiorna lo stato per riferimento.
+	 *
+	 * @param array $state Stato del turno (per riferimento).
+	 * @return array{done:bool,reply?:string,status?:string}|WP_Error
+	 */
+	private function step( &$state ) {
+		$state['rounds'] = (int) $state['rounds'] + 1;
 
-		while ( $rounds < 8 ) {
-			$rounds++;
+		// Cap di sicurezza: forza una risposta finale senza altri tool.
+		$use_tools = $state['rounds'] <= 10;
 
-			$result = Palladio_AI_Openai::chat( $messages, array( 'tools' => $tools, 'temperature' => 0.3, 'max_tokens' => Palladio_AI_Settings::max_tokens( 'agent' ) ) );
-			if ( is_wp_error( $result ) ) {
-				return $result;
-			}
-
-			$assistant  = $result['message'];
-			$messages[] = $assistant;
-
-			if ( empty( $assistant['tool_calls'] ) ) {
-				$content = (string) ( $assistant['content'] ?? '' );
-
-				// Risposta troncata dal limite token (tipico dei modelli
-				// reasoning, che consumano token di output per "pensare").
-				if ( '' === trim( $content ) && 'length' === ( $result['finish_reason'] ?? '' ) ) {
-					return new WP_Error(
-						'palladio_ai_truncated',
-						__( 'Risposta troncata dal limite token prima di produrre testo. Aumenta “Token massimi — agente (chat)” in Palladio → AI (per i modelli reasoning servono 4000+).', 'palladio' )
-					);
-				}
-
-				return $content;
-			}
-
-			foreach ( $assistant['tool_calls'] as $call ) {
-				$name = $call['function']['name'] ?? '';
-				$args = json_decode( $call['function']['arguments'] ?? '{}', true );
-				$args = is_array( $args ) ? $args : array();
-
-				$output = $this->run_tool( $name, $args );
-
-				$messages[] = array(
-					'role'         => 'tool',
-					'tool_call_id' => $call['id'] ?? '',
-					'content'      => wp_json_encode( $output ),
-				);
-			}
+		$args = array( 'temperature' => 0.3, 'max_tokens' => Palladio_AI_Settings::max_tokens( 'agent' ) );
+		if ( $use_tools ) {
+			$args['tools'] = $this->tool_definitions();
 		}
 
-		$final = Palladio_AI_Openai::chat( $messages, array( 'temperature' => 0.3, 'max_tokens' => Palladio_AI_Settings::max_tokens( 'agent' ) ) );
-		return is_wp_error( $final ) ? $final : (string) $final['content'];
+		$result = Palladio_AI_Openai::chat( $state['messages'], $args );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		$assistant           = $result['message'];
+		$state['messages'][] = $assistant;
+
+		if ( empty( $assistant['tool_calls'] ) ) {
+			$content = (string) ( $assistant['content'] ?? '' );
+			if ( '' === trim( $content ) && 'length' === ( $result['finish_reason'] ?? '' ) ) {
+				return new WP_Error(
+					'palladio_ai_truncated',
+					__( 'Risposta troncata dal limite token prima di produrre testo. Aumenta “Token massimi — agente (chat)” in Palladio → AI (per i modelli reasoning servono 4000+).', 'palladio' )
+				);
+			}
+			return array( 'done' => true, 'reply' => $content );
+		}
+
+		$names = array();
+		foreach ( $assistant['tool_calls'] as $call ) {
+			$name   = $call['function']['name'] ?? '';
+			$names[] = $name;
+			$targs  = json_decode( $call['function']['arguments'] ?? '{}', true );
+			$targs  = is_array( $targs ) ? $targs : array();
+
+			$output = $this->run_tool( $name, $targs );
+
+			$state['messages'][] = array(
+				'role'         => 'tool',
+				'tool_call_id' => $call['id'] ?? '',
+				'content'      => wp_json_encode( $output ),
+			);
+		}
+
+		return array(
+			'done'   => false,
+			/* translators: %s: elenco strumenti eseguiti. */
+			'status' => sprintf( __( 'Elaboro… (%s)', 'palladio' ), implode( ', ', array_filter( $names ) ) ),
+		);
 	}
 
 	/**
