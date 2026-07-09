@@ -275,16 +275,23 @@ Regole:
 	 */
 	private function tool_definitions() {
 		$fn = static function ( $name, $desc, $props, $required = array() ) {
+			$parameters = array(
+				'type'       => 'object',
+				// Un array PHP vuoto verrebbe serializzato come [] mentre lo
+				// schema OpenAI richiede un oggetto {}: forza stdClass.
+				'properties' => empty( $props ) ? new stdClass() : $props,
+			);
+
+			if ( ! empty( $required ) ) {
+				$parameters['required'] = $required;
+			}
+
 			return array(
 				'type'     => 'function',
 				'function' => array(
 					'name'        => $name,
 					'description' => $desc,
-					'parameters'  => array(
-						'type'       => 'object',
-						'properties' => $props,
-						'required'   => $required,
-					),
+					'parameters'  => $parameters,
 				),
 			);
 		};
