@@ -12,6 +12,10 @@ Palladio trasforma un sito WordPress in un sistema di regia completo per la vend
 
 I template `single-pll_unita.php` e `single-pll_edificio.php` implementano lo stile editoriale (`assets/css/palladio-editorial.css`, font Cormorant Garamond / Marcellus / Hanken Grotesk): hero fotografico full-bleed, **barra sticky** con prezzo e dati chiave + CTA, narrazione, **scheda tecnica** tipografica, virtual tour, posizione nell'edificio, **unità sorelle** e **dossier** (form lead). Disattivabile via filtro `palladio/editorial/enabled`. Il tema [PoeTheme](https://github.com/cosemurciano/PoeTheme) offre una **palette + abbinamento font "Sambiasi"** coordinati per header/footer.
 
+### Contenuti strutturati (non testo libero)
+
+Il metabox **"Contenuti della scheda"** (`includes/admin/class-content.php`) popola i campi del template con **campi dedicati e repeater**, non un testo libero: occhiello e frase di apertura, URL walkthrough, **capitoli** del walkthrough, **blocchi di narrazione asimmetrica** (occhiello/titolo/testo/immagine/didascalia/lato), **scheda tecnica** (voce/valore), **planimetria** (immagine + note), **galleria** (immagine/didascalia/proporzione) e **posizione nell'edificio**. Salvati in `_pll_editorial` e letti da `palladio_editorial()`; il contenuto dell'editor resta usato come narrazione introduttiva. Immagini scelte con il media picker di WordPress.
+
 ### Cosa fa già
 
 - **Bootstrap del plugin** (`palladio.php`) con costanti, autoloader e hook di attivazione/disattivazione.

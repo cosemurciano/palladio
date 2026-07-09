@@ -54,6 +54,60 @@ function palladio_meta( $post_id, $key ) {
 }
 
 /**
+ * Struttura editoriale del post (campi strutturati del template Sambiasi).
+ *
+ * Ritorna sempre l'array completo con i default, così i template possono
+ * iterare senza controlli difensivi.
+ *
+ * @param int $post_id ID post.
+ * @return array{eyebrow:string,lead:string,walkthrough_url:string,chapters:array,narrative:array,tech:array,gallery:array,floorplan:array,position:array}
+ */
+function palladio_editorial( $post_id ) {
+	$raw  = get_post_meta( $post_id, '_pll_editorial', true );
+	$data = is_array( $raw ) ? $raw : array();
+
+	$defaults = array(
+		'eyebrow'         => '',
+		'lead'            => '',
+		'walkthrough_url' => '',
+		'chapters'        => array(), // [ {time,label} ]
+		'narrative'       => array(), // [ {kicker,heading,body,image,caption,layout} ]
+		'tech'            => array(), // [ {label,value} ]
+		'gallery'         => array(), // [ {image,caption,ratio} ]
+		'floorplan'       => array( 'image' => 0, 'caption' => '', 'notes' => '' ),
+		'position'        => array( 'heading' => '', 'text' => '' ),
+	);
+
+	$data              = wp_parse_args( $data, $defaults );
+	$data['floorplan'] = wp_parse_args( is_array( $data['floorplan'] ) ? $data['floorplan'] : array(), $defaults['floorplan'] );
+	$data['position']  = wp_parse_args( is_array( $data['position'] ) ? $data['position'] : array(), $defaults['position'] );
+
+	foreach ( array( 'chapters', 'narrative', 'tech', 'gallery' ) as $rep ) {
+		if ( ! is_array( $data[ $rep ] ) ) {
+			$data[ $rep ] = array();
+		}
+	}
+
+	return $data;
+}
+
+/**
+ * Restituisce l'URL immagine da un attachment id, con dimensione.
+ *
+ * @param int    $id   Attachment ID.
+ * @param string $size Dimensione.
+ * @return string
+ */
+function palladio_image_url( $id, $size = 'large' ) {
+	$id = absint( $id );
+	if ( ! $id ) {
+		return '';
+	}
+	$url = wp_get_attachment_image_url( $id, $size );
+	return $url ? $url : '';
+}
+
+/**
  * Formatta un prezzo in stile italiano, o "su richiesta" se assente.
  *
  * @param mixed $value Prezzo grezzo.
