@@ -54,7 +54,7 @@ while ( have_posts() ) :
 				<img class="pll-e-hero__img" src="<?php echo esc_url( $hero ); ?>" alt="">
 			<?php endif; ?>
 			<div class="pll-e-hero__inner">
-				<p class="pll-e-eyebrow"><?php echo esc_html( $location ); ?> <?php echo do_shortcode( '[palladio_lang_switcher]' ); ?></p>
+				<p class="pll-e-eyebrow"><?php echo esc_html( $location ); ?></p>
 				<h1 class="pll-e-hero__title"><?php echo $claim ? esc_html( $claim ) : get_the_title(); ?></h1>
 				<?php if ( $lead ) : ?><p class="pll-e-hero__lead"><?php echo esc_html( $lead ); ?></p><?php endif; ?>
 				<p><a class="pll-e-cta" href="#residenze"><?php esc_html_e( 'Scopri le residenze', 'palladio' ); ?></a></p>
