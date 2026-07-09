@@ -41,6 +41,8 @@ class Palladio_Admin_AI {
 		add_action( 'wp_ajax_palladio_ai_generate', array( $this, 'ajax_generate' ) );
 		add_action( 'wp_ajax_palladio_ai_apply', array( $this, 'ajax_apply' ) );
 		add_action( 'wp_ajax_palladio_ai_translate', array( $this, 'ajax_translate' ) );
+		add_action( 'wp_ajax_palladio_ai_build', array( $this, 'ajax_build' ) );
+		add_action( 'wp_ajax_palladio_ai_upload_docs', array( $this, 'ajax_upload_docs' ) );
 	}
 
 	/**
@@ -93,6 +95,8 @@ class Palladio_Admin_AI {
 					'genOk'     => __( 'Bozza generata. Rivedila e applicala.', 'palladio' ),
 					'applyOk'   => __( 'Bozza applicata. Ricarico…', 'palladio' ),
 					'transOk'   => __( 'Versione tradotta creata come bozza collegata. Rivedila dal riquadro Lingue.', 'palladio' ),
+					'buildOk'   => __( 'Pagina costruita da Storage + Media. Ricarico…', 'palladio' ),
+					'docsOk'    => __( 'Documenti caricati su OpenAI Storage.', 'palladio' ),
 					'error'     => __( 'Errore', 'palladio' ),
 				),
 			)
@@ -140,6 +144,19 @@ class Palladio_Admin_AI {
 					</button>
 				</p>
 			</div>
+
+			<hr>
+			<p class="description"><?php esc_html_e( 'Costruzione da fonti: usa i documenti su OpenAI Storage (File Search) e i media del sito per popolare i campi strutturati.', 'palladio' ); ?></p>
+			<p>
+				<button type="button" class="button button-primary" data-palladio-ai="build">
+					<?php esc_html_e( 'Costruisci da Storage + Media', 'palladio' ); ?>
+				</button>
+			</p>
+			<p>
+				<button type="button" class="button" data-palladio-ai="uploadDocs">
+					<?php esc_html_e( 'Carica documenti allegati su Storage', 'palladio' ); ?>
+				</button>
+			</p>
 
 			<?php if ( $targets ) : ?>
 				<hr>
@@ -230,5 +247,38 @@ class Palladio_Admin_AI {
 		}
 
 		wp_send_json_success();
+	}
+
+	/**
+	 * AJAX: costruisce la pagina da Storage + media.
+	 *
+	 * @return void
+	 */
+	public function ajax_build() {
+		$post_id = $this->guard();
+
+		$result = Palladio_AI_Composer::build_from_sources( $post_id );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX: carica i documenti allegati su OpenAI Storage.
+	 *
+	 * @return void
+	 */
+	public function ajax_upload_docs() {
+		$post_id = $this->guard();
+
+		$result = Palladio_AI_Composer::upload_documents( $post_id );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		/* translators: 1: caricati, 2: totali. */
+		wp_send_json_success( array( 'message' => sprintf( __( '%1$d/%2$d documenti caricati.', 'palladio' ), (int) $result['uploaded'], (int) $result['total'] ) ) );
 	}
 }

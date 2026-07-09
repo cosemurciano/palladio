@@ -122,6 +122,184 @@ class Palladio_AI_Openai {
 	}
 
 	/**
+	 * Responses API con supporto a File Search (OpenAI Storage).
+	 *
+	 * @param string $instructions System/istruzioni.
+	 * @param string $input        Input utente.
+	 * @param array  $args         model, vector_store_ids (array), json (bool), max_tokens.
+	 * @return array{text:string}|WP_Error
+	 */
+	public static function responses( $instructions, $input, array $args = array() ) {
+		$key = Palladio_AI_Settings::api_key();
+		if ( '' === $key ) {
+			return new WP_Error( 'palladio_ai_no_key', __( 'Chiave API OpenAI non configurata.', 'palladio' ) );
+		}
+
+		$args = wp_parse_args(
+			$args,
+			array(
+				'model'            => Palladio_AI_Settings::model(),
+				'vector_store_ids' => array(),
+				'json'             => false,
+				'max_tokens'       => 2500,
+			)
+		);
+
+		$body = array(
+			'model'             => $args['model'],
+			'instructions'      => $instructions,
+			'input'             => $input,
+			'max_output_tokens' => (int) $args['max_tokens'],
+		);
+
+		if ( ! empty( $args['vector_store_ids'] ) ) {
+			$body['tools'] = array(
+				array(
+					'type'             => 'file_search',
+					'vector_store_ids' => array_values( array_filter( (array) $args['vector_store_ids'] ) ),
+				),
+			);
+		}
+
+		if ( $args['json'] ) {
+			$body['text'] = array( 'format' => array( 'type' => 'json_object' ) );
+		}
+
+		$response = self::request( '/responses', $body, $key );
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		self::record_usage( $args['model'], $response['usage'] ?? array() );
+
+		return array( 'text' => self::extract_output_text( $response ) );
+	}
+
+	/**
+	 * Estrae il testo di output dalla risposta della Responses API.
+	 *
+	 * @param array $response Risposta decodificata.
+	 * @return string
+	 */
+	private static function extract_output_text( $response ) {
+		if ( isset( $response['output_text'] ) && is_string( $response['output_text'] ) ) {
+			return $response['output_text'];
+		}
+
+		$text = '';
+		foreach ( ( $response['output'] ?? array() ) as $item ) {
+			if ( 'message' !== ( $item['type'] ?? '' ) ) {
+				continue;
+			}
+			foreach ( ( $item['content'] ?? array() ) as $chunk ) {
+				if ( isset( $chunk['text'] ) && is_string( $chunk['text'] ) ) {
+					$text .= $chunk['text'];
+				}
+			}
+		}
+
+		return $text;
+	}
+
+	/**
+	 * Carica un file su OpenAI (Files API), es. per il File Search.
+	 *
+	 * @param string $path    Percorso file locale.
+	 * @param string $purpose Scopo (default 'assistants').
+	 * @return string|WP_Error File id.
+	 */
+	public static function upload_file( $path, $purpose = 'assistants' ) {
+		$key = Palladio_AI_Settings::api_key();
+		if ( '' === $key ) {
+			return new WP_Error( 'palladio_ai_no_key', __( 'Chiave API OpenAI non configurata.', 'palladio' ) );
+		}
+		if ( ! is_readable( $path ) ) {
+			return new WP_Error( 'palladio_ai_no_file', __( 'File non leggibile.', 'palladio' ) );
+		}
+
+		$boundary = 'pll' . md5( $path . $purpose . (string) filesize( $path ) );
+		$eol      = "\r\n";
+		$name     = basename( $path );
+		$contents = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+		$payload  = '--' . $boundary . $eol;
+		$payload .= 'Content-Disposition: form-data; name="purpose"' . $eol . $eol . $purpose . $eol;
+		$payload .= '--' . $boundary . $eol;
+		$payload .= 'Content-Disposition: form-data; name="file"; filename="' . $name . '"' . $eol;
+		$payload .= 'Content-Type: application/octet-stream' . $eol . $eol;
+		$payload .= $contents . $eol;
+		$payload .= '--' . $boundary . '--' . $eol;
+
+		$response = wp_remote_post(
+			self::base_url() . '/files',
+			array(
+				'timeout' => 60,
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $key,
+					'Content-Type'  => 'multipart/form-data; boundary=' . $boundary,
+				),
+				'body'    => $payload,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+		if ( empty( $data['id'] ) ) {
+			return new WP_Error( 'palladio_ai_upload', $data['error']['message'] ?? __( 'Upload non riuscito.', 'palladio' ) );
+		}
+
+		return (string) $data['id'];
+	}
+
+	/**
+	 * Crea un vector store.
+	 *
+	 * @param string $name Nome.
+	 * @return string|WP_Error Vector store id.
+	 */
+	public static function create_vector_store( $name ) {
+		$key = Palladio_AI_Settings::api_key();
+		if ( '' === $key ) {
+			return new WP_Error( 'palladio_ai_no_key', __( 'Chiave API OpenAI non configurata.', 'palladio' ) );
+		}
+
+		$response = self::request( '/vector_stores', array( 'name' => $name ), $key );
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+		if ( empty( $response['id'] ) ) {
+			return new WP_Error( 'palladio_ai_vs', __( 'Creazione vector store non riuscita.', 'palladio' ) );
+		}
+
+		return (string) $response['id'];
+	}
+
+	/**
+	 * Aggiunge un file a un vector store.
+	 *
+	 * @param string $vector_store_id Vector store.
+	 * @param string $file_id         File id.
+	 * @return bool|WP_Error
+	 */
+	public static function vector_store_add_file( $vector_store_id, $file_id ) {
+		$key = Palladio_AI_Settings::api_key();
+		if ( '' === $key ) {
+			return new WP_Error( 'palladio_ai_no_key', __( 'Chiave API OpenAI non configurata.', 'palladio' ) );
+		}
+
+		$response = self::request(
+			'/vector_stores/' . rawurlencode( $vector_store_id ) . '/files',
+			array( 'file_id' => $file_id ),
+			$key
+		);
+
+		return is_wp_error( $response ) ? $response : true;
+	}
+
+	/**
 	 * Esegue la richiesta HTTP con retry su errori transitori.
 	 *
 	 * @param string $path Endpoint relativo.

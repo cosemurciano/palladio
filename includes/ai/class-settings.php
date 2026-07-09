@@ -42,6 +42,7 @@ class Palladio_AI_Settings {
 			'enabled'         => false,
 			'model'           => 'gpt-4.1-mini',
 			'translate_model' => 'gpt-4.1-mini',
+			'vector_store'    => '',
 		);
 
 		$config = get_option( 'palladio_ai', array() );
@@ -50,6 +51,15 @@ class Palladio_AI_Settings {
 		$config['enabled'] = (bool) $config['enabled'];
 
 		return $config;
+	}
+
+	/**
+	 * Vector store OpenAI (Storage) configurato per il File Search.
+	 *
+	 * @return string
+	 */
+	public static function vector_store() {
+		return (string) self::config()['vector_store'];
 	}
 
 	/**
@@ -183,6 +193,13 @@ class Palladio_AI_Settings {
 						<th scope="row"><label for="pll-ai-tmodel"><?php esc_html_e( 'Modello (traduzione)', 'palladio' ); ?></label></th>
 						<td><input type="text" id="pll-ai-tmodel" name="translate_model" class="regular-text" value="<?php echo esc_attr( $config['translate_model'] ); ?>"></td>
 					</tr>
+					<tr>
+						<th scope="row"><label for="pll-ai-vs"><?php esc_html_e( 'Vector Store (OpenAI Storage)', 'palladio' ); ?></label></th>
+						<td>
+							<input type="text" id="pll-ai-vs" name="vector_store" class="regular-text" value="<?php echo esc_attr( $config['vector_store'] ); ?>" placeholder="vs_...">
+							<p class="description"><?php esc_html_e( 'ID del vector store su platform.openai.com/storage usato dal File Search per popolare le pagine con i documenti del progetto (dossier, planimetrie, atti).', 'palladio' ); ?></p>
+						</td>
+					</tr>
 				</table>
 
 				<h2><?php esc_html_e( 'Agent conversazionale', 'palladio' ); ?></h2>
@@ -249,6 +266,7 @@ class Palladio_AI_Settings {
 			'enabled'         => ! empty( $_POST['enabled'] ),
 			'model'           => isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : 'gpt-4.1-mini',
 			'translate_model' => isset( $_POST['translate_model'] ) ? sanitize_text_field( wp_unslash( $_POST['translate_model'] ) ) : 'gpt-4.1-mini',
+			'vector_store'    => isset( $_POST['vector_store'] ) ? sanitize_text_field( wp_unslash( $_POST['vector_store'] ) ) : '',
 		);
 
 		update_option( 'palladio_ai', $config );

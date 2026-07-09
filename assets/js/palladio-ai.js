@@ -87,6 +87,25 @@
 						setStatus( ( i18n.error || 'Error' ) + ': ' + msg( res ), true );
 					}
 				} ).catch( fail );
+			} else if ( 'build' === op ) {
+				post( 'palladio_ai_build', { post: postId } ).then( function ( res ) {
+					busy( false );
+					if ( res && res.success ) {
+						setStatus( i18n.buildOk || 'Built', false );
+						window.location.reload();
+					} else {
+						setStatus( ( i18n.error || 'Error' ) + ': ' + msg( res ), true );
+					}
+				} ).catch( fail );
+			} else if ( 'uploadDocs' === op ) {
+				post( 'palladio_ai_upload_docs', { post: postId } ).then( function ( res ) {
+					busy( false );
+					if ( res && res.success ) {
+						setStatus( ( res.data && res.data.message ) ? res.data.message : ( i18n.docsOk || 'Uploaded' ), false );
+					} else {
+						setStatus( ( i18n.error || 'Error' ) + ': ' + msg( res ), true );
+					}
+				} ).catch( fail );
 			}
 		} );
 
