@@ -22,6 +22,21 @@ class Palladio_Admin_Studio {
 	const CAP = 'manage_palladio';
 
 	/**
+	 * Se true, i tool di scrittura (create_*, update_entity) sono consentiti.
+	 * In modalità progettazione (false) l'agente non modifica nulla.
+	 *
+	 * @var bool
+	 */
+	private $apply = false;
+
+	/**
+	 * Tool che modificano dati (bloccati in modalità progettazione).
+	 *
+	 * @var string[]
+	 */
+	private $write_tools = array( 'create_edificio', 'create_unit', 'create_scenario', 'update_entity' );
+
+	/**
 	 * Registra menu, asset e AJAX.
 	 *
 	 * @return void
@@ -123,8 +138,9 @@ class Palladio_Admin_Studio {
 					<div class="palladio-studio__log" data-studio-log aria-live="polite"></div>
 					<form class="palladio-studio__form" data-studio-form>
 						<textarea class="palladio-studio__input" data-studio-input rows="2" placeholder="<?php esc_attr_e( 'Es. “Popola l’edificio Palazzo Sambiasi e le sue unità usando i documenti su Storage.”', 'palladio' ); ?>"></textarea>
-						<button type="submit" class="button button-primary"><?php esc_html_e( 'Invia', 'palladio' ); ?></button>
+						<span class="palladio-studio__actions"><label class="palladio-studio__apply"><input type="checkbox" data-studio-apply> <?php esc_html_e( 'Applica modifiche (crea/aggiorna)', 'palladio' ); ?></label> <button type="submit" class="button button-primary"><?php esc_html_e( 'Invia', 'palladio' ); ?></button></span>
 					</form>
+					<p class="palladio-studio__hint description"><?php esc_html_e( 'Modalità progettazione: finché “Applica modifiche” è disattivato l’agente non crea né modifica nulla — puoi discutere e progettare. Attivalo quando vuoi dare il via alla costruzione.', 'palladio' ); ?></p>
 					<p class="palladio-studio__status" data-studio-status role="status"></p>
 				</div>
 			<?php endif; ?>
@@ -150,6 +166,10 @@ class Palladio_Admin_Studio {
 		$message = isset( $_POST['message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['message'] ) ) : '';
 		$history = isset( $_POST['history'] ) ? json_decode( wp_unslash( $_POST['history'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidationSanitization.InputNotSanitized
 		$focus   = isset( $_POST['focus'] ) ? absint( wp_unslash( $_POST['focus'] ) ) : 0;
+
+		// Modalità progettazione (default): senza "Applica modifiche" i tool di
+		// scrittura sono bloccati, così si può progettare prima di costruire.
+		$this->apply = ! empty( $_POST['apply'] );
 
 		if ( '' === $message ) {
 			wp_send_json_error( array( 'message' => __( 'Messaggio vuoto.', 'palladio' ) ), 400 );
@@ -233,6 +253,7 @@ Regole:
 - Scrivi i contenuti con update_entity: puoi impostare title, excerpt, content, i meta (prezzo, mq, camere…) e i campi editoriali (eyebrow, lead, manifesto, timeline, narrative, tech, gallery, floorplan, ambient, position). Gli aggiornamenti sono parziali: invii solo i campi che vuoi cambiare.
 - Puoi creare nuovi edifici (create_edificio), unità (create_unit, collegate a un edificio) o scenari (create_scenario) se richiesto.
 - Prima di modifiche massicce, riepiloga brevemente cosa stai per fare. Al termine, riassumi cosa hai aggiornato.
+- MODALITÀ PROGETTAZIONE: puoi sempre leggere e progettare. Se un tool di scrittura restituisce "planning_mode", NON riprovare a scrivere: proponi invece un piano chiaro (quali edifici/unità/scenari creerai e quali campi popolerai) e invita l’utente ad attivare “Applica modifiche” per dare il via. Procedi con le scritture solo quando l’utente lo conferma.
 - Rispondi in italiano, in modo conciso.', 'palladio' );
 
 		if ( $focus ) {
@@ -295,6 +316,15 @@ Regole:
 	 * @return array
 	 */
 	private function run_tool( $name, $args ) {
+		// Barriera modalità progettazione: nessuna scrittura senza consenso.
+		if ( ! $this->apply && in_array( $name, $this->write_tools, true ) ) {
+			return array(
+				'blocked' => true,
+				'reason'  => 'planning_mode',
+				'message' => __( 'Modalità progettazione attiva: nessuna modifica applicata. Proponi il piano all’utente; per procedere l’utente deve attivare “Applica modifiche”.', 'palladio' ),
+			);
+		}
+
 		switch ( $name ) {
 			case 'get_structure':
 				return $this->tool_get_structure();

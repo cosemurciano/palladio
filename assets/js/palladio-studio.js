@@ -16,6 +16,7 @@
 		var form = box.querySelector( '[data-studio-form]' );
 		var input = box.querySelector( '[data-studio-input]' );
 		var status = box.querySelector( '[data-studio-status]' );
+		var applyBox = box.querySelector( '[data-studio-apply]' );
 		var focus = box.getAttribute( 'data-focus' ) || 0;
 		var history = [];
 		var busy = false;
@@ -45,6 +46,7 @@
 			body.append( 'nonce', cfg.nonce || '' );
 			body.append( 'message', text );
 			body.append( 'focus', focus );
+			body.append( 'apply', ( applyBox && applyBox.checked ) ? '1' : '' );
 			body.append( 'history', JSON.stringify( history ) );
 
 			fetch( cfg.ajaxUrl, {
