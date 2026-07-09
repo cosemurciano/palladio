@@ -41,8 +41,12 @@ while ( have_posts() ) :
 				<img class="pll-e-hero__img" src="<?php echo esc_url( $hero ); ?>" alt="">
 			<?php endif; ?>
 			<div class="pll-e-hero__inner">
+				<?php
+				$loc_parts = array_filter( array( palladio_meta( $building_id, 'indirizzo' ), palladio_meta( $building_id, 'sottotitolo' ) ) );
+				$location  = $loc_parts ? implode( ' · ', $loc_parts ) : __( 'L’edificio', 'palladio' );
+				?>
 				<p class="pll-e-eyebrow">
-					<?php esc_html_e( 'L’edificio', 'palladio' ); ?>
+					<?php echo esc_html( $location ); ?>
 					<?php echo do_shortcode( '[palladio_lang_switcher]' ); ?>
 				</p>
 				<h1 class="pll-e-hero__title"><?php the_title(); ?></h1>
@@ -124,26 +128,44 @@ while ( have_posts() ) :
 
 		<?php
 		$units = palladio_get_building_units( $building_id );
+		$range = palladio_units_price_range( $building_id );
 		if ( $units->have_posts() ) :
 			?>
 			<section class="pll-e-section pll-e-wrap">
 				<p class="pll-e-kicker"><?php esc_html_e( 'Le residenze', 'palladio' ); ?></p>
 				<h2 class="pll-e-h"><?php esc_html_e( 'Le unità', 'palladio' ); ?></h2>
+				<?php if ( $range['min'] > 0 ) : ?>
+					<p class="pll-e-prose pll-e-residenze-range">
+						<?php
+						printf(
+							/* translators: 1: numero residenze, 2: prezzo minimo, 3: prezzo massimo. */
+							esc_html( _n( '%1$s residenza · %2$s – %3$s', '%1$s residenze · %2$s – %3$s', (int) $range['count'], 'palladio' ) ),
+							esc_html( number_format_i18n( (int) $range['count'] ) ),
+							esc_html( palladio_format_price( $range['min'] ) ),
+							esc_html( palladio_format_price( $range['max'] ) )
+						);
+						?>
+					</p>
+				<?php endif; ?>
 				<div class="pll-e-sisters">
 					<?php
 					while ( $units->have_posts() ) :
 						$units->the_post();
-						$uid    = get_the_ID();
-						$ustat  = palladio_get_unit_status( $uid );
-						$uthumb = get_the_post_thumbnail_url( $uid, 'medium_large' );
+						$uid     = get_the_ID();
+						$ustat   = palladio_get_unit_status( $uid );
+						$uthumb  = get_the_post_thumbnail_url( $uid, 'medium_large' );
+						$ueye    = palladio_unit_eyebrow( $uid );
+						$uexc    = has_excerpt( $uid ) ? get_the_excerpt( $uid ) : '';
 						?>
 						<a class="pll-e-sister" href="<?php the_permalink(); ?>">
 							<span class="pll-e-sister__media">
 								<?php if ( $uthumb ) : ?><img src="<?php echo esc_url( $uthumb ); ?>" alt="" loading="lazy"><?php endif; ?>
+								<?php if ( $ustat['label'] ) : ?><span class="palladio-badge palladio-badge--<?php echo esc_attr( $ustat['slug'] ); ?>"><?php echo esc_html( $ustat['label'] ); ?></span><?php endif; ?>
 							</span>
 							<span class="pll-e-sister__body">
-								<?php if ( $ustat['label'] ) : ?><span class="pll-e-sister__eyebrow"><?php echo esc_html( $ustat['label'] ); ?></span><?php endif; ?>
+								<?php if ( $ueye ) : ?><span class="pll-e-sister__eyebrow"><?php echo esc_html( $ueye ); ?></span><?php endif; ?>
 								<span class="pll-e-sister__title"><?php echo esc_html( get_the_title( $uid ) ); ?></span>
+								<?php if ( $uexc ) : ?><span class="pll-e-sister__desc"><?php echo esc_html( wp_trim_words( $uexc, 26 ) ); ?></span><?php endif; ?>
 								<span class="pll-e-sister__price"><?php echo esc_html( palladio_format_price( palladio_meta( $uid, 'prezzo' ) ) ); ?></span>
 							</span>
 						</a>

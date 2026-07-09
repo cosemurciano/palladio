@@ -82,6 +82,7 @@ class Palladio_Core_Meta {
 	private function edificio_fields() {
 		return array(
 			'_pll_claim'            => array( 'type' => 'string' ),
+			'_pll_sottotitolo'      => array( 'type' => 'string' ),
 			'_pll_indirizzo'        => array( 'type' => 'string' ),
 			'_pll_geo_lat'          => array( 'type' => 'number' ),
 			'_pll_geo_lng'          => array( 'type' => 'number' ),
@@ -104,6 +105,8 @@ class Palladio_Core_Meta {
 	 */
 	private function unita_fields() {
 		return array(
+			// Identificazione.
+			'_pll_codice'            => array( 'type' => 'string' ),
 			// Commerciali.
 			'_pll_prezzo'            => array( 'type' => 'number' ),
 			'_pll_prezzo_trattabile' => array( 'type' => 'boolean' ),

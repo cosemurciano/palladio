@@ -12,6 +12,12 @@ Palladio trasforma un sito WordPress in un sistema di regia completo per la vend
 
 I template `single-pll_unita.php` e `single-pll_edificio.php` implementano lo stile editoriale (`assets/css/palladio-editorial.css`, font Cormorant Garamond / Marcellus / Hanken Grotesk): hero fotografico full-bleed, **barra sticky** con prezzo e dati chiave + CTA, narrazione, **scheda tecnica** tipografica, virtual tour, posizione nell'edificio, **unità sorelle** e **dossier** (form lead). Disattivabile via filtro `palladio/editorial/enabled`. Il tema [PoeTheme](https://github.com/cosemurciano/PoeTheme) offre una **palette + abbinamento font "Sambiasi"** coordinati per header/footer.
 
+### Landing dell'edificio e homepage
+
+- **Metabox "Dati principali"** (`includes/admin/class-fields.php`): interfaccia dedicata e **tipizzata** per i campi commerciali/fisici del modello (§3), finora registrati ma senza UI. Edificio: claim, sottotitolo/secolo, indirizzo, anno, superficie totale, piani, unità in vendita, vincoli, contatti, geo. Unità: **codice/etichetta** (es. “app. 1 + 2 + 3”), prezzo, superfici, vani/camere/bagni, classe energetica, millesimi, spese, terrazza/giardino, consegna, uso, tour/video.
+- **Edificio come homepage**: dal metabox dell'edificio, "Usa questo edificio come homepage del sito" → la landing dell'edificio è servita alla radice (`option palladio_home_building`, override in `template_include`), **distinta** dalle schede delle singole unità.
+- **Landing arricchita** (`single-pll_edificio.php`): occhiello con indirizzo · sottotitolo, valori chiave dell'edificio, **fascia prezzi** ("N residenze · €min – €max") calcolata dalle unità, ed **elenco delle unità come in grafica** (immagine, badge stato, occhiello piano · m² · codice, descrizione breve, prezzo). Helper `palladio_units_price_range()` e `palladio_unit_eyebrow()`.
+
 ### Contenuti strutturati (non testo libero)
 
 Il metabox **"Contenuti della scheda"** (`includes/admin/class-content.php`) popola i campi del template con **campi dedicati e repeater**, non un testo libero: occhiello e frase di apertura, URL walkthrough, **capitoli** del walkthrough, **blocchi di narrazione asimmetrica** (occhiello/titolo/testo/immagine/didascalia/lato), **scheda tecnica** (voce/valore), **planimetria** (immagine + note), **galleria** (immagine/didascalia/proporzione) e **posizione nell'edificio**. Salvati in `_pll_editorial` e letti da `palladio_editorial()`; il contenuto dell'editor resta usato come narrazione introduttiva. Immagini scelte con il media picker di WordPress.

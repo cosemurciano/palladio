@@ -92,6 +92,67 @@ function palladio_editorial( $post_id ) {
 }
 
 /**
+ * Fascia prezzi delle unità in vendita di un edificio.
+ *
+ * @param int $building_id ID edificio.
+ * @return array{min:float,max:float,count:int}
+ */
+function palladio_units_price_range( $building_id ) {
+	$units = palladio_get_building_units(
+		$building_id,
+		array(
+			'tax_query' => array( // phpcs:ignore WordPress.DB.SlowDBQuery
+				array(
+					'taxonomy' => 'pll_stato',
+					'field'    => 'slug',
+					'terms'    => array( 'disponibile', 'riservata', 'in_trattativa' ),
+				),
+			),
+		)
+	);
+
+	$prices = array();
+	foreach ( $units->posts as $post ) {
+		$p = (float) get_post_meta( $post->ID, '_pll_prezzo', true );
+		if ( $p > 0 ) {
+			$prices[] = $p;
+		}
+	}
+	wp_reset_postdata();
+
+	return array(
+		'min'   => $prices ? min( $prices ) : 0.0,
+		'max'   => $prices ? max( $prices ) : 0.0,
+		'count' => (int) $units->post_count,
+	);
+}
+
+/**
+ * Occhiello di una card unità: piano · superficie · codice.
+ *
+ * @param int $unit_id ID unità.
+ * @return string
+ */
+function palladio_unit_eyebrow( $unit_id ) {
+	$parts = array();
+
+	$piano = get_the_terms( $unit_id, 'pll_piano' );
+	if ( ! empty( $piano ) && ! is_wp_error( $piano ) ) {
+		$parts[] = $piano[0]->name;
+	}
+	$mq = palladio_meta( $unit_id, 'mq_commerciali' );
+	if ( $mq ) {
+		$parts[] = number_format_i18n( (float) $mq, 0 ) . ' m²';
+	}
+	$codice = palladio_meta( $unit_id, 'codice' );
+	if ( $codice ) {
+		$parts[] = $codice;
+	}
+
+	return implode( ' · ', $parts );
+}
+
+/**
  * Restituisce l'URL immagine da un attachment id, con dimensione.
  *
  * @param int    $id   Attachment ID.

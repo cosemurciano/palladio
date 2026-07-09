@@ -96,6 +96,7 @@ final class Palladio {
 				'frontend_templates'  => 'Palladio_Frontend_Templates',
 				'frontend_assets'     => 'Palladio_Frontend_Assets',
 				'frontend_shortcodes' => 'Palladio_Frontend_Shortcodes',
+				'admin_fields'        => 'Palladio_Admin_Fields',
 				'admin_content'       => 'Palladio_Admin_Content',
 				'leads_store'         => 'Palladio_Leads_Store',
 				'leads_form'          => 'Palladio_Leads_Form',

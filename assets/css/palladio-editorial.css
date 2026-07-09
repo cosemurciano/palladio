@@ -402,9 +402,25 @@
 	margin: 0.2rem 0 0.4rem;
 }
 
+.pll-e-sister__desc {
+	display: block;
+	margin: 0.4rem 0 0.6rem;
+	color: var(--pll-e-taupe);
+	font-size: 0.95rem;
+	line-height: 1.5;
+}
+
 .pll-e-sister__price {
 	color: var(--pll-e-wine);
 	font-weight: 600;
+}
+
+.pll-e-residenze-range {
+	font-family: var(--pll-e-display);
+	font-size: 1.25rem;
+	color: var(--pll-e-wine);
+	margin-top: -0.5rem;
+	margin-bottom: 1.5rem;
 }
 
 /* ---------------------------------------------------------------------------

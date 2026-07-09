@@ -39,6 +39,29 @@ class Palladio_Frontend_Templates {
 	public function template_include( $template ) {
 		$map = array();
 
+		// Edificio come homepage del sito: mostra la sua landing alla radice,
+		// distinta dalle schede delle singole unità.
+		$home_id = (int) get_option( 'palladio_home_building', 0 );
+		if ( $home_id && is_front_page() && 'pll_edificio' === get_post_type( $home_id ) && 'publish' === get_post_status( $home_id ) ) {
+			global $wp_query;
+			$wp_query = new WP_Query( // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+				array(
+					'post_type'      => 'pll_edificio',
+					'p'              => $home_id,
+					'posts_per_page' => 1,
+				)
+			);
+
+			$map              = array( 'single-pll_edificio.php' );
+			$theme_candidates = array( 'palladio/' . $map[0], $map[0] );
+			$located          = locate_template( $theme_candidates );
+			if ( $located ) {
+				return $located;
+			}
+			$candidate = PALLADIO_DIR . 'templates/' . $map[0];
+			return is_readable( $candidate ) ? $candidate : $template;
+		}
+
 		if ( is_singular( 'pll_edificio' ) ) {
 			$map = array( 'single-pll_edificio.php' );
 		} elseif ( is_singular( 'pll_unita' ) ) {
