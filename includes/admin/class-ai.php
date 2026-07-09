@@ -92,7 +92,7 @@ class Palladio_Admin_AI {
 					'working'   => __( 'Operazione in corso…', 'palladio' ),
 					'genOk'     => __( 'Bozza generata. Rivedila e applicala.', 'palladio' ),
 					'applyOk'   => __( 'Bozza applicata. Ricarico…', 'palladio' ),
-					'transOk'   => __( 'Traduzione generata (stato: generata). Rivedila in Traduzioni.', 'palladio' ),
+					'transOk'   => __( 'Versione tradotta creata come bozza collegata. Rivedila dal riquadro Lingue.', 'palladio' ),
 					'error'     => __( 'Errore', 'palladio' ),
 				),
 			)

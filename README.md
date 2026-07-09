@@ -6,7 +6,7 @@ Palladio trasforma un sito WordPress in un sistema di regia completo per la vend
 
 ## Stato
 
-**Versione 0.7.0 — perimetro dei moduli completo.** Sono implementati tutti i moduli previsti dall'architettura del documento di progetto (§4): Core, Presenter (integrato con [PoeTheme](https://github.com/cosemurciano/PoeTheme)), Regia (lead + dashboard), Lingue (i18n nativo), AI/Composer, Agent conversazionale e Feeds portali. Le voci residue sono affinamenti di Fase 1 (scenari bundle/split completi, planimetrie SVG interattive, dossier PDF, `request_visit`/`handoff_human`, scoring lead, adapter Polylang/WPML).
+**Versione 0.8.0 — perimetro completo + i18n a pagine clone.** Sono implementati tutti i moduli previsti dall'architettura del documento di progetto (§4): Core, Presenter (integrato con [PoeTheme](https://github.com/cosemurciano/PoeTheme)), Regia (lead + dashboard), Lingue (i18n nativo **a pagine clone per lingua**), AI/Composer, Agent conversazionale e Feeds portali. Le voci residue sono affinamenti di Fase 1 (scenari bundle/split completi, planimetrie SVG interattive, dossier PDF, `request_visit`/`handoff_human`, scoring lead, adapter Polylang/WPML).
 
 ### Cosa fa già
 
@@ -32,11 +32,12 @@ Palladio trasforma un sito WordPress in un sistema di regia completo per la vend
   - `admin/class-leads-list-table.php` — `WP_List_Table` dei lead con filtri per stato, ricerca, paginazione e transizioni di stato (row actions con nonce).
   - Stati lead (§3.4): `nuovo`, `qualificato`, `inviato_agenzia`, `visita`, `trattativa`, `chiuso_vinto`, `chiuso_perso`.
   - Event bus: `palladio/lead_created`, `palladio/lead_status_changed`.
-- **Lingue / i18n contenuti** (`includes/i18n/`, `includes/admin/class-translations.php`) — modalità nativa a zero dipendenze (§5.4.A):
-  - `i18n/class-languages.php` — configurazione lingua sorgente + lingue attive (IT/EN/DE/FR), pagina **Palladio → Lingue**, rilevamento lingua corrente da `?lang=xx`, applicazione traduzioni sul frontend (titolo/contenuto/riassunto), **hreflang** e shortcode `[palladio_lang_switcher]`.
-  - `i18n/class-translator.php` — data layer traduzioni: storage `_pll_i18n_{lang}` (json) + stato `_pll_i18n_status_{lang}` (`assente`/`generata`/`revisionata`/`pubblicata`), risoluzione con fallback alla sorgente.
-  - `admin/class-translations.php` — metabox di traduzione affiancata sui CPT (titolo, riassunto, contenuto + meta traducibili) con stato per lingua.
-  - Il sito serve una traduzione solo se marcata **“Pubblicata”**; altrimenti fallback alla lingua sorgente.
+- **Lingue / i18n contenuti** (`includes/i18n/`, `includes/admin/class-translations.php`) — modalità nativa a zero dipendenze, **modello a pagine clone** (§5.4.A):
+  - Ogni lingua è una **pagina CPT dedicata** collegata all'originale da un **gruppo di traduzione** (`_pll_tgroup`) e con la propria lingua (`_pll_lang`) — non campi dentro il post originale.
+  - `i18n/class-translator.php` — data layer dei gruppi: lingua per post, `siblings()`, **`clone_post()`** (clona titolo/contenuto/meta/tassonomie/immagine in una nuova bozza collegata, con genitore risolto nella stessa lingua) e **`sync_shared()`** (prezzi, stato, misure e immagine restano sincronizzati tra i cloni; i testi sono per-lingua).
+  - `i18n/class-languages.php` — configurazione sorgente + lingue attive (IT/EN/DE/FR), pagina **Palladio → Lingue**, lingua corrente derivata dal **post visualizzato**, filtro archivi per lingua (`pre_get_posts`), **hreflang** verso i post collegati e shortcode `[palladio_lang_switcher]` (link alle versioni).
+  - `admin/class-translations.php` — riquadro **Lingue** sui CPT: mostra la lingua della pagina e, per ogni lingua attiva, **Modifica** (se la versione esiste) o **Crea versione** (clona in una nuova pagina editabile).
+  - La traduzione AI (Composer) **crea e popola la pagina clone** come bozza da rivedere.
 - **AI / Composer** (`includes/ai/`, `includes/admin/class-ai.php`) — richiede una chiave OpenAI (§5.3, §6):
   - `ai/class-crypto.php` — cifratura della chiave API con **libsodium** (chiave derivata dai salt WP, mai memorizzata); fallback offuscato se libsodium assente.
   - `ai/class-settings.php` — pagina **Palladio → AI**: chiave cifrata (mai ristampata in chiaro), modelli configurabili, abilitazione e **riepilogo uso/costi stimati**.
@@ -101,9 +102,9 @@ palladio/
     │   ├── class-leads-list-table.php ← pipeline lead (WP_List_Table)
     │   ├── class-translations.php   ← metabox traduzioni
     │   └── class-ai.php             ← metabox AI + handler AJAX
-    ├── i18n/                        ← MODULO LINGUE
-    │   ├── class-languages.php      ← config, routing ?lang=, hreflang, switcher
-    │   └── class-translator.php     ← storage e risoluzione traduzioni
+    ├── i18n/                        ← MODULO LINGUE (pagine clone)
+    │   ├── class-languages.php      ← config, lingua corrente, hreflang, switcher, filtro archivi
+    │   └── class-translator.php     ← gruppi di traduzione: clone + sync dati strutturati
     ├── ai/                          ← MODULO AI (OpenAI)
     │   ├── class-crypto.php         ← cifratura chiave API (libsodium)
     │   ├── class-settings.php       ← impostazioni AI + Agent + uso/costi

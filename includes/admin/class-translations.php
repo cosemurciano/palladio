@@ -1,11 +1,11 @@
 <?php
 /**
- * Modulo Lingue — editor di traduzione (admin).
+ * Modulo Lingue — pannello traduzioni (admin).
  *
- * Metabox sui CPT del plugin: per ogni lingua attiva diversa dalla sorgente
- * consente di inserire titolo, riassunto, contenuto e i campi meta
- * traducibili, con uno stato per lingua (§5.4). Il salvataggio passa dal
- * data layer Palladio_I18n_Translator.
+ * Modello a pagine clone (§5.4): il metabox mostra la lingua del post e, per
+ * ogni lingua attiva, un link alla versione esistente o un pulsante che la
+ * clona in una nuova pagina dedicata. Al salvataggio i dati strutturati
+ * vengono sincronizzati sui cloni collegati.
  *
  * @package Palladio
  */
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Metabox e salvataggio delle traduzioni.
+ * Pannello lingue e clonazione.
  */
 class Palladio_Admin_Translations {
 
@@ -27,7 +27,7 @@ class Palladio_Admin_Translations {
 	private $post_types = array( 'pll_edificio', 'pll_unita', 'pll_scenario' );
 
 	/**
-	 * Registra gli hook admin.
+	 * Registra hook admin.
 	 *
 	 * @return void
 	 */
@@ -37,11 +37,12 @@ class Palladio_Admin_Translations {
 		}
 
 		add_action( 'add_meta_boxes', array( $this, 'add_metabox' ) );
-		add_action( 'save_post', array( $this, 'save' ), 10, 2 );
+		add_action( 'admin_post_palladio_create_translation', array( $this, 'create_translation' ) );
+		add_action( 'save_post', array( $this, 'on_save' ), 30, 2 );
 	}
 
 	/**
-	 * Aggiunge il metabox lingue ai CPT.
+	 * Aggiunge il metabox lingue.
 	 *
 	 * @return void
 	 */
@@ -49,143 +50,132 @@ class Palladio_Admin_Translations {
 		foreach ( $this->post_types as $pt ) {
 			add_meta_box(
 				'palladio-i18n',
-				__( 'Palladio — Traduzioni', 'palladio' ),
+				__( 'Palladio — Lingue', 'palladio' ),
 				array( $this, 'render' ),
 				$pt,
-				'normal',
+				'side',
 				'default'
 			);
 		}
 	}
 
 	/**
-	 * Renderizza il metabox.
+	 * Renderizza il pannello.
 	 *
-	 * @param WP_Post $post Post corrente.
+	 * @param WP_Post $post Post.
 	 * @return void
 	 */
 	public function render( $post ) {
-		$source  = Palladio_I18n_Languages::source();
-		$catalog = Palladio_I18n_Languages::catalog();
-		$targets = array_diff( Palladio_I18n_Languages::active(), array( $source ) );
+		$catalog  = Palladio_I18n_Languages::catalog();
+		$active   = Palladio_I18n_Languages::active();
+		$source   = Palladio_I18n_Languages::source();
+		$own_lang = Palladio_I18n_Translator::get_lang( $post->ID );
+		$siblings = Palladio_I18n_Translator::siblings( $post->ID, array( 'publish', 'draft', 'pending', 'future', 'private' ) );
 
-		if ( empty( $targets ) ) {
-			printf(
-				'<p>%s</p>',
-				esc_html__( 'Nessuna lingua di destinazione attiva. Configura le lingue in Palladio → Lingue.', 'palladio' )
-			);
-			return;
+		echo '<p><strong>' . esc_html__( 'Lingua di questa pagina:', 'palladio' ) . '</strong> '
+			. esc_html( $catalog[ $own_lang ] ?? $own_lang );
+		if ( $own_lang === $source ) {
+			echo ' <span class="description">(' . esc_html__( 'originale', 'palladio' ) . ')</span>';
 		}
+		echo '</p>';
 
-		wp_nonce_field( 'palladio_i18n_save', 'palladio_i18n_nonce' );
+		echo '<ul style="margin:0;">';
+		foreach ( $active as $lang ) {
+			if ( $lang === $own_lang ) {
+				continue;
+			}
+			$label = $catalog[ $lang ] ?? strtoupper( $lang );
+			echo '<li style="margin:.35rem 0;display:flex;align-items:center;gap:.5rem;">';
+			echo '<span style="min-width:5.5rem;">' . esc_html( $label ) . '</span>';
 
-		$statuses    = Palladio_I18n_Translator::statuses();
-		$meta_fields = Palladio_I18n_Translator::meta_fields( $post->post_type );
-
-		echo '<p class="description">' . esc_html(
-			sprintf(
-				/* translators: %s: lingua sorgente. */
-				__( 'Contenuti originali in %s. Le traduzioni marcate come “Pubblicata” vengono servite sul sito con hreflang.', 'palladio' ),
-				$catalog[ $source ] ?? $source
-			)
-		) . '</p>';
-
-		foreach ( $targets as $lang ) {
-			$bucket = Palladio_I18n_Translator::get_bucket( $post->ID, $lang );
-			$status = Palladio_I18n_Translator::get_status( $post->ID, $lang );
-			$label  = $catalog[ $lang ] ?? strtoupper( $lang );
-			$prefix = 'palladio_i18n[' . esc_attr( $lang ) . ']';
-			?>
-			<fieldset style="border:1px solid #dcdcde;border-radius:6px;padding:1rem;margin:1rem 0;">
-				<legend style="font-weight:600;padding:0 .5rem;"><?php echo esc_html( $label ); ?></legend>
-
-				<p>
-					<label><strong><?php esc_html_e( 'Stato', 'palladio' ); ?></strong></label><br>
-					<select name="<?php echo $prefix; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>[status]">
-						<?php foreach ( $statuses as $slug => $st_label ) : ?>
-							<option value="<?php echo esc_attr( $slug ); ?>" <?php selected( $status, $slug ); ?>><?php echo esc_html( $st_label ); ?></option>
-						<?php endforeach; ?>
-					</select>
-				</p>
-
-				<p>
-					<label><strong><?php esc_html_e( 'Titolo', 'palladio' ); ?></strong></label><br>
-					<input type="text" class="widefat" name="<?php echo $prefix; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>[title]" value="<?php echo esc_attr( $bucket['title'] ); ?>">
-				</p>
-
-				<p>
-					<label><strong><?php esc_html_e( 'Riassunto', 'palladio' ); ?></strong></label><br>
-					<textarea class="widefat" rows="2" name="<?php echo $prefix; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>[excerpt]"><?php echo esc_textarea( $bucket['excerpt'] ); ?></textarea>
-				</p>
-
-				<p>
-					<label><strong><?php esc_html_e( 'Contenuto', 'palladio' ); ?></strong></label><br>
-					<textarea class="widefat" rows="6" name="<?php echo $prefix; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>[content]"><?php echo esc_textarea( $bucket['content'] ); ?></textarea>
-				</p>
-
-				<?php foreach ( $meta_fields as $key => $meta_label ) : ?>
-					<p>
-						<label><strong><?php echo esc_html( $meta_label ); ?></strong></label><br>
-						<textarea class="widefat" rows="2" name="<?php echo $prefix; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>[meta][<?php echo esc_attr( $key ); ?>]"><?php echo esc_textarea( $bucket['meta'][ $key ] ?? '' ); ?></textarea>
-					</p>
-				<?php endforeach; ?>
-			</fieldset>
-			<?php
+			if ( ! empty( $siblings[ $lang ] ) ) {
+				printf(
+					'<a class="button button-small" href="%s">%s</a>',
+					esc_url( get_edit_post_link( $siblings[ $lang ] ) ),
+					esc_html__( 'Modifica', 'palladio' )
+				);
+			} else {
+				printf(
+					'<a class="button button-small button-primary" href="%s">%s</a>',
+					esc_url( $this->create_url( $post->ID, $lang ) ),
+					esc_html__( 'Crea versione', 'palladio' )
+				);
+			}
+			echo '</li>';
 		}
+		echo '</ul>';
+
+		echo '<p class="description">' . esc_html__( 'Ogni lingua è una pagina dedicata. Prezzi, stato e misure restano sincronizzati; testi e immagini sono per lingua.', 'palladio' ) . '</p>';
 	}
 
 	/**
-	 * Salva le traduzioni.
+	 * URL nonce per creare una traduzione.
+	 *
+	 * @param int    $post_id ID sorgente.
+	 * @param string $lang    Lingua.
+	 * @return string
+	 */
+	private function create_url( $post_id, $lang ) {
+		return wp_nonce_url(
+			add_query_arg(
+				array(
+					'action' => 'palladio_create_translation',
+					'source' => (int) $post_id,
+					'lang'   => sanitize_key( $lang ),
+				),
+				admin_url( 'admin-post.php' )
+			),
+			'palladio_create_translation_' . (int) $post_id
+		);
+	}
+
+	/**
+	 * Handler: crea la pagina clone e apre l'editor.
+	 *
+	 * @return void
+	 */
+	public function create_translation() {
+		$source = isset( $_GET['source'] ) ? absint( wp_unslash( $_GET['source'] ) ) : 0;
+		$lang   = isset( $_GET['lang'] ) ? sanitize_key( wp_unslash( $_GET['lang'] ) ) : '';
+
+		check_admin_referer( 'palladio_create_translation_' . $source );
+
+		if ( ! $source || ! current_user_can( 'edit_post', $source ) ) {
+			wp_die( esc_html__( 'Permesso negato.', 'palladio' ) );
+		}
+
+		$new_id = Palladio_I18n_Translator::clone_post( $source, $lang );
+		if ( is_wp_error( $new_id ) ) {
+			wp_die( esc_html( $new_id->get_error_message() ) );
+		}
+
+		wp_safe_redirect( get_edit_post_link( $new_id, 'redirect' ) );
+		exit;
+	}
+
+	/**
+	 * Al salvataggio: assicura lingua/gruppo e sincronizza i dati strutturati.
 	 *
 	 * @param int     $post_id ID post.
 	 * @param WP_Post $post    Post.
 	 * @return void
 	 */
-	public function save( $post_id, $post ) {
+	public function on_save( $post_id, $post ) {
 		if ( ! in_array( $post->post_type, $this->post_types, true ) ) {
 			return;
 		}
-
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
 			return;
 		}
-
-		if (
-			! isset( $_POST['palladio_i18n_nonce'] )
-			|| ! wp_verify_nonce( sanitize_key( wp_unslash( $_POST['palladio_i18n_nonce'] ) ), 'palladio_i18n_save' )
-		) {
+		if ( wp_is_post_revision( $post_id ) ) {
 			return;
 		}
 
-		if ( ! current_user_can( 'edit_post', $post_id ) ) {
-			return;
+		// Un post senza lingua è l'originale (lingua sorgente).
+		if ( '' === (string) get_post_meta( $post_id, Palladio_I18n_Translator::LANG_META, true ) ) {
+			Palladio_I18n_Translator::set_lang( $post_id, Palladio_I18n_Languages::source() );
 		}
 
-		if ( empty( $_POST['palladio_i18n'] ) || ! is_array( $_POST['palladio_i18n'] ) ) {
-			return;
-		}
-
-		$source  = Palladio_I18n_Languages::source();
-		$targets = array_diff( Palladio_I18n_Languages::active(), array( $source ) );
-
-		// Sanitizzazione profonda demandata a Palladio_I18n_Translator::save().
-		$raw = wp_unslash( $_POST['palladio_i18n'] ); // phpcs:ignore WordPress.Security.ValidationSanitization.InputNotSanitized
-
-		foreach ( $targets as $lang ) {
-			if ( empty( $raw[ $lang ] ) || ! is_array( $raw[ $lang ] ) ) {
-				continue;
-			}
-
-			$entry  = $raw[ $lang ];
-			$bucket = array(
-				'title'   => $entry['title'] ?? '',
-				'excerpt' => $entry['excerpt'] ?? '',
-				'content' => $entry['content'] ?? '',
-				'meta'    => ( isset( $entry['meta'] ) && is_array( $entry['meta'] ) ) ? $entry['meta'] : array(),
-			);
-			$status = $entry['status'] ?? 'assente';
-
-			Palladio_I18n_Translator::save( $post_id, $lang, $bucket, $status );
-		}
+		Palladio_I18n_Translator::sync_shared( $post_id );
 	}
 }

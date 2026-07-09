@@ -48,14 +48,9 @@ function palladio_header_owns_title() {
  * @return mixed
  */
 function palladio_meta( $post_id, $key ) {
-	$value = get_post_meta( $post_id, '_pll_' . $key, true );
-
-	// Applica la traduzione del meta nella lingua corrente, se disponibile.
-	if ( class_exists( 'Palladio_I18n_Translator' ) ) {
-		$value = Palladio_I18n_Translator::translate_meta( $post_id, $key, $value );
-	}
-
-	return $value;
+	// Nel modello a pagine clone ogni post è nativo nella propria lingua:
+	// il meta si legge direttamente, senza risoluzione di traduzione.
+	return get_post_meta( $post_id, '_pll_' . $key, true );
 }
 
 /**

@@ -187,17 +187,25 @@ class Palladio_AI_Composer {
 			return new WP_Error( 'palladio_ai_bad_json', __( 'Risposta AI non valida.', 'palladio' ) );
 		}
 
-		$bucket = array(
-			'title'   => $data['title'] ?? '',
-			'excerpt' => $data['excerpt'] ?? '',
-			'content' => $data['content'] ?? '',
-			'meta'    => array(),
+		// Crea (o riusa) la pagina clone nella lingua di destinazione e la popola.
+		$target_id = Palladio_I18n_Translator::clone_post( $post_id, $lang );
+		if ( is_wp_error( $target_id ) ) {
+			return $target_id;
+		}
+
+		wp_update_post(
+			array(
+				'ID'           => $target_id,
+				'post_title'   => sanitize_text_field( $data['title'] ?? get_the_title( $post_id ) ),
+				'post_excerpt' => sanitize_textarea_field( $data['excerpt'] ?? '' ),
+				'post_content' => wp_kses_post( $data['content'] ?? '' ),
+			)
 		);
 
-		// Salva come "generata": va rivista prima della pubblicazione.
-		Palladio_I18n_Translator::save( $post_id, $lang, $bucket, 'generata' );
-
-		return $bucket;
+		return array(
+			'target_id' => (int) $target_id,
+			'edit_link' => get_edit_post_link( $target_id, 'raw' ),
+		);
 	}
 
 	/**
