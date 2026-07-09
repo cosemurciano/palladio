@@ -6,7 +6,7 @@ Palladio trasforma un sito WordPress in un sistema di regia completo per la vend
 
 ## Stato
 
-**Versione 0.4.0 — Core + Presenter + Regia + i18n contenuti.** Il plugin è installabile e attivabile: registra il modello dati, renderizza le pagine di edificio e unità (integrandosi nativamente con [PoeTheme](https://github.com/cosemurciano/PoeTheme)), cattura i lead con dashboard e pipeline, e serve i contenuti multilingua in modalità nativa (IT sorgente + EN/DE/FR). I moduli AI/Composer, Agent e Feeds sono ancora da implementare (cfr. Roadmap §7).
+**Versione 0.5.0 — Core + Presenter + Regia + i18n + AI/Composer.** Il plugin registra il modello dati, renderizza le pagine (integrandosi con [PoeTheme](https://github.com/cosemurciano/PoeTheme)), cattura i lead con dashboard e pipeline, serve i contenuti multilingua e — con una chiave OpenAI configurata — genera le schede dai dati strutturati e le relative traduzioni. Restano da implementare l'Agent conversazionale e i Feeds portali (cfr. Roadmap §7).
 
 ### Cosa fa già
 
@@ -36,7 +36,13 @@ Palladio trasforma un sito WordPress in un sistema di regia completo per la vend
   - `i18n/class-languages.php` — configurazione lingua sorgente + lingue attive (IT/EN/DE/FR), pagina **Palladio → Lingue**, rilevamento lingua corrente da `?lang=xx`, applicazione traduzioni sul frontend (titolo/contenuto/riassunto), **hreflang** e shortcode `[palladio_lang_switcher]`.
   - `i18n/class-translator.php` — data layer traduzioni: storage `_pll_i18n_{lang}` (json) + stato `_pll_i18n_status_{lang}` (`assente`/`generata`/`revisionata`/`pubblicata`), risoluzione con fallback alla sorgente.
   - `admin/class-translations.php` — metabox di traduzione affiancata sui CPT (titolo, riassunto, contenuto + meta traducibili) con stato per lingua.
-  - Il sito serve una traduzione solo se marcata **“Pubblicata”**; altrimenti fallback alla lingua sorgente. Predisposto per la generazione AI (Composer) in Fase 1 tramite il filtro `palladio/i18n/meta_fields` e il data layer condiviso.
+  - Il sito serve una traduzione solo se marcata **“Pubblicata”**; altrimenti fallback alla lingua sorgente.
+- **AI / Composer** (`includes/ai/`, `includes/admin/class-ai.php`) — richiede una chiave OpenAI (§5.3, §6):
+  - `ai/class-crypto.php` — cifratura della chiave API con **libsodium** (chiave derivata dai salt WP, mai memorizzata); fallback offuscato se libsodium assente.
+  - `ai/class-settings.php` — pagina **Palladio → AI**: chiave cifrata (mai ristampata in chiaro), modelli configurabili, abilitazione e **riepilogo uso/costi stimati**.
+  - `ai/class-openai.php` — client HTTP server-side (Chat Completions + Embeddings) con **retry** su errori transitori e log token/costo. La chiave non lascia mai il server.
+  - `ai/class-composer.php` — genera la scheda (titolo, abstract, descrizione, meta description, FAQ) **dai dati strutturati** come bozza rivedibile (`_pll_ai_draft`), la applica su richiesta, e **traduce** titolo/riassunto/contenuto salvando nel data layer i18n con stato `generata`.
+  - `admin/class-ai.php` — metabox con pulsanti *Genera scheda / Applica bozza / Genera traduzione* via **AJAX** (nonce + capability `edit_post`); nessuna chiamata AI dal browser.
 
 ### Integrazione con PoeTheme
 
@@ -77,13 +83,19 @@ palladio/
     ├── leads/                       ← MODULO REGIA (dati + form)
     │   ├── class-store.php          ← tabella lead + query
     │   └── class-form.php           ← form cattura lead + notifica
-    ├── admin/                       ← MODULO REGIA + LINGUE (admin)
+    ├── admin/                       ← ADMIN (Regia, Lingue, AI)
     │   ├── class-regia.php          ← menu + dashboard + azioni
     │   ├── class-leads-list-table.php ← pipeline lead (WP_List_Table)
-    │   └── class-translations.php   ← metabox traduzioni
-    └── i18n/                        ← MODULO LINGUE
-        ├── class-languages.php      ← config, routing ?lang=, hreflang, switcher
-        └── class-translator.php     ← storage e risoluzione traduzioni
+    │   ├── class-translations.php   ← metabox traduzioni
+    │   └── class-ai.php             ← metabox AI + handler AJAX
+    ├── i18n/                        ← MODULO LINGUE
+    │   ├── class-languages.php      ← config, routing ?lang=, hreflang, switcher
+    │   └── class-translator.php     ← storage e risoluzione traduzioni
+    └── ai/                          ← MODULO AI (OpenAI)
+        ├── class-crypto.php         ← cifratura chiave API (libsodium)
+        ├── class-settings.php       ← impostazioni + uso/costi
+        ├── class-openai.php         ← client HTTP (chat + embeddings)
+        └── class-composer.php       ← generazione schede + traduzioni
 ```
 
 I moduli sono attivabili/disattivabili via filtro `palladio/modules`, per installazioni leggere.
