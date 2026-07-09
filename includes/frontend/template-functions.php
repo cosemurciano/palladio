@@ -70,19 +70,30 @@ function palladio_editorial( $post_id ) {
 		'eyebrow'         => '',
 		'lead'            => '',
 		'walkthrough_url' => '',
-		'chapters'        => array(), // [ {time,label} ]
+		'chapters'        => array(), // [ {time,label} ]  (unità)
 		'narrative'       => array(), // [ {kicker,heading,body,image,caption,layout} ]
-		'tech'            => array(), // [ {label,value} ]
+		'tech'            => array(), // [ {label,value} ]  (unità)
 		'gallery'         => array(), // [ {image,caption,ratio} ]
-		'floorplan'       => array( 'image' => 0, 'caption' => '', 'notes' => '' ),
-		'position'        => array( 'heading' => '', 'text' => '' ),
+		'floorplan'       => array( 'image' => 0, 'caption' => '', 'notes' => '' ), // unità
+		'position'        => array( 'heading' => '', 'text' => '' ), // unità
+		// Campi specifici della landing Edificio.
+		'ambient'         => array( 'image' => 0, 'caption' => '' ),
+		'manifesto'       => array(), // [ {text,emphasis} ]
+		'timeline'        => array(), // [ {kicker,year,heading,body,image} ]
+		'gallery_url'     => '',
+		'gallery_count'   => '',
+		'units_eyebrow'   => '',
+		'units_heading'   => '',
+		'units_filters'   => false,
 	);
 
 	$data              = wp_parse_args( $data, $defaults );
 	$data['floorplan'] = wp_parse_args( is_array( $data['floorplan'] ) ? $data['floorplan'] : array(), $defaults['floorplan'] );
 	$data['position']  = wp_parse_args( is_array( $data['position'] ) ? $data['position'] : array(), $defaults['position'] );
+	$data['ambient']   = wp_parse_args( is_array( $data['ambient'] ) ? $data['ambient'] : array(), $defaults['ambient'] );
+	$data['units_filters'] = ! empty( $data['units_filters'] );
 
-	foreach ( array( 'chapters', 'narrative', 'tech', 'gallery' ) as $rep ) {
+	foreach ( array( 'chapters', 'narrative', 'tech', 'gallery', 'manifesto', 'timeline' ) as $rep ) {
 		if ( ! is_array( $data[ $rep ] ) ) {
 			$data[ $rep ] = array();
 		}

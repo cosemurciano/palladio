@@ -20,7 +20,12 @@ I template `single-pll_unita.php` e `single-pll_edificio.php` implementano lo st
 
 ### Contenuti strutturati (non testo libero)
 
-Il metabox **"Contenuti della scheda"** (`includes/admin/class-content.php`) popola i campi del template con **campi dedicati e repeater**, non un testo libero: occhiello e frase di apertura, URL walkthrough, **capitoli** del walkthrough, **blocchi di narrazione asimmetrica** (occhiello/titolo/testo/immagine/didascalia/lato), **scheda tecnica** (voce/valore), **planimetria** (immagine + note), **galleria** (immagine/didascalia/proporzione) e **posizione nell'edificio**. Salvati in `_pll_editorial` e letti da `palladio_editorial()`; il contenuto dell'editor resta usato come narrazione introduttiva. Immagini scelte con il media picker di WordPress.
+Il metabox **"Contenuti della scheda"** (`includes/admin/class-content.php`) popola i campi del template con **campi dedicati e repeater**, non un testo libero, con **set differenziati per Edificio e Unità**:
+
+- **Unità**: occhiello, lead, URL walkthrough, **capitoli**, **narrazione asimmetrica**, **scheda tecnica**, **planimetria**, **galleria**, **posizione**.
+- **Edificio (landing)**: occhiello, lead, **Manifesto** (affermazioni con enfasi), **Timeline / scroll-telling** (occhiello, anno, titolo, testo, immagine), **Ambient loop** (immagine + didascalia), **sezione unità** (occhiello, titolo, toggle filtri), **galleria** (con link "Tutta la galleria" + numero foto).
+
+Salvati in `_pll_editorial` e letti da `palladio_editorial()`; immagini scelte con il media picker di WordPress. La landing dell'edificio (`single-pll_edificio.php`) rende, conforme alle immagini di riferimento: hero, **manifesto** (reveal allo scroll), **timeline** con anni, **ambient loop** a piena larghezza, **unità "Scegli le tue stanze"** con **filtri client-side** (Tutte / Piano / Prezzo / Con spazio esterno) e card con scatto/badge/occhiello/descrizione/prezzo, e **galleria asimmetrica** (masonry). Reveal e filtri sono progressive enhancement in `assets/js/palladio.js`.
 
 ### Cosa fa già
 

@@ -38,8 +38,100 @@
 		} );
 	}
 
+	// -------------------------------------------------------------------------
+	// Landing edificio: filtri/ordinamento della sezione "Scegli le tue stanze".
+	// -------------------------------------------------------------------------
+	function initUnitFilters( group ) {
+		var grid = group.closest( 'section' ) ? group.closest( 'section' ).querySelector( '[data-palladio-units]' ) : null;
+		if ( ! grid ) {
+			return;
+		}
+
+		var chips = group.querySelectorAll( '.pll-e-chip' );
+		var cards = Array.prototype.slice.call( grid.querySelectorAll( '.pll-e-unit-card' ) );
+		var original = cards.slice();
+		var priceDesc = true;
+
+		function setActive( chip ) {
+			Array.prototype.forEach.call( chips, function ( c ) {
+				c.classList.toggle( 'is-active', c === chip );
+			} );
+		}
+
+		function reorder( list ) {
+			list.forEach( function ( card ) {
+				grid.appendChild( card );
+			} );
+		}
+
+		group.addEventListener( 'click', function ( event ) {
+			var chip = event.target.closest( '.pll-e-chip' );
+			if ( ! chip ) {
+				return;
+			}
+			var filter = chip.getAttribute( 'data-filter' );
+			setActive( chip );
+
+			// Reset visibilità.
+			cards.forEach( function ( c ) { c.hidden = false; } );
+
+			if ( 'all' === filter ) {
+				reorder( original );
+			} else if ( 'esterno' === filter ) {
+				cards.forEach( function ( c ) {
+					c.hidden = '1' !== c.getAttribute( 'data-esterno' );
+				} );
+			} else if ( 'prezzo' === filter ) {
+				var byPrice = original.slice().sort( function ( a, b ) {
+					var pa = parseFloat( a.getAttribute( 'data-prezzo' ) ) || 0;
+					var pb = parseFloat( b.getAttribute( 'data-prezzo' ) ) || 0;
+					return priceDesc ? pb - pa : pa - pb;
+				} );
+				priceDesc = ! priceDesc;
+				reorder( byPrice );
+			} else if ( 'piano' === filter ) {
+				var byFloor = original.slice().sort( function ( a, b ) {
+					return ( a.getAttribute( 'data-piano' ) || '' ).localeCompare( b.getAttribute( 'data-piano' ) || '' );
+				} );
+				reorder( byFloor );
+			}
+		} );
+	}
+
+	// -------------------------------------------------------------------------
+	// Reveal allo scroll (manifesto, timeline).
+	// -------------------------------------------------------------------------
+	function initReveal() {
+		var items = document.querySelectorAll( '.pll-reveal' );
+		if ( ! items.length ) {
+			return;
+		}
+		document.body.classList.add( 'js-reveal' );
+
+		if ( ! ( 'IntersectionObserver' in window ) ) {
+			Array.prototype.forEach.call( items, function ( el ) { el.classList.add( 'is-in' ); } );
+			return;
+		}
+
+		var obs = new IntersectionObserver( function ( entries ) {
+			entries.forEach( function ( entry ) {
+				if ( entry.isIntersecting ) {
+					entry.target.classList.add( 'is-in' );
+					obs.unobserve( entry.target );
+				}
+			} );
+		}, { threshold: 0.15 } );
+
+		Array.prototype.forEach.call( items, function ( el ) { obs.observe( el ); } );
+	}
+
 	document.addEventListener( 'DOMContentLoaded', function () {
 		var groups = document.querySelectorAll( '[data-palladio-filters]' );
 		Array.prototype.forEach.call( groups, initGroup );
+
+		var unitFilters = document.querySelectorAll( '[data-palladio-unit-filters]' );
+		Array.prototype.forEach.call( unitFilters, initUnitFilters );
+
+		initReveal();
 	} );
 }() );

@@ -1,8 +1,13 @@
 <?php
 /**
- * Template singolo — Edificio (direzione visiva editoriale "Sambiasi").
+ * Template singolo — Edificio (landing, direzione visiva editoriale "Sambiasi").
  *
- * Sovrascrivibile dal tema: {tema}/palladio/single-pll_edificio.php.
+ * Struttura conforme alle immagini di riferimento: hero, manifesto, timeline
+ * scroll-telling, ambient loop, sezione unità "Scegli le tue stanze" con
+ * filtri, galleria asimmetrica. I campi provengono da palladio_editorial()
+ * (metabox "Contenuti della scheda", set Edificio) e dai dati principali.
+ *
+ * Sovrascrivibile: {tema}/palladio/single-pll_edificio.php.
  *
  * @package Palladio
  */
@@ -20,6 +25,10 @@ while ( have_posts() ) :
 	$hero        = get_the_post_thumbnail_url( $building_id, 'full' );
 	$ed          = palladio_editorial( $building_id );
 
+	$loc_parts = array_filter( array( palladio_meta( $building_id, 'indirizzo' ), palladio_meta( $building_id, 'sottotitolo' ) ) );
+	$location  = $ed['eyebrow'] ? $ed['eyebrow'] : ( $loc_parts ? implode( ' · ', $loc_parts ) : __( 'L’edificio', 'palladio' ) );
+	$lead      = $ed['lead'] ? $ed['lead'] : ( has_excerpt() ? get_the_excerpt() : '' );
+
 	$facts = array();
 	if ( $anno = palladio_meta( $building_id, 'anno_costruzione' ) ) { // phpcs:ignore
 		$facts[] = array( (string) absint( $anno ), __( 'Anno', 'palladio' ) );
@@ -33,6 +42,10 @@ while ( have_posts() ) :
 	if ( $uv = palladio_meta( $building_id, 'num_unita_vendita' ) ) { // phpcs:ignore
 		$facts[] = array( (string) absint( $uv ), __( 'Unità in vendita', 'palladio' ) );
 	}
+
+	$ratio_css = static function ( $ratio ) {
+		return in_array( $ratio, array( '3:2', '4:3', '4:5', '1:1', '16:9' ), true ) ? str_replace( ':', ' / ', $ratio ) : '4 / 3';
+	};
 	?>
 	<div class="palladio-editorial palladio-edificio-editorial">
 
@@ -41,18 +54,10 @@ while ( have_posts() ) :
 				<img class="pll-e-hero__img" src="<?php echo esc_url( $hero ); ?>" alt="">
 			<?php endif; ?>
 			<div class="pll-e-hero__inner">
-				<?php
-				$loc_parts = array_filter( array( palladio_meta( $building_id, 'indirizzo' ), palladio_meta( $building_id, 'sottotitolo' ) ) );
-				$location  = $loc_parts ? implode( ' · ', $loc_parts ) : __( 'L’edificio', 'palladio' );
-				?>
-				<p class="pll-e-eyebrow">
-					<?php echo esc_html( $location ); ?>
-					<?php echo do_shortcode( '[palladio_lang_switcher]' ); ?>
-				</p>
-				<h1 class="pll-e-hero__title"><?php the_title(); ?></h1>
-				<?php if ( $claim ) : ?>
-					<p class="pll-e-hero__lead"><?php echo esc_html( $claim ); ?></p>
-				<?php endif; ?>
+				<p class="pll-e-eyebrow"><?php echo esc_html( $location ); ?> <?php echo do_shortcode( '[palladio_lang_switcher]' ); ?></p>
+				<h1 class="pll-e-hero__title"><?php echo $claim ? esc_html( $claim ) : get_the_title(); ?></h1>
+				<?php if ( $lead ) : ?><p class="pll-e-hero__lead"><?php echo esc_html( $lead ); ?></p><?php endif; ?>
+				<p><a class="pll-e-cta" href="#residenze"><?php esc_html_e( 'Scopri le residenze', 'palladio' ); ?></a></p>
 			</div>
 		</header>
 
@@ -60,56 +65,166 @@ while ( have_posts() ) :
 			<div class="pll-e-sticky">
 				<div class="pll-e-sticky__inner">
 					<div class="pll-e-sticky__facts">
-						<?php
-						$indirizzo = palladio_meta( $building_id, 'indirizzo' );
-						if ( $indirizzo ) :
-							?>
-							<span class="pll-e-fact"><b><?php echo esc_html( $indirizzo ); ?></b><span><?php esc_html_e( 'Indirizzo', 'palladio' ); ?></span></span>
-						<?php endif; ?>
 						<?php foreach ( $facts as $fact ) : ?>
 							<span class="pll-e-fact"><b><?php echo esc_html( $fact[0] ); ?></b><span><?php echo esc_html( $fact[1] ); ?></span></span>
 						<?php endforeach; ?>
 					</div>
+					<a class="pll-e-cta" href="#residenze"><?php esc_html_e( 'Richiedi il dossier', 'palladio' ); ?></a>
 				</div>
 			</div>
 		<?php endif; ?>
 
 		<?php if ( get_the_content() ) : ?>
-			<section class="pll-e-section pll-e-wrap">
-				<div class="pll-e-prose"><?php the_content(); ?></div>
+			<section class="pll-e-section pll-e-wrap"><div class="pll-e-prose"><?php the_content(); ?></div></section>
+		<?php endif; ?>
+
+		<?php // MANIFESTO. ?>
+		<?php if ( $ed['manifesto'] ) : ?>
+			<section class="pll-e-section pll-e-wrap pll-e-manifesto">
+				<span class="pll-e-manifesto__rule" aria-hidden="true"></span>
+				<?php foreach ( $ed['manifesto'] as $m ) : ?>
+					<p class="pll-e-manifesto__line pll-reveal">
+						<?php echo esc_html( $m['text'] ?? '' ); ?>
+						<?php if ( ! empty( $m['emphasis'] ) ) : ?><em><?php echo esc_html( $m['emphasis'] ); ?></em><?php endif; ?>
+					</p>
+				<?php endforeach; ?>
 			</section>
 		<?php endif; ?>
 
-		<?php foreach ( $ed['narrative'] as $block ) : ?>
-			<?php $img = palladio_image_url( $block['image'] ?? 0, 'large' ); ?>
-			<section class="pll-e-section pll-e-wrap">
-				<div class="pll-e-narrative pll-e-narrative--<?php echo esc_attr( 'left' === ( $block['layout'] ?? 'right' ) ? 'left' : 'right' ); ?>">
-					<div class="pll-e-narrative__text">
-						<?php if ( ! empty( $block['kicker'] ) ) : ?><p class="pll-e-kicker"><?php echo esc_html( $block['kicker'] ); ?></p><?php endif; ?>
-						<?php if ( ! empty( $block['heading'] ) ) : ?><h2 class="pll-e-h"><?php echo esc_html( $block['heading'] ); ?></h2><?php endif; ?>
-						<?php if ( ! empty( $block['body'] ) ) : ?><div><?php echo wp_kses_post( wpautop( $block['body'] ) ); ?></div><?php endif; ?>
+		<?php // TIMELINE / scroll-telling. ?>
+		<?php if ( $ed['timeline'] ) : ?>
+			<section class="pll-e-timeline">
+				<?php
+				$years = array_filter( wp_list_pluck( $ed['timeline'], 'year' ) );
+				if ( $years ) :
+					?>
+					<div class="pll-e-wrap pll-e-timeline__index">
+						<?php foreach ( $years as $y ) : ?><span><?php echo esc_html( $y ); ?></span><?php endforeach; ?>
 					</div>
-					<?php if ( $img ) : ?>
-						<figure class="pll-e-narrative__media"><img src="<?php echo esc_url( $img ); ?>" alt="" loading="lazy">
-							<?php if ( ! empty( $block['caption'] ) ) : ?><figcaption class="pll-e-sister__eyebrow"><?php echo esc_html( $block['caption'] ); ?></figcaption><?php endif; ?>
-						</figure>
+				<?php endif; ?>
+				<?php foreach ( $ed['timeline'] as $t ) : ?>
+					<?php $timg = palladio_image_url( $t['image'] ?? 0, 'large' ); ?>
+					<div class="pll-e-timeline__row pll-e-wrap">
+						<figure class="pll-e-timeline__media"><?php if ( $timg ) : ?><img src="<?php echo esc_url( $timg ); ?>" alt="" loading="lazy"><?php endif; ?></figure>
+						<div class="pll-e-timeline__text pll-reveal">
+							<?php if ( ! empty( $t['kicker'] ) ) : ?><p class="pll-e-kicker"><?php echo esc_html( $t['kicker'] ); ?></p><?php endif; ?>
+							<?php if ( ! empty( $t['year'] ) ) : ?><p class="pll-e-timeline__year"><?php echo esc_html( $t['year'] ); ?></p><?php endif; ?>
+							<?php if ( ! empty( $t['heading'] ) ) : ?><h2 class="pll-e-h"><?php echo esc_html( $t['heading'] ); ?></h2><?php endif; ?>
+							<?php if ( ! empty( $t['body'] ) ) : ?><div class="pll-e-prose"><?php echo wp_kses_post( wpautop( $t['body'] ) ); ?></div><?php endif; ?>
+						</div>
+					</div>
+				<?php endforeach; ?>
+			</section>
+		<?php endif; ?>
+
+		<?php // AMBIENT LOOP. ?>
+		<?php $ambient = palladio_image_url( $ed['ambient']['image'], 'full' ); ?>
+		<?php if ( $ambient ) : ?>
+			<section class="pll-e-ambient" style="background-image:url('<?php echo esc_url( $ambient ); ?>')">
+				<?php if ( $ed['ambient']['caption'] ) : ?><span class="pll-e-ambient__caption"><?php echo esc_html( $ed['ambient']['caption'] ); ?></span><?php endif; ?>
+			</section>
+		<?php endif; ?>
+
+		<?php // UNITÀ — "Scegli le tue stanze". ?>
+		<?php
+		$units = palladio_get_building_units( $building_id );
+		$range = palladio_units_price_range( $building_id );
+		if ( $units->have_posts() ) :
+			?>
+			<section id="residenze" class="pll-e-section pll-e-wrap">
+				<div class="pll-e-units-head">
+					<div>
+						<p class="pll-e-kicker"><?php echo esc_html( $ed['units_eyebrow'] ? $ed['units_eyebrow'] : __( 'Le residenze', 'palladio' ) ); ?></p>
+						<h2 class="pll-e-h"><?php echo esc_html( $ed['units_heading'] ? $ed['units_heading'] : __( 'Scegli le tue stanze', 'palladio' ) ); ?></h2>
+					</div>
+					<?php if ( $ed['units_filters'] ) : ?>
+						<div class="pll-e-filters" data-palladio-unit-filters>
+							<button type="button" class="pll-e-chip is-active" data-filter="all"><?php esc_html_e( 'Tutte', 'palladio' ); ?></button>
+							<button type="button" class="pll-e-chip" data-filter="piano"><?php esc_html_e( 'Piano', 'palladio' ); ?> ↓</button>
+							<button type="button" class="pll-e-chip" data-filter="prezzo"><?php esc_html_e( 'Prezzo', 'palladio' ); ?> ↓</button>
+							<button type="button" class="pll-e-chip" data-filter="esterno"><?php esc_html_e( 'Con spazio esterno', 'palladio' ); ?></button>
+						</div>
 					<?php endif; ?>
 				</div>
-			</section>
-		<?php endforeach; ?>
 
+				<?php if ( $range['min'] > 0 ) : ?>
+					<p class="pll-e-prose pll-e-residenze-range">
+						<?php
+						printf(
+							/* translators: 1: n residenze, 2: min, 3: max. */
+							esc_html( _n( '%1$s residenza · %2$s – %3$s', '%1$s residenze · %2$s – %3$s', (int) $range['count'], 'palladio' ) ),
+							esc_html( number_format_i18n( (int) $range['count'] ) ),
+							esc_html( palladio_format_price( $range['min'] ) ),
+							esc_html( palladio_format_price( $range['max'] ) )
+						);
+						?>
+					</p>
+				<?php endif; ?>
+
+				<div class="pll-e-sisters" data-palladio-units>
+					<?php
+					while ( $units->have_posts() ) :
+						$units->the_post();
+						$uid     = get_the_ID();
+						$ustat   = palladio_get_unit_status( $uid );
+						$uthumb  = get_the_post_thumbnail_url( $uid, 'large' );
+						$ueye    = palladio_unit_eyebrow( $uid );
+						$uexc    = has_excerpt( $uid ) ? get_the_excerpt( $uid ) : '';
+						$uprice  = (float) palladio_meta( $uid, 'prezzo' );
+						$upiano  = get_the_terms( $uid, 'pll_piano' );
+						$upiano  = ( ! empty( $upiano ) && ! is_wp_error( $upiano ) ) ? $upiano[0]->slug : '';
+						$uext    = ( (float) palladio_meta( $uid, 'terrazza_mq' ) > 0 || (float) palladio_meta( $uid, 'giardino_mq' ) > 0 ) ? '1' : '0';
+						$ushot   = wp_get_attachment_caption( get_post_thumbnail_id( $uid ) );
+						?>
+						<a class="pll-e-sister pll-e-unit-card" href="<?php the_permalink(); ?>"
+							data-piano="<?php echo esc_attr( $upiano ); ?>"
+							data-prezzo="<?php echo esc_attr( $uprice ); ?>"
+							data-esterno="<?php echo esc_attr( $uext ); ?>">
+							<span class="pll-e-sister__media">
+								<?php if ( $uthumb ) : ?><img src="<?php echo esc_url( $uthumb ); ?>" alt="" loading="lazy"><?php endif; ?>
+								<?php if ( $ustat['label'] ) : ?><span class="palladio-badge palladio-badge--<?php echo esc_attr( $ustat['slug'] ); ?>"><?php echo esc_html( $ustat['label'] ); ?></span><?php endif; ?>
+								<?php if ( $ushot ) : ?><span class="pll-e-unit-card__shot"><?php echo esc_html( $ushot ); ?></span><?php endif; ?>
+							</span>
+							<span class="pll-e-sister__body">
+								<?php if ( $ueye ) : ?><span class="pll-e-sister__eyebrow"><?php echo esc_html( $ueye ); ?></span><?php endif; ?>
+								<span class="pll-e-sister__title"><?php echo esc_html( get_the_title( $uid ) ); ?></span>
+								<?php if ( $uexc ) : ?><span class="pll-e-sister__desc"><?php echo esc_html( wp_trim_words( $uexc, 26 ) ); ?></span><?php endif; ?>
+								<span class="pll-e-sister__price"><?php echo esc_html( palladio_format_price( $uprice ) ); ?></span>
+							</span>
+						</a>
+					<?php endwhile; wp_reset_postdata(); ?>
+				</div>
+			</section>
+		<?php endif; ?>
+
+		<?php // GALLERIA asimmetrica. ?>
 		<?php if ( $ed['gallery'] ) : ?>
 			<section class="pll-e-section pll-e-wrap">
-				<p class="pll-e-kicker"><?php esc_html_e( 'Galleria', 'palladio' ); ?></p>
-				<h2 class="pll-e-h"><?php esc_html_e( 'L’edificio in luce', 'palladio' ); ?></h2>
-				<div class="pll-e-sisters">
+				<div class="pll-e-units-head">
+					<div>
+						<p class="pll-e-kicker"><?php esc_html_e( 'Galleria', 'palladio' ); ?></p>
+						<h2 class="pll-e-h"><?php esc_html_e( 'Il palazzo in luce', 'palladio' ); ?></h2>
+					</div>
+					<p class="pll-e-prose pll-e-gallery-note"><?php esc_html_e( 'Composizione editoriale asimmetrica: tagli e proporzioni diverse, mai griglia uniforme.', 'palladio' ); ?></p>
+				</div>
+				<div class="pll-e-gallery">
 					<?php foreach ( $ed['gallery'] as $shot ) : ?>
 						<?php $gi = palladio_image_url( $shot['image'] ?? 0, 'large' ); if ( ! $gi ) { continue; } ?>
-						<figure class="pll-e-sister"><span class="pll-e-sister__media"><img src="<?php echo esc_url( $gi ); ?>" alt="" loading="lazy"></span>
-							<?php if ( ! empty( $shot['caption'] ) ) : ?><figcaption class="pll-e-sister__body pll-e-sister__eyebrow"><?php echo esc_html( $shot['caption'] ); ?></figcaption><?php endif; ?>
+						<figure class="pll-e-gallery__item" style="aspect-ratio:<?php echo esc_attr( $ratio_css( $shot['ratio'] ?? '4:3' ) ); ?>">
+							<img src="<?php echo esc_url( $gi ); ?>" alt="" loading="lazy">
+							<?php if ( ! empty( $shot['caption'] ) ) : ?><figcaption><?php echo esc_html( $shot['caption'] ); ?><?php if ( ! empty( $shot['ratio'] ) ) : ?> · <?php echo esc_html( $shot['ratio'] ); ?><?php endif; ?></figcaption><?php endif; ?>
 						</figure>
 					<?php endforeach; ?>
 				</div>
+				<?php if ( $ed['gallery_url'] ) : ?>
+					<p class="pll-e-gallery-more"><a href="<?php echo esc_url( $ed['gallery_url'] ); ?>">
+						<?php
+						$count = $ed['gallery_count'] ? $ed['gallery_count'] : (string) count( $ed['gallery'] );
+						/* translators: %s: numero fotografie. */
+						printf( esc_html__( 'Tutta la galleria — %s fotografie →', 'palladio' ), esc_html( $count ) );
+						?>
+					</a></p>
+				<?php endif; ?>
 			</section>
 		<?php endif; ?>
 
@@ -119,65 +234,14 @@ while ( have_posts() ) :
 			?>
 			<section class="pll-e-tech">
 				<div class="pll-e-wrap pll-e-section">
-					<p class="pll-e-kicker"><?php esc_html_e( 'Vincoli e note legali', 'palladio' ); ?></p>
-					<h2 class="pll-e-h"><?php esc_html_e( 'Trasparenza', 'palladio' ); ?></h2>
+					<p class="pll-e-kicker"><?php esc_html_e( 'Come funziona l’acquisto', 'palladio' ); ?></p>
+					<h2 class="pll-e-h"><?php esc_html_e( 'La chiarezza è parte dell’architettura', 'palladio' ); ?></h2>
 					<p class="pll-e-prose"><?php echo esc_html( $vincoli ); ?></p>
 				</div>
 			</section>
 		<?php endif; ?>
 
-		<?php
-		$units = palladio_get_building_units( $building_id );
-		$range = palladio_units_price_range( $building_id );
-		if ( $units->have_posts() ) :
-			?>
-			<section class="pll-e-section pll-e-wrap">
-				<p class="pll-e-kicker"><?php esc_html_e( 'Le residenze', 'palladio' ); ?></p>
-				<h2 class="pll-e-h"><?php esc_html_e( 'Le unità', 'palladio' ); ?></h2>
-				<?php if ( $range['min'] > 0 ) : ?>
-					<p class="pll-e-prose pll-e-residenze-range">
-						<?php
-						printf(
-							/* translators: 1: numero residenze, 2: prezzo minimo, 3: prezzo massimo. */
-							esc_html( _n( '%1$s residenza · %2$s – %3$s', '%1$s residenze · %2$s – %3$s', (int) $range['count'], 'palladio' ) ),
-							esc_html( number_format_i18n( (int) $range['count'] ) ),
-							esc_html( palladio_format_price( $range['min'] ) ),
-							esc_html( palladio_format_price( $range['max'] ) )
-						);
-						?>
-					</p>
-				<?php endif; ?>
-				<div class="pll-e-sisters">
-					<?php
-					while ( $units->have_posts() ) :
-						$units->the_post();
-						$uid     = get_the_ID();
-						$ustat   = palladio_get_unit_status( $uid );
-						$uthumb  = get_the_post_thumbnail_url( $uid, 'medium_large' );
-						$ueye    = palladio_unit_eyebrow( $uid );
-						$uexc    = has_excerpt( $uid ) ? get_the_excerpt( $uid ) : '';
-						?>
-						<a class="pll-e-sister" href="<?php the_permalink(); ?>">
-							<span class="pll-e-sister__media">
-								<?php if ( $uthumb ) : ?><img src="<?php echo esc_url( $uthumb ); ?>" alt="" loading="lazy"><?php endif; ?>
-								<?php if ( $ustat['label'] ) : ?><span class="palladio-badge palladio-badge--<?php echo esc_attr( $ustat['slug'] ); ?>"><?php echo esc_html( $ustat['label'] ); ?></span><?php endif; ?>
-							</span>
-							<span class="pll-e-sister__body">
-								<?php if ( $ueye ) : ?><span class="pll-e-sister__eyebrow"><?php echo esc_html( $ueye ); ?></span><?php endif; ?>
-								<span class="pll-e-sister__title"><?php echo esc_html( get_the_title( $uid ) ); ?></span>
-								<?php if ( $uexc ) : ?><span class="pll-e-sister__desc"><?php echo esc_html( wp_trim_words( $uexc, 26 ) ); ?></span><?php endif; ?>
-								<span class="pll-e-sister__price"><?php echo esc_html( palladio_format_price( palladio_meta( $uid, 'prezzo' ) ) ); ?></span>
-							</span>
-						</a>
-					<?php endwhile; wp_reset_postdata(); ?>
-				</div>
-			</section>
-		<?php endif; ?>
-
-		<?php
-		/** Estensione dopo l'elenco unità (scenari, planimetrie…). */
-		do_action( 'palladio/edificio/after_units', $building_id );
-		?>
+		<?php do_action( 'palladio/edificio/after_units', $building_id ); ?>
 
 	</div>
 	<?php
