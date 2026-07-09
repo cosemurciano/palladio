@@ -45,7 +45,7 @@ class Palladio_AI_Settings {
 			'vector_store'     => '',
 			'tokens_generate'  => 3000,
 			'tokens_translate' => 2000,
-			'tokens_agent'     => 1500,
+			'tokens_agent'     => 4000,
 		);
 
 		$config = get_option( 'palladio_ai', array() );
@@ -330,7 +330,7 @@ class Palladio_AI_Settings {
 			'vector_store'     => isset( $_POST['vector_store'] ) ? sanitize_text_field( wp_unslash( $_POST['vector_store'] ) ) : '',
 			'tokens_generate'  => $tok( 'tokens_generate', 3000 ),
 			'tokens_translate' => $tok( 'tokens_translate', 2000 ),
-			'tokens_agent'     => $tok( 'tokens_agent', 1500 ),
+			'tokens_agent'     => $tok( 'tokens_agent', 4000 ),
 		);
 
 		update_option( 'palladio_ai', $config );

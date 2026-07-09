@@ -175,9 +175,25 @@ class Palladio_Admin_Studio {
 			wp_send_json_error( array( 'message' => __( 'Messaggio vuoto.', 'palladio' ) ), 400 );
 		}
 
-		$reply = $this->run( $message, is_array( $history ) ? $history : array(), $focus );
+		// Il loop dell'agente può richiedere diverse chiamate API consecutive:
+		// alza il limite di esecuzione dove l'hosting lo consente.
+		if ( function_exists( 'set_time_limit' ) ) {
+			@set_time_limit( 300 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		}
+
+		try {
+			$reply = $this->run( $message, is_array( $history ) ? $history : array(), $focus );
+		} catch ( Throwable $t ) {
+			wp_send_json_error( array( 'message' => $t->getMessage() ) );
+		}
+
 		if ( is_wp_error( $reply ) ) {
-			wp_send_json_error( array( 'message' => $reply->get_error_message() ) );
+			$msg = $reply->get_error_message();
+			wp_send_json_error( array( 'message' => $msg ? $msg : $reply->get_error_code() ) );
+		}
+
+		if ( '' === trim( (string) $reply ) ) {
+			wp_send_json_error( array( 'message' => __( 'Il modello ha restituito una risposta vuota (probabilmente troncata dai token di ragionamento). Aumenta “Token massimi — agente (chat)” in Palladio → AI, ad es. 4000+ per i modelli reasoning.', 'palladio' ) ) );
 		}
 
 		wp_send_json_success( array( 'reply' => $reply ) );
@@ -215,7 +231,18 @@ class Palladio_Admin_Studio {
 			$messages[] = $assistant;
 
 			if ( empty( $assistant['tool_calls'] ) ) {
-				return (string) ( $assistant['content'] ?? '' );
+				$content = (string) ( $assistant['content'] ?? '' );
+
+				// Risposta troncata dal limite token (tipico dei modelli
+				// reasoning, che consumano token di output per "pensare").
+				if ( '' === trim( $content ) && 'length' === ( $result['finish_reason'] ?? '' ) ) {
+					return new WP_Error(
+						'palladio_ai_truncated',
+						__( 'Risposta troncata dal limite token prima di produrre testo. Aumenta “Token massimi — agente (chat)” in Palladio → AI (per i modelli reasoning servono 4000+).', 'palladio' )
+					);
+				}
+
+				return $content;
 			}
 
 			foreach ( $assistant['tool_calls'] as $call ) {

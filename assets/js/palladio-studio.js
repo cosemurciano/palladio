@@ -55,21 +55,38 @@
 				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
 				body: body.toString(),
 			} ).then( function ( r ) {
-				return r.json();
+				// Leggi sempre il testo: se il PHP muore (timeout/fatal) la
+				// risposta non è JSON e serve una diagnosi leggibile.
+				return r.text().then( function ( raw ) {
+					var data = null;
+					try { data = JSON.parse( raw ); } catch ( e ) { /* non-JSON */ }
+					return { status: r.status, data: data, raw: raw };
+				} );
 			} ).then( function ( res ) {
 				busy = false;
 				status.textContent = '';
-				if ( res && res.success && res.data && res.data.reply ) {
-					add( 'assistant', res.data.reply );
+				var d = res.data;
+
+				if ( d && d.success && d.data && d.data.reply ) {
+					add( 'assistant', d.data.reply );
 					history.push( { role: 'user', content: text } );
-					history.push( { role: 'assistant', content: res.data.reply } );
-				} else {
-					var m = ( res && res.data && res.data.message ) ? res.data.message : ( i18n.error || 'Error' );
-					status.textContent = ( i18n.error || 'Error' ) + ': ' + m;
+					history.push( { role: 'assistant', content: d.data.reply } );
+					return;
 				}
-			} ).catch( function () {
+
+				var m;
+				if ( d && d.data && d.data.message ) {
+					m = d.data.message;
+				} else if ( ! d ) {
+					var snippet = ( res.raw || '' ).replace( /<[^>]*>/g, ' ' ).replace( /\s+/g, ' ' ).trim().slice( 0, 200 );
+					m = 'HTTP ' + res.status + ( snippet ? ' — ' + snippet : '' ) + ' (probabile timeout PHP: riprova o alza max_execution_time)';
+				} else {
+					m = 'risposta senza dettagli dal server';
+				}
+				status.textContent = ( i18n.error || 'Error' ) + ': ' + m;
+			} ).catch( function ( err ) {
 				busy = false;
-				status.textContent = i18n.error || 'Error';
+				status.textContent = ( i18n.error || 'Error' ) + ': ' + ( err && err.message ? err.message : 'rete' );
 			} );
 		} );
 	}

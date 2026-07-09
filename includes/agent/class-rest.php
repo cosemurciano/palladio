@@ -196,7 +196,16 @@ class Palladio_Agent_Rest {
 
 			// Nessun tool richiesto: risposta finale.
 			if ( empty( $assistant['tool_calls'] ) ) {
-				return (string) ( $assistant['content'] ?? '' );
+				$content = (string) ( $assistant['content'] ?? '' );
+
+				if ( '' === trim( $content ) && 'length' === ( $result['finish_reason'] ?? '' ) ) {
+					return new WP_Error(
+						'palladio_ai_truncated',
+						__( 'Risposta non disponibile: limite token raggiunto. Aumenta “Token massimi — agente (chat)” in Palladio → AI.', 'palladio' )
+					);
+				}
+
+				return $content;
 			}
 
 			// Esegue i tool richiesti e accoda i risultati.
