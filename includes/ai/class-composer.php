@@ -311,8 +311,8 @@ class Palladio_AI_Composer {
 				'title'     => 'string',
 				'excerpt'   => 'string',
 				'meta'      => $is_unit
-					? array( 'prezzo' => 'number', 'mq_commerciali' => 'number', 'mq_coperti' => 'number', 'camere' => 'int', 'bagni' => 'int', 'vani' => 'number', 'esposizione' => 'string', 'classe_energetica' => 'string', 'millesimi' => 'number', 'spese_condominiali' => 'number', 'terrazza_mq' => 'number', 'giardino_mq' => 'number', 'stato_consegna' => 'string', 'destinazione_uso' => 'string' )
-					: array( 'anno_costruzione' => 'int', 'mq_totali' => 'number', 'num_piani' => 'int', 'num_unita_vendita' => 'int', 'indirizzo' => 'string', 'claim' => 'string' ),
+					? array( 'codice' => 'string', 'prezzo' => 'number', 'mq_commerciali' => 'number', 'mq_coperti' => 'number', 'camere' => 'int', 'bagni' => 'int', 'vani' => 'number', 'esposizione' => 'string', 'classe_energetica' => 'string', 'millesimi' => 'number', 'spese_condominiali' => 'number', 'terrazza_mq' => 'number', 'giardino_mq' => 'number', 'stato_consegna' => 'string', 'destinazione_uso' => 'string' )
+					: array( 'anno_costruzione' => 'int', 'mq_totali' => 'number', 'num_piani' => 'int', 'num_unita_vendita' => 'int', 'indirizzo' => 'string', 'sottotitolo' => 'string', 'claim' => 'string' ),
 				'editorial' => array(
 					'eyebrow'         => 'string',
 					'lead'            => 'string',
