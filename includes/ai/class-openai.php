@@ -46,17 +46,19 @@ class Palladio_AI_Openai {
 				'model'       => Palladio_AI_Settings::model(),
 				'temperature' => 0.7,
 				'json'        => false,
-				'max_tokens'  => 1500,
+				'max_tokens'  => Palladio_AI_Settings::max_tokens( 'agent' ),
 				'tools'       => array(),
 				'tool_choice' => 'auto',
 			)
 		);
 
 		$body = array(
-			'model'       => $args['model'],
-			'messages'    => $messages,
-			'temperature' => (float) $args['temperature'],
-			'max_tokens'  => (int) $args['max_tokens'],
+			'model'                 => $args['model'],
+			'messages'              => $messages,
+			'temperature'           => (float) $args['temperature'],
+			// I modelli recenti richiedono max_completion_tokens (max_tokens è
+			// deprecato); il fallback sotto gestisce i modelli più vecchi.
+			'max_completion_tokens' => (int) $args['max_tokens'],
 		);
 
 		if ( $args['json'] ) {
@@ -68,7 +70,38 @@ class Palladio_AI_Openai {
 			$body['tool_choice'] = $args['tool_choice'];
 		}
 
-		$response = self::request( '/chat/completions', $body, $key );
+		// Compatibilità tra generazioni di modelli: se l'API rifiuta un
+		// parametro (400), adattalo e riprova (max 3 correzioni).
+		$response = null;
+		for ( $fix = 0; $fix < 3; $fix++ ) {
+			$response = self::request( '/chat/completions', $body, $key );
+
+			if ( ! is_wp_error( $response ) ) {
+				break;
+			}
+
+			$msg = $response->get_error_message();
+
+			if ( isset( $body['max_completion_tokens'] ) && false !== strpos( $msg, 'max_completion_tokens' ) ) {
+				// Modello più vecchio: usa il parametro storico.
+				$body['max_tokens'] = $body['max_completion_tokens'];
+				unset( $body['max_completion_tokens'] );
+				continue;
+			}
+			if ( isset( $body['max_tokens'] ) && false !== strpos( $msg, "'max_tokens'" ) ) {
+				$body['max_completion_tokens'] = $body['max_tokens'];
+				unset( $body['max_tokens'] );
+				continue;
+			}
+			if ( isset( $body['temperature'] ) && false !== stripos( $msg, 'temperature' ) ) {
+				// I modelli reasoning accettano solo la temperatura di default.
+				unset( $body['temperature'] );
+				continue;
+			}
+
+			break;
+		}
+
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}

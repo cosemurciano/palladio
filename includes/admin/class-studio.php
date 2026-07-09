@@ -206,7 +206,7 @@ class Palladio_Admin_Studio {
 		while ( $rounds < 8 ) {
 			$rounds++;
 
-			$result = Palladio_AI_Openai::chat( $messages, array( 'tools' => $tools, 'temperature' => 0.3, 'max_tokens' => 1200 ) );
+			$result = Palladio_AI_Openai::chat( $messages, array( 'tools' => $tools, 'temperature' => 0.3, 'max_tokens' => Palladio_AI_Settings::max_tokens( 'agent' ) ) );
 			if ( is_wp_error( $result ) ) {
 				return $result;
 			}
@@ -233,7 +233,7 @@ class Palladio_Admin_Studio {
 			}
 		}
 
-		$final = Palladio_AI_Openai::chat( $messages, array( 'temperature' => 0.3, 'max_tokens' => 900 ) );
+		$final = Palladio_AI_Openai::chat( $messages, array( 'temperature' => 0.3, 'max_tokens' => Palladio_AI_Settings::max_tokens( 'agent' ) ) );
 		return is_wp_error( $final ) ? $final : (string) $final['content'];
 	}
 
@@ -472,7 +472,7 @@ Regole:
 		$res = Palladio_AI_Openai::responses(
 			__( 'Rispondi solo con le informazioni presenti nei documenti. Cita i valori esatti (prezzi, misure, date).', 'palladio' ),
 			$query,
-			array( 'vector_store_ids' => array( $vs ), 'max_tokens' => 900 )
+			array( 'vector_store_ids' => array( $vs ), 'max_tokens' => Palladio_AI_Settings::max_tokens( 'agent' ) )
 		);
 
 		if ( is_wp_error( $res ) ) {
