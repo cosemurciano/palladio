@@ -18,6 +18,7 @@ while ( have_posts() ) :
 	$building_id = get_the_ID();
 	$claim       = palladio_meta( $building_id, 'claim' );
 	$hero        = get_the_post_thumbnail_url( $building_id, 'full' );
+	$ed          = palladio_editorial( $building_id );
 
 	$facts = array();
 	if ( $anno = palladio_meta( $building_id, 'anno_costruzione' ) ) { // phpcs:ignore
@@ -72,6 +73,39 @@ while ( have_posts() ) :
 		<?php if ( get_the_content() ) : ?>
 			<section class="pll-e-section pll-e-wrap">
 				<div class="pll-e-prose"><?php the_content(); ?></div>
+			</section>
+		<?php endif; ?>
+
+		<?php foreach ( $ed['narrative'] as $block ) : ?>
+			<?php $img = palladio_image_url( $block['image'] ?? 0, 'large' ); ?>
+			<section class="pll-e-section pll-e-wrap">
+				<div class="pll-e-narrative pll-e-narrative--<?php echo esc_attr( 'left' === ( $block['layout'] ?? 'right' ) ? 'left' : 'right' ); ?>">
+					<div class="pll-e-narrative__text">
+						<?php if ( ! empty( $block['kicker'] ) ) : ?><p class="pll-e-kicker"><?php echo esc_html( $block['kicker'] ); ?></p><?php endif; ?>
+						<?php if ( ! empty( $block['heading'] ) ) : ?><h2 class="pll-e-h"><?php echo esc_html( $block['heading'] ); ?></h2><?php endif; ?>
+						<?php if ( ! empty( $block['body'] ) ) : ?><div><?php echo wp_kses_post( wpautop( $block['body'] ) ); ?></div><?php endif; ?>
+					</div>
+					<?php if ( $img ) : ?>
+						<figure class="pll-e-narrative__media"><img src="<?php echo esc_url( $img ); ?>" alt="" loading="lazy">
+							<?php if ( ! empty( $block['caption'] ) ) : ?><figcaption class="pll-e-sister__eyebrow"><?php echo esc_html( $block['caption'] ); ?></figcaption><?php endif; ?>
+						</figure>
+					<?php endif; ?>
+				</div>
+			</section>
+		<?php endforeach; ?>
+
+		<?php if ( $ed['gallery'] ) : ?>
+			<section class="pll-e-section pll-e-wrap">
+				<p class="pll-e-kicker"><?php esc_html_e( 'Galleria', 'palladio' ); ?></p>
+				<h2 class="pll-e-h"><?php esc_html_e( 'L’edificio in luce', 'palladio' ); ?></h2>
+				<div class="pll-e-sisters">
+					<?php foreach ( $ed['gallery'] as $shot ) : ?>
+						<?php $gi = palladio_image_url( $shot['image'] ?? 0, 'large' ); if ( ! $gi ) { continue; } ?>
+						<figure class="pll-e-sister"><span class="pll-e-sister__media"><img src="<?php echo esc_url( $gi ); ?>" alt="" loading="lazy"></span>
+							<?php if ( ! empty( $shot['caption'] ) ) : ?><figcaption class="pll-e-sister__body pll-e-sister__eyebrow"><?php echo esc_html( $shot['caption'] ); ?></figcaption><?php endif; ?>
+						</figure>
+					<?php endforeach; ?>
+				</div>
 			</section>
 		<?php endif; ?>
 
