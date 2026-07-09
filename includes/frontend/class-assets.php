@@ -51,6 +51,29 @@ class Palladio_Frontend_Assets {
 			$this->asset_version( 'assets/js/palladio.js' ),
 			true
 		);
+
+		// Direzione visiva editoriale sulle schede singole (edificio/unità/scenario).
+		if ( is_singular( array( 'pll_edificio', 'pll_unita', 'pll_scenario' ) ) ) {
+			/**
+			 * Consente di disattivare lo stile editoriale (es. tema con design proprio).
+			 *
+			 * @param bool $enabled Attivo.
+			 */
+			if ( apply_filters( 'palladio/editorial/enabled', true ) ) {
+				wp_enqueue_style(
+					'palladio-fonts',
+					'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Hanken+Grotesk:wght@400;500;600;700&family=Marcellus&display=swap',
+					array(),
+					null // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Google Fonts è versionato via URL.
+				);
+				wp_enqueue_style(
+					'palladio-editorial',
+					PALLADIO_URI . 'assets/css/palladio-editorial.css',
+					array( 'palladio', 'palladio-fonts' ),
+					$this->asset_version( 'assets/css/palladio-editorial.css' )
+				);
+			}
+		}
 	}
 
 	/**

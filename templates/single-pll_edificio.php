@@ -1,10 +1,8 @@
 <?php
 /**
- * Template singolo — Edificio.
+ * Template singolo — Edificio (direzione visiva editoriale "Sambiasi").
  *
  * Sovrascrivibile dal tema: {tema}/palladio/single-pll_edificio.php.
- * Il contenuto è renderizzato direttamente nel <main> del tema, che su
- * PoeTheme fornisce già container, larghezza e padding.
  *
  * @package Palladio
  */
@@ -18,124 +16,114 @@ get_header();
 while ( have_posts() ) :
 	the_post();
 	$building_id = get_the_ID();
-
-	$claim     = palladio_meta( $building_id, 'claim' );
-	$indirizzo = palladio_meta( $building_id, 'indirizzo' );
+	$claim       = palladio_meta( $building_id, 'claim' );
+	$hero        = get_the_post_thumbnail_url( $building_id, 'full' );
 
 	$facts = array();
-	if ( $anno = palladio_meta( $building_id, 'anno_costruzione' ) ) { // phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition
-		$facts[] = array( __( 'Anno', 'palladio' ), (string) absint( $anno ) );
+	if ( $anno = palladio_meta( $building_id, 'anno_costruzione' ) ) { // phpcs:ignore
+		$facts[] = array( (string) absint( $anno ), __( 'Anno', 'palladio' ) );
 	}
-	if ( $mq = palladio_meta( $building_id, 'mq_totali' ) ) { // phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition
-		$facts[] = array( __( 'Superficie totale', 'palladio' ), sprintf( __( '%s m²', 'palladio' ), number_format_i18n( (float) $mq, 0 ) ) );
+	if ( $mq = palladio_meta( $building_id, 'mq_totali' ) ) { // phpcs:ignore
+		$facts[] = array( number_format_i18n( (float) $mq, 0 ) . ' m²', __( 'Superficie', 'palladio' ) );
 	}
-	if ( $piani = palladio_meta( $building_id, 'num_piani' ) ) { // phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition
-		$facts[] = array( __( 'Piani', 'palladio' ), (string) absint( $piani ) );
+	if ( $piani = palladio_meta( $building_id, 'num_piani' ) ) { // phpcs:ignore
+		$facts[] = array( (string) absint( $piani ), __( 'Piani', 'palladio' ) );
 	}
-	if ( $uv = palladio_meta( $building_id, 'num_unita_vendita' ) ) { // phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition
-		$facts[] = array( __( 'Unità in vendita', 'palladio' ), (string) absint( $uv ) );
+	if ( $uv = palladio_meta( $building_id, 'num_unita_vendita' ) ) { // phpcs:ignore
+		$facts[] = array( (string) absint( $uv ), __( 'Unità in vendita', 'palladio' ) );
 	}
 	?>
-	<section class="palladio-single palladio-edificio">
+	<div class="palladio-editorial palladio-edificio-editorial">
 
-		<?php if ( ! palladio_header_owns_title() ) : ?>
-			<header class="palladio-edificio__header">
-				<h1 class="palladio-edificio__title"><?php the_title(); ?></h1>
+		<header class="pll-e-hero">
+			<?php if ( $hero ) : ?>
+				<img class="pll-e-hero__img" src="<?php echo esc_url( $hero ); ?>" alt="">
+			<?php endif; ?>
+			<div class="pll-e-hero__inner">
+				<p class="pll-e-eyebrow">
+					<?php esc_html_e( 'L’edificio', 'palladio' ); ?>
+					<?php echo do_shortcode( '[palladio_lang_switcher]' ); ?>
+				</p>
+				<h1 class="pll-e-hero__title"><?php the_title(); ?></h1>
 				<?php if ( $claim ) : ?>
-					<p class="palladio-edificio__claim"><?php echo esc_html( $claim ); ?></p>
+					<p class="pll-e-hero__lead"><?php echo esc_html( $claim ); ?></p>
 				<?php endif; ?>
-			</header>
+			</div>
+		</header>
+
+		<?php if ( $facts ) : ?>
+			<div class="pll-e-sticky">
+				<div class="pll-e-sticky__inner">
+					<div class="pll-e-sticky__facts">
+						<?php
+						$indirizzo = palladio_meta( $building_id, 'indirizzo' );
+						if ( $indirizzo ) :
+							?>
+							<span class="pll-e-fact"><b><?php echo esc_html( $indirizzo ); ?></b><span><?php esc_html_e( 'Indirizzo', 'palladio' ); ?></span></span>
+						<?php endif; ?>
+						<?php foreach ( $facts as $fact ) : ?>
+							<span class="pll-e-fact"><b><?php echo esc_html( $fact[0] ); ?></b><span><?php echo esc_html( $fact[1] ); ?></span></span>
+						<?php endforeach; ?>
+					</div>
+				</div>
+			</div>
 		<?php endif; ?>
 
-		<div class="palladio-panel palladio-edificio__hero">
-			<?php if ( has_post_thumbnail() ) : ?>
-				<figure class="palladio-edificio__media">
-					<?php the_post_thumbnail( 'large', array( 'loading' => 'eager' ) ); ?>
-				</figure>
-			<?php endif; ?>
-
-			<div class="palladio-edificio__intro">
-				<?php if ( $indirizzo ) : ?>
-					<p class="palladio-edificio__address"><?php echo esc_html( $indirizzo ); ?></p>
-				<?php endif; ?>
-
-				<?php if ( $facts ) : ?>
-					<dl class="palladio-facts">
-						<?php foreach ( $facts as $fact ) : ?>
-							<div class="palladio-facts__item">
-								<dt><?php echo esc_html( $fact[0] ); ?></dt>
-								<dd><?php echo esc_html( $fact[1] ); ?></dd>
-							</div>
-						<?php endforeach; ?>
-					</dl>
-				<?php endif; ?>
-			</div>
-		</div>
-
 		<?php if ( get_the_content() ) : ?>
-			<div class="palladio-panel palladio-content">
-				<?php the_content(); ?>
-			</div>
+			<section class="pll-e-section pll-e-wrap">
+				<div class="pll-e-prose"><?php the_content(); ?></div>
+			</section>
 		<?php endif; ?>
 
 		<?php
 		$vincoli = palladio_meta( $building_id, 'vincoli_note' );
 		if ( $vincoli ) :
 			?>
-			<div class="palladio-panel palladio-edificio__vincoli">
-				<h2><?php esc_html_e( 'Vincoli e note legali', 'palladio' ); ?></h2>
-				<p><?php echo esc_html( $vincoli ); ?></p>
-			</div>
+			<section class="pll-e-tech">
+				<div class="pll-e-wrap pll-e-section">
+					<p class="pll-e-kicker"><?php esc_html_e( 'Vincoli e note legali', 'palladio' ); ?></p>
+					<h2 class="pll-e-h"><?php esc_html_e( 'Trasparenza', 'palladio' ); ?></h2>
+					<p class="pll-e-prose"><?php echo esc_html( $vincoli ); ?></p>
+				</div>
+			</section>
 		<?php endif; ?>
 
 		<?php
 		$units = palladio_get_building_units( $building_id );
 		if ( $units->have_posts() ) :
 			?>
-			<div class="palladio-units">
-				<h2 class="palladio-units__heading"><?php esc_html_e( 'Le unità', 'palladio' ); ?></h2>
-
-				<?php
-				// Chip di filtro per stato (progressive enhancement: senza JS mostra tutto).
-				$stati = get_terms(
-					array(
-						'taxonomy'   => 'pll_stato',
-						'hide_empty' => true,
-						'object_ids' => wp_list_pluck( $units->posts, 'ID' ),
-					)
-				);
-				if ( ! is_wp_error( $stati ) && count( $stati ) > 1 ) :
-					?>
-					<div class="palladio-filters" data-palladio-filters role="group" aria-label="<?php esc_attr_e( 'Filtra le unità per stato', 'palladio' ); ?>">
-						<button type="button" class="palladio-filters__chip is-active" data-filter="stato" data-value="*"><?php esc_html_e( 'Tutte', 'palladio' ); ?></button>
-						<?php foreach ( $stati as $stato ) : ?>
-							<button type="button" class="palladio-filters__chip" data-filter="stato" data-value="<?php echo esc_attr( $stato->slug ); ?>"><?php echo esc_html( $stato->name ); ?></button>
-						<?php endforeach; ?>
-					</div>
-				<?php endif; ?>
-
-				<div class="palladio-units-grid" data-palladio-grid>
+			<section class="pll-e-section pll-e-wrap">
+				<p class="pll-e-kicker"><?php esc_html_e( 'Le residenze', 'palladio' ); ?></p>
+				<h2 class="pll-e-h"><?php esc_html_e( 'Le unità', 'palladio' ); ?></h2>
+				<div class="pll-e-sisters">
 					<?php
 					while ( $units->have_posts() ) :
 						$units->the_post();
-						palladio_render_unit_card( get_the_ID() );
-					endwhile;
-					wp_reset_postdata();
-					?>
+						$uid    = get_the_ID();
+						$ustat  = palladio_get_unit_status( $uid );
+						$uthumb = get_the_post_thumbnail_url( $uid, 'medium_large' );
+						?>
+						<a class="pll-e-sister" href="<?php the_permalink(); ?>">
+							<span class="pll-e-sister__media">
+								<?php if ( $uthumb ) : ?><img src="<?php echo esc_url( $uthumb ); ?>" alt="" loading="lazy"><?php endif; ?>
+							</span>
+							<span class="pll-e-sister__body">
+								<?php if ( $ustat['label'] ) : ?><span class="pll-e-sister__eyebrow"><?php echo esc_html( $ustat['label'] ); ?></span><?php endif; ?>
+								<span class="pll-e-sister__title"><?php echo esc_html( get_the_title( $uid ) ); ?></span>
+								<span class="pll-e-sister__price"><?php echo esc_html( palladio_format_price( palladio_meta( $uid, 'prezzo' ) ) ); ?></span>
+							</span>
+						</a>
+					<?php endwhile; wp_reset_postdata(); ?>
 				</div>
-			</div>
+			</section>
 		<?php endif; ?>
 
 		<?php
-		/**
-		 * Punto di estensione dopo l'elenco unità (scenari, planimetrie, CTA…).
-		 *
-		 * @param int $building_id ID dell'edificio.
-		 */
+		/** Estensione dopo l'elenco unità (scenari, planimetrie…). */
 		do_action( 'palladio/edificio/after_units', $building_id );
 		?>
 
-	</section>
+	</div>
 	<?php
 endwhile;
 
