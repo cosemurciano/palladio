@@ -130,6 +130,15 @@ class Palladio_Admin_AI {
 		}
 		?>
 		<div class="palladio-ai-box" data-post="<?php echo esc_attr( $post->ID ); ?>">
+			<?php if ( class_exists( 'Palladio_Admin_Studio' ) ) : ?>
+				<p>
+					<a class="button button-hero" href="<?php echo esc_url( Palladio_Admin_Studio::url( $post->ID ) ); ?>">
+						<?php esc_html_e( '🪄 Avvia l’agente AI', 'palladio' ); ?>
+					</a>
+				</p>
+				<p class="description"><?php esc_html_e( 'L’agente conosce l’intera struttura e i documenti su Storage e può popolare edifici, unità e scenari.', 'palladio' ); ?></p>
+				<hr>
+			<?php endif; ?>
 			<p>
 				<button type="button" class="button button-primary" data-palladio-ai="generate">
 					<?php esc_html_e( 'Genera scheda', 'palladio' ); ?>

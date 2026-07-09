@@ -302,7 +302,7 @@ class Palladio_AI_Composer {
 		}
 
 		$vector_store = Palladio_AI_Settings::vector_store();
-		$media        = self::media_context( $post_id );
+		$media        = self::media_list( $post_id );
 
 		$is_unit = 'pll_unita' === $post->post_type;
 
@@ -358,18 +358,23 @@ class Palladio_AI_Composer {
 			return new WP_Error( 'palladio_ai_bad_json', __( 'Risposta AI non valida.', 'palladio' ) );
 		}
 
-		return self::apply_built( $post_id, $data, $media );
+		return self::apply_structured( $post_id, $data, $media );
 	}
 
 	/**
-	 * Applica al post i dati costruiti (meta, immagini, editoriale).
+	 * Applica al post dati strutturati (meta, immagini, editoriale).
+	 *
+	 * Riutilizzabile: usato sia da build_from_sources() sia dall'agente Studio.
 	 *
 	 * @param int   $post_id ID post.
-	 * @param array $data    Dati dal modello.
-	 * @param array $media   Lista media valida (id => info).
+	 * @param array $data    Dati (title, excerpt, content, meta{}, editorial{}).
+	 * @param array $media   Lista media valida (per validare gli id immagine).
 	 * @return array Riepilogo.
 	 */
-	private static function apply_built( $post_id, $data, $media ) {
+	public static function apply_structured( $post_id, $data, $media = null ) {
+		if ( null === $media ) {
+			$media = self::media_list( $post_id );
+		}
 		$valid_ids = wp_list_pluck( $media, 'id' );
 
 		$vid = static function ( $id ) use ( $valid_ids ) {
@@ -384,6 +389,9 @@ class Palladio_AI_Composer {
 		}
 		if ( ! empty( $data['excerpt'] ) ) {
 			$update['post_excerpt'] = sanitize_textarea_field( $data['excerpt'] );
+		}
+		if ( ! empty( $data['content'] ) ) {
+			$update['post_content'] = wp_kses_post( $data['content'] );
 		}
 		if ( count( $update ) > 1 ) {
 			wp_update_post( $update );
@@ -403,84 +411,147 @@ class Palladio_AI_Composer {
 
 		$ed = isset( $data['editorial'] ) && is_array( $data['editorial'] ) ? $data['editorial'] : array();
 
+		// Parte dai valori esistenti così gli aggiornamenti parziali non azzerano il resto.
+		$editorial = function_exists( 'palladio_editorial' ) ? palladio_editorial( $post_id ) : array();
+
 		// Immagine in evidenza (hero).
 		$hero = $vid( $ed['hero_image'] ?? 0 );
 		if ( $hero ) {
 			set_post_thumbnail( $post_id, $hero );
 		}
 
-		$editorial = array(
-			'eyebrow'         => sanitize_text_field( $ed['eyebrow'] ?? '' ),
-			'lead'            => sanitize_textarea_field( $ed['lead'] ?? '' ),
-			'walkthrough_url' => esc_url_raw( $ed['walkthrough_url'] ?? '' ),
-			'chapters'        => array(),
-			'narrative'       => array(),
-			'tech'            => array(),
-			'gallery'         => array(),
-			'floorplan'       => array(
+		// Campi scalari (sovrascritti solo se forniti).
+		if ( isset( $ed['eyebrow'] ) ) {
+			$editorial['eyebrow'] = sanitize_text_field( $ed['eyebrow'] );
+		}
+		if ( isset( $ed['lead'] ) ) {
+			$editorial['lead'] = sanitize_textarea_field( $ed['lead'] );
+		}
+		if ( isset( $ed['walkthrough_url'] ) ) {
+			$editorial['walkthrough_url'] = esc_url_raw( $ed['walkthrough_url'] );
+		}
+		if ( isset( $ed['gallery_url'] ) ) {
+			$editorial['gallery_url'] = esc_url_raw( $ed['gallery_url'] );
+		}
+		if ( isset( $ed['gallery_count'] ) ) {
+			$editorial['gallery_count'] = sanitize_text_field( $ed['gallery_count'] );
+		}
+		if ( isset( $ed['units_eyebrow'] ) ) {
+			$editorial['units_eyebrow'] = sanitize_text_field( $ed['units_eyebrow'] );
+		}
+		if ( isset( $ed['units_heading'] ) ) {
+			$editorial['units_heading'] = sanitize_text_field( $ed['units_heading'] );
+		}
+		if ( isset( $ed['units_filters'] ) ) {
+			$editorial['units_filters'] = ! empty( $ed['units_filters'] );
+		}
+
+		// Gruppi.
+		if ( isset( $ed['floorplan'] ) && is_array( $ed['floorplan'] ) ) {
+			$editorial['floorplan'] = array(
 				'image'   => $vid( $ed['floorplan']['image'] ?? 0 ),
 				'caption' => sanitize_text_field( $ed['floorplan']['caption'] ?? '' ),
 				'notes'   => sanitize_textarea_field( $ed['floorplan']['notes'] ?? '' ),
-			),
-			'position'        => array(
+			);
+		}
+		if ( isset( $ed['position'] ) && is_array( $ed['position'] ) ) {
+			$editorial['position'] = array(
 				'heading' => sanitize_text_field( $ed['position']['heading'] ?? '' ),
 				'text'    => sanitize_textarea_field( $ed['position']['text'] ?? '' ),
-			),
-		);
+			);
+		}
+		if ( isset( $ed['ambient'] ) && is_array( $ed['ambient'] ) ) {
+			$editorial['ambient'] = array(
+				'image'   => $vid( $ed['ambient']['image'] ?? 0 ),
+				'caption' => sanitize_text_field( $ed['ambient']['caption'] ?? '' ),
+			);
+		}
 
-		foreach ( (array) ( $ed['chapters'] ?? array() ) as $c ) {
-			if ( ! is_array( $c ) ) {
-				continue;
+		// Repeater (sostituiti solo se forniti).
+		if ( isset( $ed['chapters'] ) ) {
+			$editorial['chapters'] = array();
+			foreach ( (array) $ed['chapters'] as $c ) {
+				if ( is_array( $c ) ) {
+					$editorial['chapters'][] = array(
+						'time'  => sanitize_text_field( $c['time'] ?? '' ),
+						'label' => sanitize_text_field( $c['label'] ?? '' ),
+					);
+				}
 			}
-			$editorial['chapters'][] = array(
-				'time'  => sanitize_text_field( $c['time'] ?? '' ),
-				'label' => sanitize_text_field( $c['label'] ?? '' ),
-			);
 		}
-		foreach ( (array) ( $ed['narrative'] ?? array() ) as $n ) {
-			if ( ! is_array( $n ) ) {
-				continue;
+		if ( isset( $ed['narrative'] ) ) {
+			$editorial['narrative'] = array();
+			foreach ( (array) $ed['narrative'] as $n ) {
+				if ( is_array( $n ) ) {
+					$editorial['narrative'][] = array(
+						'kicker'  => sanitize_text_field( $n['kicker'] ?? '' ),
+						'heading' => sanitize_text_field( $n['heading'] ?? '' ),
+						'body'    => wp_kses_post( $n['body'] ?? '' ),
+						'image'   => $vid( $n['image'] ?? 0 ),
+						'caption' => sanitize_text_field( $n['caption'] ?? '' ),
+						'layout'  => ( 'left' === ( $n['layout'] ?? '' ) ) ? 'left' : 'right',
+					);
+				}
 			}
-			$editorial['narrative'][] = array(
-				'kicker'  => sanitize_text_field( $n['kicker'] ?? '' ),
-				'heading' => sanitize_text_field( $n['heading'] ?? '' ),
-				'body'    => wp_kses_post( $n['body'] ?? '' ),
-				'image'   => $vid( $n['image'] ?? 0 ),
-				'caption' => sanitize_text_field( $n['caption'] ?? '' ),
-				'layout'  => ( 'left' === ( $n['layout'] ?? '' ) ) ? 'left' : 'right',
-			);
 		}
-		foreach ( (array) ( $ed['tech'] ?? array() ) as $t ) {
-			if ( ! is_array( $t ) ) {
-				continue;
+		if ( isset( $ed['tech'] ) ) {
+			$editorial['tech'] = array();
+			foreach ( (array) $ed['tech'] as $t ) {
+				if ( is_array( $t ) ) {
+					$editorial['tech'][] = array(
+						'label' => sanitize_text_field( $t['label'] ?? '' ),
+						'value' => sanitize_text_field( $t['value'] ?? '' ),
+					);
+				}
 			}
-			$editorial['tech'][] = array(
-				'label' => sanitize_text_field( $t['label'] ?? '' ),
-				'value' => sanitize_text_field( $t['value'] ?? '' ),
-			);
 		}
-		foreach ( (array) ( $ed['gallery'] ?? array() ) as $g ) {
-			if ( ! is_array( $g ) ) {
-				continue;
+		if ( isset( $ed['gallery'] ) ) {
+			$editorial['gallery'] = array();
+			foreach ( (array) $ed['gallery'] as $g ) {
+				$img = is_array( $g ) ? $vid( $g['image'] ?? 0 ) : 0;
+				if ( $img ) {
+					$editorial['gallery'][] = array(
+						'image'   => $img,
+						'caption' => sanitize_text_field( $g['caption'] ?? '' ),
+						'ratio'   => in_array( $g['ratio'] ?? '', array( '3:2', '4:3', '4:5', '1:1', '16:9' ), true ) ? $g['ratio'] : '4:3',
+					);
+				}
 			}
-			$img = $vid( $g['image'] ?? 0 );
-			if ( ! $img ) {
-				continue;
+		}
+		if ( isset( $ed['manifesto'] ) ) {
+			$editorial['manifesto'] = array();
+			foreach ( (array) $ed['manifesto'] as $m ) {
+				if ( is_array( $m ) ) {
+					$editorial['manifesto'][] = array(
+						'text'     => sanitize_text_field( $m['text'] ?? '' ),
+						'emphasis' => sanitize_text_field( $m['emphasis'] ?? '' ),
+					);
+				}
 			}
-			$editorial['gallery'][] = array(
-				'image'   => $img,
-				'caption' => sanitize_text_field( $g['caption'] ?? '' ),
-				'ratio'   => in_array( $g['ratio'] ?? '', array( '3:2', '4:3', '4:5', '1:1' ), true ) ? $g['ratio'] : '4:3',
-			);
+		}
+		if ( isset( $ed['timeline'] ) ) {
+			$editorial['timeline'] = array();
+			foreach ( (array) $ed['timeline'] as $t ) {
+				if ( is_array( $t ) ) {
+					$editorial['timeline'][] = array(
+						'kicker'  => sanitize_text_field( $t['kicker'] ?? '' ),
+						'year'    => sanitize_text_field( $t['year'] ?? '' ),
+						'heading' => sanitize_text_field( $t['heading'] ?? '' ),
+						'body'    => wp_kses_post( $t['body'] ?? '' ),
+						'image'   => $vid( $t['image'] ?? 0 ),
+					);
+				}
+			}
 		}
 
 		update_post_meta( $post_id, '_pll_editorial', $editorial );
 
 		return array(
-			'narrative' => count( $editorial['narrative'] ),
-			'gallery'   => count( $editorial['gallery'] ),
-			'tech'      => count( $editorial['tech'] ),
 			'hero'      => (bool) $hero,
+			'narrative' => count( $editorial['narrative'] ?? array() ),
+			'gallery'   => count( $editorial['gallery'] ?? array() ),
+			'manifesto' => count( $editorial['manifesto'] ?? array() ),
+			'timeline'  => count( $editorial['timeline'] ?? array() ),
 		);
 	}
 
@@ -491,7 +562,7 @@ class Palladio_AI_Composer {
 	 * @param int $limit   Numero massimo di media.
 	 * @return array<int,array{id:int,title:string,alt:string,caption:string}>
 	 */
-	private static function media_context( $post_id, $limit = 40 ) {
+	public static function media_list( $post_id, $limit = 40 ) {
 		// Priorità ai media allegati al post, poi ai più recenti.
 		$ids = get_posts(
 			array(

@@ -105,6 +105,7 @@ final class Palladio {
 				'admin_translations'  => 'Palladio_Admin_Translations',
 				'ai_settings'         => 'Palladio_AI_Settings',
 				'admin_ai'            => 'Palladio_Admin_AI',
+				'admin_studio'        => 'Palladio_Admin_Studio',
 				'agent_kb'            => 'Palladio_Agent_KB',
 				'agent_chats'         => 'Palladio_Agent_Chats',
 				'agent_rest'          => 'Palladio_Agent_Rest',
