@@ -229,7 +229,7 @@ class Palladio_Admin_Studio {
 Regole:
 - Inizia SEMPRE chiamando get_structure per conoscere edifici, unità e scenari esistenti.
 - Per i fatti (prezzi, misure, stanze, vincoli, descrizioni) usa search_project_documents (File Search sui documenti del progetto). NON inventare dati.
-- Per le immagini usa SOLO gli id restituiti da list_media (non inventare id).
+- Per le immagini usa SOLO gli id restituiti da list_media (non inventare id): a parità di pertinenza PREFERISCI le foto più recenti (campo "date", ordinate dalla più recente) e usa anche il NOME DEL FILE (campo "filename"), oltre a titolo/alt/didascalia, per capire il soggetto.
 - Scrivi i contenuti con update_entity: puoi impostare title, excerpt, content, i meta (prezzo, mq, camere…) e i campi editoriali (eyebrow, lead, manifesto, timeline, narrative, tech, gallery, floorplan, ambient, position). Gli aggiornamenti sono parziali: invii solo i campi che vuoi cambiare.
 - Puoi creare nuove unità (create_unit) o scenari (create_scenario) se richiesto.
 - Prima di modifiche massicce, riepiloga brevemente cosa stai per fare. Al termine, riassumi cosa hai aggiornato.
@@ -271,7 +271,7 @@ Regole:
 		return array(
 			$fn( 'get_structure', 'Restituisce l’intera struttura: edifici con le loro unità e scenari, con i dati chiave.', array() ),
 			$fn( 'get_entity', 'Restituisce tutti i dati di un elemento (edificio/unità/scenario) dato il suo id.', array( 'id' => array( 'type' => 'integer' ) ), array( 'id' ) ),
-			$fn( 'list_media', 'Elenca le immagini della libreria media (id, titolo, alt, didascalia), opzionalmente prioritizzando quelle allegate a un post.', array( 'post_id' => array( 'type' => 'integer' ) ) ),
+			$fn( 'list_media', 'Elenca le immagini della libreria media (id, titolo, filename, alt, didascalia, date, attached), ordinate dalle più recenti e con priorità a quelle allegate al post indicato.', array( 'post_id' => array( 'type' => 'integer' ) ) ),
 			$fn( 'search_project_documents', 'Cerca informazioni nei documenti del progetto su OpenAI Storage (File Search).', array( 'query' => array( 'type' => 'string' ) ), array( 'query' ) ),
 			$fn( 'update_entity', 'Aggiorna i contenuti di un elemento. Campi opzionali: title, excerpt, content, meta (oggetto chiave→valore, es. prezzo, mq_commerciali, camere), editorial (oggetto con eyebrow, lead, manifesto[], timeline[], narrative[], tech[], gallery[], floorplan, ambient, position, hero_image e altri).', array(
 				'id'        => array( 'type' => 'integer' ),

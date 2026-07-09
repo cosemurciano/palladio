@@ -328,11 +328,11 @@ class Palladio_AI_Composer {
 			)
 		);
 
-		$instructions = __( 'Sei l’editor immobiliare del progetto. Costruisci la scheda usando SOLO fatti verificati: cerca prezzi, misure, stanze, vincoli e descrizioni nei documenti del progetto tramite file search. Non inventare dati. Per le immagini scegli ESCLUSIVAMENTE gli id presenti nella lista media fornita (non inventare id). Rispondi con un unico oggetto JSON valido conforme allo schema.', 'palladio' );
+		$instructions = __( 'Sei l’editor immobiliare del progetto. Costruisci la scheda usando SOLO fatti verificati: cerca prezzi, misure, stanze, vincoli e descrizioni nei documenti del progetto tramite file search. Non inventare dati. Per le immagini scegli ESCLUSIVAMENTE gli id presenti nella lista media fornita (non inventare id): a parità di pertinenza PREFERISCI le foto più recenti (campo "date", ordine discendente) e usa il NOME DEL FILE (campo "filename") oltre a titolo/alt/didascalia per capire il soggetto. Rispondi con un unico oggetto JSON valido conforme allo schema.', 'palladio' );
 
 		$input = sprintf(
 			/* translators: 1: tipo, 2: titolo, 3: schema json, 4: lista media json. */
-			__( "Tipo: %1\$s. Titolo attuale: %2\$s.\n\nSchema JSON richiesto:\n%3\$s\n\nMedia disponibili (usa questi id):\n%4\$s", 'palladio' ),
+			__( "Tipo: %1\$s. Titolo attuale: %2\$s.\n\nSchema JSON richiesto:\n%3\$s\n\nMedia disponibili (ordinati per data, più recenti prima; usa questi id, considera 'filename' e 'date'):\n%4\$s", 'palladio' ),
 			$post->post_type,
 			get_the_title( $post ),
 			$schema,
@@ -558,48 +558,51 @@ class Palladio_AI_Composer {
 	/**
 	 * Raccoglie il contesto dei media del sito (immagini) per la scelta AI.
 	 *
+	 * Preferenza alle foto più recenti (ordinate per data, discendente) e ai
+	 * media allegati al post; include il nome del file e la data così l'agente
+	 * può scegliere in base a recency e nome del file.
+	 *
 	 * @param int $post_id ID post.
 	 * @param int $limit   Numero massimo di media.
-	 * @return array<int,array{id:int,title:string,alt:string,caption:string}>
+	 * @return array<int,array{id:int,title:string,filename:string,alt:string,caption:string,date:string,attached:bool}>
 	 */
 	public static function media_list( $post_id, $limit = 40 ) {
-		// Priorità ai media allegati al post, poi ai più recenti.
-		$ids = get_posts(
-			array(
-				'post_type'      => 'attachment',
-				'post_mime_type' => 'image',
-				'post_status'    => 'inherit',
-				'post_parent'    => (int) $post_id,
-				'posts_per_page' => $limit,
-				'fields'         => 'ids',
-				'no_found_rows'  => true,
-			)
+		$common = array(
+			'post_type'      => 'attachment',
+			'post_mime_type' => 'image',
+			'post_status'    => 'inherit',
+			'fields'         => 'ids',
+			'orderby'        => 'date',
+			'order'          => 'DESC', // Più recenti prima.
+			'no_found_rows'  => true,
 		);
 
+		// Prima gli allegati al post (più pertinenti), già ordinati per data.
+		$attached = get_posts( array_merge( $common, array( 'post_parent' => (int) $post_id, 'posts_per_page' => $limit ) ) );
+
+		// Poi i più recenti dell'archivio, sempre per data discendente.
+		$ids = $attached;
 		if ( count( $ids ) < $limit ) {
-			$recent = get_posts(
-				array(
-					'post_type'      => 'attachment',
-					'post_mime_type' => 'image',
-					'post_status'    => 'inherit',
-					'posts_per_page' => $limit - count( $ids ),
-					'post__not_in'   => $ids ? $ids : array( 0 ),
-					'fields'         => 'ids',
-					'orderby'        => 'date',
-					'order'          => 'DESC',
-					'no_found_rows'  => true,
-				)
-			);
+			$recent = get_posts( array_merge( $common, array(
+				'posts_per_page' => $limit - count( $ids ),
+				'post__not_in'   => $ids ? $ids : array( 0 ),
+			) ) );
 			$ids = array_merge( $ids, $recent );
 		}
 
+		$attached_lookup = array_flip( $attached );
+
 		$media = array();
 		foreach ( $ids as $id ) {
+			$file = get_attached_file( $id );
 			$media[] = array(
-				'id'      => (int) $id,
-				'title'   => get_the_title( $id ),
-				'alt'     => (string) get_post_meta( $id, '_wp_attachment_image_alt', true ),
-				'caption' => wp_get_attachment_caption( $id ) ? wp_get_attachment_caption( $id ) : '',
+				'id'       => (int) $id,
+				'title'    => get_the_title( $id ),
+				'filename' => $file ? wp_basename( $file ) : '',
+				'alt'      => (string) get_post_meta( $id, '_wp_attachment_image_alt', true ),
+				'caption'  => wp_get_attachment_caption( $id ) ? wp_get_attachment_caption( $id ) : '',
+				'date'     => get_the_date( 'Y-m-d', $id ),
+				'attached' => isset( $attached_lookup[ $id ] ),
 			);
 		}
 

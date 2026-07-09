@@ -281,20 +281,33 @@ class Palladio_I18n_Languages {
 		$catalog = self::catalog();
 		$current = self::current();
 
-		$items = array();
+		$items     = array();
+		$available = 0; // Lingue diverse dalla corrente effettivamente raggiungibili.
+
 		foreach ( $active as $lang ) {
 			// Codice breve (IT/EN/DE/FR) per lo switcher; nome esteso come title.
 			$label = strtoupper( $lang );
 			$title = $catalog[ $lang ] ?? $label;
-			$url   = self::post_url( $lang );
 
 			if ( $lang === $current ) {
 				$items[] = sprintf( '<span class="palladio-lang is-current" aria-current="true" title="%2$s">%1$s</span>', esc_html( $label ), esc_attr( $title ) );
-			} elseif ( '' !== $url ) {
-				$items[] = sprintf( '<a class="palladio-lang" href="%1$s" title="%3$s">%2$s</a>', esc_url( $url ), esc_html( $label ), esc_attr( $title ) );
-			} else {
-				$items[] = sprintf( '<span class="palladio-lang is-missing" aria-disabled="true" title="%2$s">%1$s</span>', esc_html( $label ), esc_attr( $title ) );
+				continue;
 			}
+
+			// Mostra una lingua solo se esiste la pagina tradotta corrispondente:
+			// le lingue attive ma senza versione (o non attive) non vanno mostrate.
+			$url = self::post_url( $lang );
+			if ( '' === $url ) {
+				continue;
+			}
+
+			$items[]  = sprintf( '<a class="palladio-lang" href="%1$s" title="%3$s">%2$s</a>', esc_url( $url ), esc_html( $label ), esc_attr( $title ) );
+			$available++;
+		}
+
+		// Nessuna alternativa raggiungibile: niente switcher.
+		if ( $available < 1 ) {
+			return '';
 		}
 
 		return '<nav class="palladio-lang-switcher" aria-label="' . esc_attr__( 'Lingua', 'palladio' ) . '">' . implode( '', $items ) . '</nav>';
