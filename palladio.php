@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       Palladio
  * Plugin URI:        https://github.com/cosemurciano/palladio
- * Description:       Sistema di regia per la vendita frazionata di immobili: un edificio, molte unità, una campagna. Core + Presenter + Regia + i18n + AI/Composer — vedi PALLADIO-Progetto.md.
- * Version:           0.5.0
+ * Description:       Sistema di regia per la vendita frazionata di immobili: un edificio, molte unità, una campagna. Core + Presenter + Regia + i18n + AI + Agent — vedi PALLADIO-Progetto.md.
+ * Version:           0.6.0
  * Requires at least: 6.4
  * Requires PHP:      8.1
  * Author:            Cosè Murciano
@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // -----------------------------------------------------------------------------
 // Costanti del plugin.
 // -----------------------------------------------------------------------------
-define( 'PALLADIO_VERSION', '0.5.0' );
+define( 'PALLADIO_VERSION', '0.6.0' );
 define( 'PALLADIO_FILE', __FILE__ );
 define( 'PALLADIO_DIR', plugin_dir_path( __FILE__ ) );
 define( 'PALLADIO_URI', plugin_dir_url( __FILE__ ) );

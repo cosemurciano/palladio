@@ -165,6 +165,36 @@ class Palladio_AI_Settings {
 					</tr>
 				</table>
 
+				<h2><?php esc_html_e( 'Agent conversazionale', 'palladio' ); ?></h2>
+				<?php $agent = class_exists( 'Palladio_Agent_Rest' ) ? Palladio_Agent_Rest::config() : array( 'enabled' => false, 'top_k' => 5, 'rate_limit' => 20, 'disclaimer' => '', 'system' => '' ); ?>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Abilita agent', 'palladio' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="agent_enabled" value="1" <?php checked( ! empty( $agent['enabled'] ) ); ?>>
+								<?php esc_html_e( 'Mostra il widget di chat sulle schede del progetto.', 'palladio' ); ?>
+							</label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="pll-agent-topk"><?php esc_html_e( 'Chunk di contesto (top-k)', 'palladio' ); ?></label></th>
+						<td><input type="number" id="pll-agent-topk" name="agent_top_k" min="1" max="10" value="<?php echo esc_attr( (int) $agent['top_k'] ); ?>"></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="pll-agent-rl"><?php esc_html_e( 'Limite messaggi / 10 min (per IP)', 'palladio' ); ?></label></th>
+						<td><input type="number" id="pll-agent-rl" name="agent_rate_limit" min="1" max="200" value="<?php echo esc_attr( (int) $agent['rate_limit'] ); ?>"></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="pll-agent-disc"><?php esc_html_e( 'Avviso AI (trasparenza)', 'palladio' ); ?></label></th>
+						<td><input type="text" id="pll-agent-disc" name="agent_disclaimer" class="large-text" value="<?php echo esc_attr( $agent['disclaimer'] ); ?>"></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="pll-agent-sys"><?php esc_html_e( 'Istruzioni (system prompt)', 'palladio' ); ?></label></th>
+						<td><textarea id="pll-agent-sys" name="agent_system" class="large-text" rows="5"><?php echo esc_textarea( $agent['system'] ); ?></textarea></td>
+					</tr>
+				</table>
+
 				<?php submit_button( __( 'Salva impostazioni AI', 'palladio' ) ); ?>
 			</form>
 
@@ -202,6 +232,16 @@ class Palladio_AI_Settings {
 		);
 
 		update_option( 'palladio_ai', $config );
+
+		// Impostazioni agent.
+		$agent = array(
+			'enabled'    => ! empty( $_POST['agent_enabled'] ),
+			'top_k'      => isset( $_POST['agent_top_k'] ) ? max( 1, min( 10, absint( wp_unslash( $_POST['agent_top_k'] ) ) ) ) : 5,
+			'rate_limit' => isset( $_POST['agent_rate_limit'] ) ? max( 1, min( 200, absint( wp_unslash( $_POST['agent_rate_limit'] ) ) ) ) : 20,
+			'disclaimer' => isset( $_POST['agent_disclaimer'] ) ? sanitize_text_field( wp_unslash( $_POST['agent_disclaimer'] ) ) : '',
+			'system'     => isset( $_POST['agent_system'] ) ? sanitize_textarea_field( wp_unslash( $_POST['agent_system'] ) ) : '',
+		);
+		update_option( 'palladio_agent', $agent );
 
 		// Aggiorna la chiave solo se fornita (non ristampiamo mai quella salvata).
 		if ( isset( $_POST['api_key'] ) && '' !== trim( (string) wp_unslash( $_POST['api_key'] ) ) ) {

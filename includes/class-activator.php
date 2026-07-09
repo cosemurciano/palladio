@@ -35,6 +35,14 @@ class Palladio_Activator {
 			Palladio_Leads_Store::install();
 		}
 
+		// Tabelle Agent (KB + conversazioni).
+		if ( class_exists( 'Palladio_Agent_KB' ) ) {
+			Palladio_Agent_KB::install();
+		}
+		if ( class_exists( 'Palladio_Agent_Chats' ) ) {
+			Palladio_Agent_Chats::install();
+		}
+
 		self::add_capabilities();
 
 		update_option( 'palladio_version', PALLADIO_VERSION );

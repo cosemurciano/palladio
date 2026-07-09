@@ -6,7 +6,7 @@ Palladio trasforma un sito WordPress in un sistema di regia completo per la vend
 
 ## Stato
 
-**Versione 0.5.0 — Core + Presenter + Regia + i18n + AI/Composer.** Il plugin registra il modello dati, renderizza le pagine (integrandosi con [PoeTheme](https://github.com/cosemurciano/PoeTheme)), cattura i lead con dashboard e pipeline, serve i contenuti multilingua e — con una chiave OpenAI configurata — genera le schede dai dati strutturati e le relative traduzioni. Restano da implementare l'Agent conversazionale e i Feeds portali (cfr. Roadmap §7).
+**Versione 0.6.0 — Core + Presenter + Regia + i18n + AI/Composer + Agent.** Il plugin registra il modello dati, renderizza le pagine (integrandosi con [PoeTheme](https://github.com/cosemurciano/PoeTheme)), cattura i lead con dashboard e pipeline, serve i contenuti multilingua, genera schede e traduzioni via OpenAI e — con l'agent attivo — offre un concierge conversazionale (RAG + function calling) che qualifica i lead 24/7. Resta da implementare il modulo Feeds portali (cfr. Roadmap §7).
 
 ### Cosa fa già
 
@@ -43,6 +43,13 @@ Palladio trasforma un sito WordPress in un sistema di regia completo per la vend
   - `ai/class-openai.php` — client HTTP server-side (Chat Completions + Embeddings) con **retry** su errori transitori e log token/costo. La chiave non lascia mai il server.
   - `ai/class-composer.php` — genera la scheda (titolo, abstract, descrizione, meta description, FAQ) **dai dati strutturati** come bozza rivedibile (`_pll_ai_draft`), la applica su richiesta, e **traduce** titolo/riassunto/contenuto salvando nel data layer i18n con stato `generata`.
   - `admin/class-ai.php` — metabox con pulsanti *Genera scheda / Applica bozza / Genera traduzione* via **AJAX** (nonce + capability `edit_post`); nessuna chiamata AI dal browser.
+- **Agent conversazionale** (`includes/agent/`) — concierge di vendita + qualificatore lead (§5.5), richiede l'AI configurata:
+  - `agent/class-kb.php` — Knowledge Base RAG: alla pubblicazione dei CPT indicizza i contenuti in chunk con **embeddings** nella tabella `palladio_kb`; ricerca per **cosine similarity** in PHP.
+  - `agent/class-chats.php` — log conversazioni nella tabella `palladio_chats` (consultabile dalla regia).
+  - `agent/class-tools.php` — **function calling**: `get_unit_details` e `list_available_units` (prezzi/stati **sempre freschi dal DB**, mai dalla KB) e `save_lead` (con consenso, aggancio a Regia).
+  - `agent/class-rest.php` — endpoint `POST /palladio/v1/agent/chat`: retrieval top-k + chat completion con system prompt parametrico, **loop di tool**, **rate limiting** per IP e **guardrail** (risponde solo dal contesto/tool, disclaimer, consenso prima di salvare dati).
+  - `agent/class-widget.php` + `assets/js/agent-widget.js` — widget chat embeddabile che **dichiara la natura AI** (trasparenza, AI Act) e parla solo con l'endpoint REST; nessuna chiave o chiamata AI lato browser. Stili palette-aware in `assets/css/palladio-agent.css`.
+  - Impostazioni Agent (abilitazione, top-k, rate limit, disclaimer, system prompt) nella pagina **Palladio → AI**.
 
 ### Integrazione con PoeTheme
 
@@ -91,11 +98,17 @@ palladio/
     ├── i18n/                        ← MODULO LINGUE
     │   ├── class-languages.php      ← config, routing ?lang=, hreflang, switcher
     │   └── class-translator.php     ← storage e risoluzione traduzioni
-    └── ai/                          ← MODULO AI (OpenAI)
-        ├── class-crypto.php         ← cifratura chiave API (libsodium)
-        ├── class-settings.php       ← impostazioni + uso/costi
-        ├── class-openai.php         ← client HTTP (chat + embeddings)
-        └── class-composer.php       ← generazione schede + traduzioni
+    ├── ai/                          ← MODULO AI (OpenAI)
+    │   ├── class-crypto.php         ← cifratura chiave API (libsodium)
+    │   ├── class-settings.php       ← impostazioni AI + Agent + uso/costi
+    │   ├── class-openai.php         ← client HTTP (chat + tools + embeddings)
+    │   └── class-composer.php       ← generazione schede + traduzioni
+    └── agent/                       ← MODULO AGENT (RAG + chat)
+        ├── class-kb.php             ← knowledge base + ricerca semantica
+        ├── class-chats.php          ← log conversazioni
+        ├── class-tools.php          ← function calling
+        ├── class-rest.php           ← endpoint /agent/chat + orchestrazione
+        └── class-widget.php         ← widget frontend
 ```
 
 I moduli sono attivabili/disattivabili via filtro `palladio/modules`, per installazioni leggere.
