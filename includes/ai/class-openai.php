@@ -70,11 +70,13 @@ class Palladio_AI_Openai {
 			$body['tool_choice'] = $args['tool_choice'];
 		}
 
+		$timeout = isset( $args['timeout'] ) ? (int) $args['timeout'] : null;
+
 		// Compatibilità tra generazioni di modelli: se l'API rifiuta un
 		// parametro (400), adattalo e riprova (max 3 correzioni).
 		$response = null;
 		for ( $fix = 0; $fix < 3; $fix++ ) {
-			$response = self::request( '/chat/completions', $body, $key );
+			$response = self::request( '/chat/completions', $body, $key, $timeout );
 
 			if ( ! is_wp_error( $response ) ) {
 				break;
@@ -199,7 +201,8 @@ class Palladio_AI_Openai {
 			$body['text'] = array( 'format' => array( 'type' => 'json_object' ) );
 		}
 
-		$response = self::request( '/responses', $body, $key );
+		$timeout  = isset( $args['timeout'] ) ? (int) $args['timeout'] : null;
+		$response = self::request( '/responses', $body, $key, $timeout );
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
@@ -336,15 +339,16 @@ class Palladio_AI_Openai {
 	/**
 	 * Esegue la richiesta HTTP con retry su errori transitori.
 	 *
-	 * @param string $path Endpoint relativo.
-	 * @param array  $body Corpo JSON.
-	 * @param string $key  Chiave API.
+	 * @param string   $path    Endpoint relativo.
+	 * @param array    $body    Corpo JSON.
+	 * @param string   $key     Chiave API.
+	 * @param int|null $timeout Timeout in secondi; null = impostazione globale.
 	 * @return array|WP_Error Risposta decodificata.
 	 */
-	private static function request( $path, array $body, $key ) {
+	private static function request( $path, array $body, $key, $timeout = null ) {
 		$url      = self::base_url() . $path;
 		$attempts = 3;
-		$timeout  = Palladio_AI_Settings::http_timeout();
+		$timeout  = ( null !== $timeout && $timeout > 0 ) ? (int) $timeout : Palladio_AI_Settings::http_timeout();
 
 		for ( $i = 0; $i < $attempts; $i++ ) {
 			$response = wp_remote_post(

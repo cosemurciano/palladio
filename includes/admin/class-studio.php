@@ -254,7 +254,15 @@ class Palladio_Admin_Studio {
 		// Cap di sicurezza: forza una risposta finale senza altri tool.
 		$use_tools = $state['rounds'] <= 10;
 
-		$args = array( 'temperature' => 0.3, 'max_tokens' => Palladio_AI_Settings::max_tokens( 'agent' ) );
+		$args = array(
+			'temperature' => 0.3,
+			'max_tokens'  => Palladio_AI_Settings::max_tokens( 'agent' ),
+			// Ogni passo deve concludersi entro la finestra del proxy front-end
+			// (che tronca la risposta al browser con "Content-Length exceeds
+			// body"): limita la singola chiamata così PHP restituisce sempre
+			// un JSON valido, anche in caso di timeout.
+			'timeout'     => $this->step_timeout(),
+		);
 		if ( $use_tools ) {
 			$args['tools'] = $this->tool_definitions();
 		}
@@ -285,7 +293,7 @@ class Palladio_Admin_Studio {
 			$targs  = json_decode( $call['function']['arguments'] ?? '{}', true );
 			$targs  = is_array( $targs ) ? $targs : array();
 
-			$output = $this->run_tool( $name, $targs );
+			$output = $this->run_tool( $name, $targs, $state );
 
 			$state['messages'][] = array(
 				'role'         => 'tool',
@@ -302,6 +310,20 @@ class Palladio_Admin_Studio {
 	}
 
 	/**
+	 * Timeout (secondi) per la singola chiamata OpenAI di un passo.
+	 *
+	 * Deve restare sotto la finestra del proxy front-end (~60s) affinché PHP
+	 * possa sempre restituire un JSON valido invece di far troncare la
+	 * risposta al browser.
+	 *
+	 * @return int
+	 */
+	private function step_timeout() {
+		$configured = class_exists( 'Palladio_AI_Settings' ) ? (int) Palladio_AI_Settings::http_timeout() : 45;
+		return max( 20, min( 45, $configured ) );
+	}
+
+	/**
 	 * System prompt dell'agente.
 	 *
 	 * @param int $focus Post a fuoco.
@@ -312,7 +334,7 @@ class Palladio_Admin_Studio {
 
 Regole:
 - Inizia SEMPRE chiamando get_structure per conoscere edifici, unità e scenari esistenti.
-- Per i fatti (prezzi, misure, stanze, vincoli, descrizioni) usa search_project_documents (File Search sui documenti del progetto). NON inventare dati.
+- Per i fatti (prezzi, misure, stanze, vincoli, descrizioni) usa search_project_documents (File Search sui documenti del progetto). NON inventare dati. Interroga lo Storage con PARSIMONIA: poche ricerche mirate, non una raffica di varianti. Se un tool ti risponde con "empty" o dice che non ci sono documenti/risultati, NON riprovare la ricerca in questo turno: procedi con i dati già disponibili (get_structure, get_entity, list_media) o chiedi le informazioni all’utente.
 - Per le immagini usa SOLO gli id restituiti da list_media (non inventare id): a parità di pertinenza PREFERISCI le foto più recenti (campo "date", ordinate dalla più recente) e usa anche il NOME DEL FILE (campo "filename"), oltre a titolo/alt/didascalia, per capire il soggetto.
 - Scrivi i contenuti con update_entity: puoi impostare title, excerpt, content, i meta (prezzo, mq, camere…) e i campi editoriali (eyebrow, lead, manifesto, timeline, narrative, tech, gallery, floorplan, ambient, position). Gli aggiornamenti sono parziali: invii solo i campi che vuoi cambiare.
 - Puoi creare nuovi edifici (create_edificio), unità (create_unit, collegate a un edificio) o scenari (create_scenario) se richiesto.
@@ -382,11 +404,12 @@ Regole:
 	/**
 	 * Esegue un tool.
 	 *
-	 * @param string $name Nome tool.
-	 * @param array  $args Argomenti.
+	 * @param string $name  Nome tool.
+	 * @param array  $args  Argomenti.
+	 * @param array  $state Stato del turno (per riferimento, per la cache).
 	 * @return array
 	 */
-	private function run_tool( $name, $args ) {
+	private function run_tool( $name, $args, &$state = array() ) {
 		// Barriera modalità progettazione: nessuna scrittura senza consenso.
 		if ( ! $this->apply && in_array( $name, $this->write_tools, true ) ) {
 			return array(
@@ -404,7 +427,7 @@ Regole:
 			case 'list_media':
 				return array( 'media' => Palladio_AI_Composer::media_list( absint( $args['post_id'] ?? 0 ) ) );
 			case 'search_project_documents':
-				return $this->tool_search( (string) ( $args['query'] ?? '' ) );
+				return $this->tool_search( (string) ( $args['query'] ?? '' ), $state );
 			case 'update_entity':
 				return $this->tool_update( $args );
 			case 'create_edificio':
@@ -525,25 +548,63 @@ Regole:
 	 * Tool: File Search sui documenti su Storage.
 	 *
 	 * @param string $query Domanda.
+	 * @param array  $state Stato del turno (per riferimento, per la cache).
 	 * @return array
 	 */
-	private function tool_search( $query ) {
+	private function tool_search( $query, &$state = array() ) {
 		$vs = Palladio_AI_Settings::vector_store();
 		if ( '' === $vs ) {
-			return array( 'note' => __( 'Nessun vector store configurato in Palladio → AI.', 'palladio' ) );
+			return array(
+				'note'  => __( 'Nessun documento su Storage: non ci sono documenti da consultare. Non riprovare la ricerca; procedi con i dati già disponibili o chiedi all’utente.', 'palladio' ),
+				'empty' => true,
+			);
+		}
+
+		// Cache per turno: evita di interrogare ripetutamente lo Storage con la
+		// stessa domanda (chiamate lente e costose alla Responses API).
+		if ( ! isset( $state['searches'] ) || ! is_array( $state['searches'] ) ) {
+			$state['searches'] = array();
+		}
+		$ckey = md5( strtolower( trim( $query ) ) );
+		if ( isset( $state['searches'][ $ckey ] ) ) {
+			return array( 'result' => $state['searches'][ $ckey ], 'cached' => true );
+		}
+		// Se una precedente ricerca nel turno non ha trovato nulla, evita di
+		// martellare lo Storage con altre varianti.
+		if ( ! empty( $state['storage_empty'] ) ) {
+			return array(
+				'note'  => __( 'Ricerche precedenti in questo turno non hanno prodotto risultati utili dallo Storage. Non insistere: procedi con i dati disponibili o chiedi all’utente.', 'palladio' ),
+				'empty' => true,
+			);
 		}
 
 		$res = Palladio_AI_Openai::responses(
-			__( 'Rispondi solo con le informazioni presenti nei documenti. Cita i valori esatti (prezzi, misure, date).', 'palladio' ),
+			__( 'Rispondi solo con le informazioni presenti nei documenti. Cita i valori esatti (prezzi, misure, date). Se i documenti non contengono nulla di pertinente rispondi esattamente con "NESSUN_RISULTATO".', 'palladio' ),
 			$query,
-			array( 'vector_store_ids' => array( $vs ), 'max_tokens' => Palladio_AI_Settings::max_tokens( 'agent' ) )
+			array(
+				'vector_store_ids' => array( $vs ),
+				// La sintesi di una ricerca non richiede molti token: limitali per
+				// mantenere veloce il singolo passo.
+				'max_tokens'       => min( 1200, Palladio_AI_Settings::max_tokens( 'agent' ) ),
+				'timeout'          => $this->step_timeout(),
+			)
 		);
 
 		if ( is_wp_error( $res ) ) {
 			return array( 'error' => $res->get_error_message() );
 		}
 
-		return array( 'result' => $res['text'] );
+		$text = trim( (string) $res['text'] );
+		if ( '' === $text || false !== strpos( $text, 'NESSUN_RISULTATO' ) ) {
+			$state['storage_empty'] = true;
+			return array(
+				'note'  => __( 'Nessun risultato pertinente nei documenti su Storage per questa ricerca. Non riprovare con altre varianti in questo turno.', 'palladio' ),
+				'empty' => true,
+			);
+		}
+
+		$state['searches'][ $ckey ] = $text;
+		return array( 'result' => $text );
 	}
 
 	/**
