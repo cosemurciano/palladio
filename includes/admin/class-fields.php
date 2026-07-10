@@ -115,6 +115,24 @@ class Palladio_Admin_Fields {
 			echo '<p class="palladio-home-flag"><label><input type="checkbox" name="palladio_is_home" value="1" ' . checked( $is_home, true, false ) . '> <strong>' . esc_html__( 'Usa questo edificio come homepage del sito', 'palladio' ) . '</strong></label><br><span class="description">' . esc_html__( 'La landing dell’edificio verrà mostrata alla radice del sito, distinta dalle schede delle singole unità.', 'palladio' ) . '</span></p><hr>';
 		}
 
+		if ( 'pll_unita' === $post->post_type ) {
+			$buildings = get_posts( array(
+				'post_type'      => 'pll_edificio',
+				'post_status'    => array( 'publish', 'draft', 'pending', 'future', 'private' ),
+				'posts_per_page' => 100,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+				'no_found_rows'  => true,
+			) );
+			echo '<p class="palladio-parent-building"><label><strong>' . esc_html__( 'Edificio di appartenenza', 'palladio' ) . '</strong><br>';
+			echo '<select name="palladio_parent_building" class="widefat">';
+			echo '<option value="0">' . esc_html__( '— Nessuno —', 'palladio' ) . '</option>';
+			foreach ( $buildings as $building ) {
+				echo '<option value="' . esc_attr( $building->ID ) . '" ' . selected( (int) $post->post_parent, $building->ID, false ) . '>' . esc_html( $building->post_title ) . '</option>';
+			}
+			echo '</select></label><span class="description">' . esc_html__( 'L’unità compare nell’elenco “residenze” di questo edificio.', 'palladio' ) . '</span></p><hr>';
+		}
+
 		echo '<div class="palladio-fields-grid">';
 		foreach ( self::fields( $post->post_type ) as $key => $conf ) {
 			$value = get_post_meta( $post->ID, '_pll_' . $key, true );
@@ -209,6 +227,17 @@ class Palladio_Admin_Fields {
 					$value = sanitize_text_field( $value );
 			}
 			update_post_meta( $post_id, $meta, $value );
+		}
+
+		// Edificio di appartenenza (solo unità). Aggiornamento diretto in DB per
+		// non rientrare nell'hook save_post con wp_update_post.
+		if ( 'pll_unita' === $post->post_type && isset( $_POST['palladio_parent_building'] ) ) {
+			$parent = absint( wp_unslash( $_POST['palladio_parent_building'] ) );
+			if ( 0 === $parent || 'pll_edificio' === get_post_type( $parent ) ) {
+				global $wpdb;
+				$wpdb->update( $wpdb->posts, array( 'post_parent' => $parent ), array( 'ID' => $post_id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+				clean_post_cache( $post_id );
+			}
 		}
 
 		// Flag homepage (solo edificio).

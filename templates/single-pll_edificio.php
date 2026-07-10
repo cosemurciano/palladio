@@ -161,38 +161,14 @@ while ( have_posts() ) :
 					</p>
 				<?php endif; ?>
 
-				<div class="pll-e-sisters" data-palladio-units>
+				<div class="pll-e-sisters" id="palladio-units-grid" data-palladio-units>
 					<?php
 					while ( $units->have_posts() ) :
 						$units->the_post();
-						$uid     = get_the_ID();
-						$ustat   = palladio_get_unit_status( $uid );
-						$uthumb  = get_the_post_thumbnail_url( $uid, 'large' );
-						$ueye    = palladio_unit_eyebrow( $uid );
-						$uexc    = has_excerpt( $uid ) ? get_the_excerpt( $uid ) : '';
-						$uprice  = (float) palladio_meta( $uid, 'prezzo' );
-						$upiano  = get_the_terms( $uid, 'pll_piano' );
-						$upiano  = ( ! empty( $upiano ) && ! is_wp_error( $upiano ) ) ? $upiano[0]->slug : '';
-						$uext    = ( (float) palladio_meta( $uid, 'terrazza_mq' ) > 0 || (float) palladio_meta( $uid, 'giardino_mq' ) > 0 ) ? '1' : '0';
-						$ushot   = wp_get_attachment_caption( get_post_thumbnail_id( $uid ) );
-						?>
-						<a class="pll-e-sister pll-e-unit-card" href="<?php the_permalink(); ?>"
-							data-piano="<?php echo esc_attr( $upiano ); ?>"
-							data-prezzo="<?php echo esc_attr( $uprice ); ?>"
-							data-esterno="<?php echo esc_attr( $uext ); ?>">
-							<span class="pll-e-sister__media">
-								<?php if ( $uthumb ) : ?><img src="<?php echo esc_url( $uthumb ); ?>" alt="" loading="lazy"><?php endif; ?>
-								<?php if ( $ustat['label'] ) : ?><span class="palladio-badge palladio-badge--<?php echo esc_attr( $ustat['slug'] ); ?>"><?php echo esc_html( $ustat['label'] ); ?></span><?php endif; ?>
-								<?php if ( $ushot ) : ?><span class="pll-e-unit-card__shot"><?php echo esc_html( $ushot ); ?></span><?php endif; ?>
-							</span>
-							<span class="pll-e-sister__body">
-								<?php if ( $ueye ) : ?><span class="pll-e-sister__eyebrow"><?php echo esc_html( $ueye ); ?></span><?php endif; ?>
-								<span class="pll-e-sister__title"><?php echo esc_html( get_the_title( $uid ) ); ?></span>
-								<?php if ( $uexc ) : ?><span class="pll-e-sister__desc"><?php echo esc_html( wp_trim_words( $uexc, 26 ) ); ?></span><?php endif; ?>
-								<span class="pll-e-sister__price"><?php echo esc_html( palladio_format_price( $uprice ) ); ?></span>
-							</span>
-						</a>
-					<?php endwhile; wp_reset_postdata(); ?>
+						palladio_render_unit_card_editorial( get_the_ID() );
+					endwhile;
+					wp_reset_postdata();
+					?>
 				</div>
 			</section>
 		<?php endif; ?>

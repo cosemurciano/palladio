@@ -26,6 +26,22 @@ class Palladio_Core_CPT {
 	public function register() {
 		add_action( 'init', array( __CLASS__, 'register_post_types' ), 5 );
 		add_action( 'init', array( __CLASS__, 'register_taxonomies' ), 6 );
+		add_action( 'init', array( __CLASS__, 'maybe_flush_rewrites' ), 99 );
+	}
+
+	/**
+	 * Rigenera le rewrite rules quando cambia la versione del plugin.
+	 *
+	 * Le modifiche a slug/gerarchie dei CPT diventano così effettive senza
+	 * che l'utente debba risalvare i permalink a mano.
+	 *
+	 * @return void
+	 */
+	public static function maybe_flush_rewrites() {
+		if ( get_option( 'palladio_rewrite_version' ) !== PALLADIO_VERSION ) {
+			flush_rewrite_rules( false );
+			update_option( 'palladio_rewrite_version', PALLADIO_VERSION );
+		}
 	}
 
 	/**
@@ -69,10 +85,16 @@ class Palladio_Core_CPT {
 					'edit_item'     => __( 'Modifica unità', 'palladio' ),
 				),
 				'public'       => true,
-				'has_archive'  => false,
+				'has_archive'  => true, // Elenco unità su /unita/.
 				'show_in_menu' => 'edit.php?post_type=pll_edificio',
 				'supports'     => array( 'title', 'editor', 'thumbnail', 'excerpt', 'custom-fields', 'page-attributes' ),
-				'hierarchical' => true, // Abilita post_parent verso l'edificio.
+				// NON gerarchico: il genitore (post_parent) è un pll_edificio,
+				// cioè un ALTRO post type. Con hierarchical=true WordPress
+				// costruiva permalink /unita/{edificio}/{unita}/ che non
+				// risolveva mai (il segmento genitore non esiste tra le unità)
+				// → 404 su tutte le schede. post_parent resta comunque usato
+				// come collegamento logico all'edificio.
+				'hierarchical' => false,
 				'rewrite'      => array( 'slug' => 'unita' ),
 				'show_in_rest' => true,
 			)
