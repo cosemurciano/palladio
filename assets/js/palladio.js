@@ -125,12 +125,73 @@
 		Array.prototype.forEach.call( items, function ( el ) { obs.observe( el ); } );
 	}
 
+	// -------------------------------------------------------------------------
+	// Timeline / scroll-telling: media sticky con crossfade, i capitoli
+	// avanzano con lo scroll; gli anni sono cliccabili. Senza JS (o senza
+	// IntersectionObserver) la sezione resta figura + testo impilati.
+	// -------------------------------------------------------------------------
+	function initScrolly( section ) {
+		var frames = section.querySelectorAll( '[data-scrolly-frame]' );
+		var chapters = section.querySelectorAll( '[data-scrolly-chapter]' );
+		var links = section.querySelectorAll( '[data-scrolly-goto]' );
+
+		if ( ! chapters.length || ! ( 'IntersectionObserver' in window ) ) {
+			return;
+		}
+		section.classList.add( 'is-scrolly' );
+
+		function activate( index ) {
+			Array.prototype.forEach.call( frames, function ( f ) {
+				f.classList.toggle( 'is-active', parseInt( f.getAttribute( 'data-scrolly-frame' ), 10 ) === index );
+			} );
+			Array.prototype.forEach.call( links, function ( a ) {
+				var on = parseInt( a.getAttribute( 'data-scrolly-goto' ), 10 ) === index;
+				a.classList.toggle( 'is-active', on );
+				if ( on ) {
+					a.setAttribute( 'aria-current', 'true' );
+				} else {
+					a.removeAttribute( 'aria-current' );
+				}
+			} );
+		}
+
+		// Scroll automatico: il capitolo al centro del viewport è quello attivo.
+		var observer = new IntersectionObserver( function ( entries ) {
+			entries.forEach( function ( entry ) {
+				if ( entry.isIntersecting ) {
+					activate( parseInt( entry.target.getAttribute( 'data-scrolly-chapter' ), 10 ) );
+				}
+			} );
+		}, { rootMargin: '-45% 0px -45% 0px', threshold: 0 } );
+
+		Array.prototype.forEach.call( chapters, function ( ch ) {
+			observer.observe( ch );
+		} );
+
+		// Click sugli anni: scorrimento morbido al capitolo.
+		var smooth = ! ( window.matchMedia && window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches );
+		section.addEventListener( 'click', function ( event ) {
+			var link = event.target.closest( '[data-scrolly-goto]' );
+			if ( ! link ) {
+				return;
+			}
+			var target = section.querySelector( '[data-scrolly-chapter="' + link.getAttribute( 'data-scrolly-goto' ) + '"]' );
+			if ( target ) {
+				event.preventDefault();
+				target.scrollIntoView( { behavior: smooth ? 'smooth' : 'auto', block: 'start' } );
+			}
+		} );
+	}
+
 	document.addEventListener( 'DOMContentLoaded', function () {
 		var groups = document.querySelectorAll( '[data-palladio-filters]' );
 		Array.prototype.forEach.call( groups, initGroup );
 
 		var unitFilters = document.querySelectorAll( '[data-palladio-unit-filters]' );
 		Array.prototype.forEach.call( unitFilters, initUnitFilters );
+
+		var scrolly = document.querySelectorAll( '[data-palladio-scrolly]' );
+		Array.prototype.forEach.call( scrolly, initScrolly );
 
 		initReveal();
 	} );
