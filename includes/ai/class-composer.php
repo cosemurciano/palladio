@@ -406,7 +406,10 @@ class Palladio_AI_Composer {
 				if ( is_numeric( $value ) ) {
 					update_post_meta( $post_id, '_pll_' . $key, (float) $value );
 				} else {
-					update_post_meta( $post_id, '_pll_' . $key, sanitize_text_field( (string) $value ) );
+					$value = (string) $value;
+					// I campi multiriga (es. vincoli_note) conservano gli a-capo.
+					$value = ( false !== strpos( $value, "\n" ) ) ? sanitize_textarea_field( $value ) : sanitize_text_field( $value );
+					update_post_meta( $post_id, '_pll_' . $key, $value );
 				}
 			}
 		}
