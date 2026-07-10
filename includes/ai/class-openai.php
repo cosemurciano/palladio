@@ -337,6 +337,75 @@ class Palladio_AI_Openai {
 	}
 
 	/**
+	 * Recupera lo stato di un vector store e il conteggio dei file indicizzati.
+	 *
+	 * Utile come diagnostica: verifica che l'ID sia valido, che i documenti
+	 * siano stati indicizzati (status "completed") e non ancora in elaborazione
+	 * o falliti.
+	 *
+	 * @param string $id Vector store id.
+	 * @return array|WP_Error { id, name, status, file_counts }.
+	 */
+	public static function vector_store_info( $id ) {
+		$key = Palladio_AI_Settings::api_key();
+		if ( '' === $key ) {
+			return new WP_Error( 'palladio_ai_no_key', __( 'Chiave API OpenAI non configurata.', 'palladio' ) );
+		}
+		$id = trim( (string) $id );
+		if ( '' === $id ) {
+			return new WP_Error( 'palladio_ai_no_vs', __( 'Nessun vector store configurato.', 'palladio' ) );
+		}
+
+		return self::get_json( '/vector_stores/' . rawurlencode( $id ) );
+	}
+
+	/**
+	 * GET JSON verso l'API OpenAI.
+	 *
+	 * @param string $path Endpoint relativo.
+	 * @return array|WP_Error Risposta decodificata.
+	 */
+	private static function get_json( $path ) {
+		$key = Palladio_AI_Settings::api_key();
+		if ( '' === $key ) {
+			return new WP_Error( 'palladio_ai_no_key', __( 'Chiave API OpenAI non configurata.', 'palladio' ) );
+		}
+
+		$response = wp_remote_get(
+			self::base_url() . $path,
+			array(
+				'timeout' => min( 45, Palladio_AI_Settings::http_timeout() ),
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $key,
+					'Content-Type'  => 'application/json',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( $code >= 200 && $code < 300 && is_array( $data ) ) {
+			return $data;
+		}
+
+		$message = is_array( $data ) && isset( $data['error']['message'] ) ? $data['error']['message'] : '';
+
+		return new WP_Error(
+			'palladio_ai_http_' . $code,
+			$message ? $message : sprintf(
+				/* translators: %d: codice HTTP. */
+				__( 'Errore OpenAI (HTTP %d).', 'palladio' ),
+				$code
+			)
+		);
+	}
+
+	/**
 	 * Esegue la richiesta HTTP con retry su errori transitori.
 	 *
 	 * @param string   $path    Endpoint relativo.
