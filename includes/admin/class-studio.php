@@ -49,7 +49,7 @@ class Palladio_Admin_Studio {
 	 *
 	 * @var string[]
 	 */
-	private $write_tools = array( 'create_edificio', 'create_unit', 'create_scenario', 'update_entity' );
+	private $write_tools = array( 'create_edificio', 'create_unit', 'create_scenario', 'update_entity', 'set_status', 'delete_entity', 'set_home_building' );
 
 	/**
 	 * Registra menu, asset e AJAX.
@@ -459,12 +459,18 @@ Regole:
 - Inizia SEMPRE chiamando get_structure per conoscere edifici, unità e scenari esistenti.
 - Per i fatti (prezzi, misure, stanze, vincoli, descrizioni) usa search_project_documents (File Search sui documenti del progetto). NON inventare dati. Interroga lo Storage con PARSIMONIA: poche ricerche mirate, non una raffica di varianti. Se un tool ti risponde con "empty" o dice che non ci sono documenti/risultati, NON riprovare la ricerca in questo turno: procedi con i dati già disponibili (get_structure, get_entity, list_media) o chiedi le informazioni all’utente.
 - Per le immagini usa SOLO gli id restituiti da list_media (non inventare id): a parità di pertinenza PREFERISCI le foto più recenti (campo "date", ordinate dalla più recente) e usa anche il NOME DEL FILE (campo "filename"), oltre a titolo/alt/didascalia, per capire il soggetto.
-- Scrivi i contenuti con update_entity: puoi impostare title, excerpt, content, i meta (prezzo, mq, camere…) e i campi editoriali (eyebrow, lead, manifesto, timeline, narrative, tech, gallery, floorplan, ambient, position). Gli aggiornamenti sono parziali: invii solo i campi che vuoi cambiare.
+- Scrivi i contenuti con update_entity: title, excerpt, content, meta, campi editoriali, tassonomie (tipologia, piano, stato) e — per le unità — building_id per spostarle sotto un altro edificio. Gli aggiornamenti sono parziali: invii solo i campi che vuoi cambiare. Lo SCHEMA COMPLETO dei campi disponibili è riportato in fondo: conoscilo e usalo per compilare OGNI campo pertinente, non solo i principali.
 - Puoi creare nuovi edifici (create_edificio), unità (create_unit, collegate a un edificio) o scenari (create_scenario) se richiesto.
+- Puoi pubblicare o riportare in bozza con set_status, e cestinare con delete_entity. ELIMINA (cestina) un elemento SOLO su richiesta esplicita dell’utente in questo turno, mai di tua iniziativa; il cestino è recuperabile. Prima di pubblicare verifica che i campi essenziali siano compilati.
+- Puoi impostare un edificio come homepage del sito con set_home_building (id dell’edificio; 0 per rimuovere).
+- Usa audit_content per la visione d’insieme: elenca per ogni edificio/unità/scenario i campi ancora vuoti, così puoi proporre un piano di completamento mirato.
+- Usa list_terms per conoscere i termini esistenti di tipologia, piano e stato prima di assegnarli.
 - Prima di modifiche massicce, riepiloga brevemente cosa stai per fare. Al termine, riassumi cosa hai aggiornato.
 - MODALITÀ PROGETTAZIONE: puoi sempre leggere e progettare. Se un tool di scrittura restituisce "planning_mode", NON riprovare a scrivere: proponi invece un piano chiaro (quali edifici/unità/scenari creerai e quali campi popolerai) e invita l’utente ad attivare “Applica modifiche” per dare il via. Procedi con le scritture solo quando l’utente lo conferma.
 - MEMORIA DI PROGETTO: hai una memoria persistente tra le sessioni. Quando con l’utente prendete decisioni di progettazione importanti (naming scelti, struttura concordata, piani approvati, preferenze espresse), salvale con save_memory: scrivi appunti sintetici e completi (il nuovo testo SOSTITUISCE il precedente, quindi includi anche ciò che va conservato). Così potrai riprendere il discorso in una sessione futura.
 - Rispondi in italiano, in modo conciso.', 'palladio' );
+
+		$prompt .= "\n\n" . $this->fields_schema_text();
 
 		$memory = self::memory();
 		if ( '' !== $memory ) {
@@ -481,6 +487,39 @@ Regole:
 		}
 
 		return $prompt;
+	}
+
+	/**
+	 * Schema testuale completo dei campi di edificio, unità e scenario,
+	 * generato dalla stessa definizione usata dai metabox (fonte unica):
+	 * l'agente conosce così ogni campo compilabile.
+	 *
+	 * @return string
+	 */
+	private function fields_schema_text() {
+		$lines   = array( __( 'SCHEMA COMPLETO DEI CAMPI (chiavi per update_entity):', 'palladio' ) );
+		$labels  = array(
+			'pll_edificio' => 'EDIFICIO',
+			'pll_unita'    => 'UNITÀ',
+		);
+
+		if ( class_exists( 'Palladio_Admin_Fields' ) ) {
+			foreach ( $labels as $pt => $label ) {
+				$parts = array();
+				foreach ( Palladio_Admin_Fields::fields( $pt ) as $key => $conf ) {
+					$parts[] = $key . ' (' . $conf['type'] . ': ' . $conf['label'] . ')';
+				}
+				$lines[] = $label . ' — meta: ' . implode( '; ', $parts ) . '.';
+			}
+		}
+
+		$lines[] = 'SCENARIO — meta: scenario_tipo ("bundle"=unità accorpate | "split"=frazionamento); scenario_unita (JSON array di ID unità coinvolte, es. "[12,15,18]"); scenario_prezzo (number: prezzo del pacchetto EUR); scenario_stato ("disponibile" | "non_disponibile").';
+		$lines[] = 'EDITORIAL comuni (update_entity.editorial): eyebrow (occhiello); lead (paragrafo di apertura); walkthrough_url; hero_image (id media, diventa immagine in evidenza); narrative[] {kicker,heading,body,image,caption,layout:"left"|"right"}; tech[] {label,value} (scheda tecnica); gallery[] {image,caption,ratio:"3:2"|"4:3"|"4:5"|"1:1"|"16:9"}.';
+		$lines[] = 'EDITORIAL solo unità: chapters[] {time,label} (capitoli walkthrough); floorplan {image,caption,notes} (planimetria); position {heading,text} (posizione nell’edificio).';
+		$lines[] = 'EDITORIAL solo edificio: manifesto[] {text,emphasis} (frasi del manifesto, emphasis = parola da evidenziare); timeline[] {kicker,year,heading,body,image} (storia dell’edificio); ambient {image,caption} (foto d’ambiente); gallery_url; gallery_count; units_eyebrow; units_heading; units_filters (bool: mostra filtri unità).';
+		$lines[] = 'TASSONOMIE (update_entity.taxonomies): tipologia (es. appartamento, locale commerciale, deposito); piano (es. Piano terra, Piano nobile); stato (slug tipici: disponibile, riservata, in_trattativa, venduta, non_in_vendita — verifica con list_terms). Per le unità: building_id sposta l’unità sotto un altro edificio.';
+
+		return implode( "\n", $lines );
 	}
 
 	/**
@@ -516,17 +555,24 @@ Regole:
 			$fn( 'get_entity', 'Restituisce tutti i dati di un elemento (edificio/unità/scenario) dato il suo id.', array( 'id' => array( 'type' => 'integer' ) ), array( 'id' ) ),
 			$fn( 'list_media', 'Elenca le immagini della libreria media (id, titolo, filename, alt, didascalia, date, attached), ordinate dalle più recenti e con priorità a quelle allegate al post indicato.', array( 'post_id' => array( 'type' => 'integer' ) ) ),
 			$fn( 'search_project_documents', 'Cerca informazioni nei documenti del progetto su OpenAI Storage (File Search).', array( 'query' => array( 'type' => 'string' ) ), array( 'query' ) ),
-			$fn( 'update_entity', 'Aggiorna i contenuti di un elemento. Campi opzionali: title, excerpt, content, meta (oggetto chiave→valore, es. prezzo, mq_commerciali, camere), editorial (oggetto con eyebrow, lead, manifesto[], timeline[], narrative[], tech[], gallery[], floorplan, ambient, position, hero_image e altri).', array(
-				'id'        => array( 'type' => 'integer' ),
-				'title'     => array( 'type' => 'string' ),
-				'excerpt'   => array( 'type' => 'string' ),
-				'content'   => array( 'type' => 'string' ),
-				'meta'      => array( 'type' => 'object' ),
-				'editorial' => array( 'type' => 'object' ),
+			$fn( 'update_entity', 'Aggiorna i contenuti di un elemento. Campi opzionali: title, excerpt, content, meta (oggetto chiave→valore — vedi SCHEMA nel prompt), editorial (oggetto — vedi SCHEMA), taxonomies (oggetto {tipologia, piano, stato}: stringa o array di nomi/slug), building_id (solo unità: sposta sotto un altro edificio). Aggiornamenti parziali: invia solo ciò che cambi.', array(
+				'id'          => array( 'type' => 'integer' ),
+				'title'       => array( 'type' => 'string' ),
+				'excerpt'     => array( 'type' => 'string' ),
+				'content'     => array( 'type' => 'string' ),
+				'meta'        => array( 'type' => 'object' ),
+				'editorial'   => array( 'type' => 'object' ),
+				'taxonomies'  => array( 'type' => 'object' ),
+				'building_id' => array( 'type' => 'integer' ),
 			), array( 'id' ) ),
 			$fn( 'create_edificio', 'Crea un nuovo edificio (bozza).', array( 'title' => array( 'type' => 'string' ) ), array( 'title' ) ),
 			$fn( 'create_unit', 'Crea una nuova unità (bozza) collegata a un edificio.', array( 'building_id' => array( 'type' => 'integer' ), 'title' => array( 'type' => 'string' ) ), array( 'building_id', 'title' ) ),
 			$fn( 'create_scenario', 'Crea un nuovo scenario (bozza).', array( 'title' => array( 'type' => 'string' ) ), array( 'title' ) ),
+			$fn( 'set_status', 'Cambia lo stato di pubblicazione di un elemento: "publish" (pubblica), "draft" (bozza) o "pending" (in revisione).', array( 'id' => array( 'type' => 'integer' ), 'status' => array( 'type' => 'string', 'enum' => array( 'publish', 'draft', 'pending' ) ) ), array( 'id', 'status' ) ),
+			$fn( 'delete_entity', 'Sposta un elemento nel cestino (recuperabile). Usalo SOLO su richiesta esplicita dell’utente.', array( 'id' => array( 'type' => 'integer' ) ), array( 'id' ) ),
+			$fn( 'set_home_building', 'Imposta un edificio come homepage del sito (la sua landing è servita alla radice). Passa building_id=0 per rimuovere l’impostazione.', array( 'building_id' => array( 'type' => 'integer' ) ), array( 'building_id' ) ),
+			$fn( 'list_terms', 'Elenca i termini esistenti di una tassonomia: "tipologia", "piano" o "stato".', array( 'taxonomy' => array( 'type' => 'string', 'enum' => array( 'tipologia', 'piano', 'stato' ) ) ), array( 'taxonomy' ) ),
+			$fn( 'audit_content', 'Visione d’insieme: per ogni edificio, unità e scenario elenca i campi importanti ancora vuoti (meta, editoriale, immagini, tassonomie). Utile per proporre un piano di completamento.', array() ),
 			$fn( 'save_memory', 'Salva la memoria di progetto persistente (decisioni, naming, piani concordati con l’utente). Il testo SOSTITUISCE la memoria precedente: includi tutto ciò che va ricordato, in forma sintetica.', array( 'notes' => array( 'type' => 'string' ) ), array( 'notes' ) ),
 		);
 	}
@@ -566,6 +612,16 @@ Regole:
 				return $this->tool_create( 'pll_unita', $args );
 			case 'create_scenario':
 				return $this->tool_create( 'pll_scenario', $args );
+			case 'set_status':
+				return $this->tool_set_status( absint( $args['id'] ?? 0 ), (string) ( $args['status'] ?? '' ) );
+			case 'delete_entity':
+				return $this->tool_delete( absint( $args['id'] ?? 0 ) );
+			case 'set_home_building':
+				return $this->tool_set_home( absint( $args['building_id'] ?? 0 ) );
+			case 'list_terms':
+				return $this->tool_list_terms( (string) ( $args['taxonomy'] ?? '' ) );
+			case 'audit_content':
+				return $this->tool_audit();
 			case 'save_memory':
 				return $this->tool_save_memory( (string) ( $args['notes'] ?? '' ) );
 			default:
@@ -687,16 +743,31 @@ Regole:
 			}
 		}
 
-		return array(
-			'id'        => $id,
-			'post_type' => $post->post_type,
-			'title'     => $post->post_title,
-			'excerpt'   => $post->post_excerpt,
-			'content'   => $post->post_content,
-			'status'    => $post->post_status,
-			'meta'      => $meta,
-			'editorial' => function_exists( 'palladio_editorial' ) ? palladio_editorial( $id ) : array(),
+		$taxonomies = array();
+		foreach ( array( 'tipologia' => 'pll_tipologia', 'piano' => 'pll_piano', 'stato' => 'pll_stato' ) as $short => $taxonomy ) {
+			$terms = get_the_terms( $id, $taxonomy );
+			$taxonomies[ $short ] = ( $terms && ! is_wp_error( $terms ) ) ? wp_list_pluck( $terms, 'slug' ) : array();
+		}
+
+		$out = array(
+			'id'             => $id,
+			'post_type'      => $post->post_type,
+			'title'          => $post->post_title,
+			'excerpt'        => $post->post_excerpt,
+			'content'        => $post->post_content,
+			'status'         => $post->post_status,
+			'parent'         => (int) $post->post_parent,
+			'featured_image' => (int) get_post_thumbnail_id( $id ),
+			'taxonomies'     => $taxonomies,
+			'meta'           => $meta,
+			'editorial'      => function_exists( 'palladio_editorial' ) ? palladio_editorial( $id ) : array(),
 		);
+
+		if ( 'pll_edificio' === $post->post_type ) {
+			$out['is_home'] = ( (int) get_option( 'palladio_home_building', 0 ) === $id );
+		}
+
+		return $out;
 	}
 
 	/**
@@ -792,11 +863,68 @@ Regole:
 			$data['editorial'] = $args['editorial'];
 		}
 
-		if ( ! $data ) {
+		// Tassonomie: nomi o slug, creati se mancanti (tranne "stato", che deve
+		// esistere: gli stati hanno semantica nel sistema).
+		$tax_result = array();
+		if ( isset( $args['taxonomies'] ) && is_array( $args['taxonomies'] ) ) {
+			$map = array( 'tipologia' => 'pll_tipologia', 'piano' => 'pll_piano', 'stato' => 'pll_stato' );
+			foreach ( $map as $short => $taxonomy ) {
+				if ( ! isset( $args['taxonomies'][ $short ] ) ) {
+					continue;
+				}
+				$values   = array_filter( array_map( 'sanitize_text_field', array_map( 'strval', (array) $args['taxonomies'][ $short ] ) ) );
+				$term_ids = array();
+				foreach ( $values as $value ) {
+					$term = get_term_by( 'slug', sanitize_title( $value ), $taxonomy );
+					if ( ! $term ) {
+						$term = get_term_by( 'name', $value, $taxonomy );
+					}
+					if ( ! $term && 'pll_stato' !== $taxonomy ) {
+						$new = wp_insert_term( $value, $taxonomy );
+						if ( ! is_wp_error( $new ) ) {
+							$term = get_term( $new['term_id'], $taxonomy );
+						}
+					}
+					if ( $term && ! is_wp_error( $term ) ) {
+						$term_ids[] = (int) $term->term_id;
+					} elseif ( 'pll_stato' === $taxonomy ) {
+						$existing = get_terms( array( 'taxonomy' => 'pll_stato', 'hide_empty' => false, 'fields' => 'slugs' ) );
+						return array(
+							'error'        => 'invalid_stato',
+							'message'      => sprintf( 'Stato "%s" inesistente.', $value ),
+							'valid_states' => is_wp_error( $existing ) ? array() : $existing,
+						);
+					}
+				}
+				if ( $term_ids ) {
+					wp_set_object_terms( $id, $term_ids, $taxonomy );
+					$tax_result[ $short ] = count( $term_ids );
+				}
+			}
+		}
+
+		// Spostamento unità sotto un altro edificio.
+		$moved = false;
+		if ( isset( $args['building_id'] ) && 'pll_unita' === $post->post_type ) {
+			$parent = absint( $args['building_id'] );
+			if ( ! $parent || 'pll_edificio' !== get_post_type( $parent ) ) {
+				return array( 'error' => 'invalid_building' );
+			}
+			wp_update_post( array( 'ID' => $id, 'post_parent' => $parent ) );
+			$moved = true;
+		}
+
+		if ( ! $data && ! $tax_result && ! $moved ) {
 			return array( 'error' => 'nothing_to_update' );
 		}
 
-		$summary = Palladio_AI_Composer::apply_structured( $id, $data );
+		$summary = $data ? Palladio_AI_Composer::apply_structured( $id, $data ) : array();
+		if ( $tax_result ) {
+			$summary['taxonomies'] = $tax_result;
+		}
+		if ( $moved ) {
+			$summary['moved_to_building'] = absint( $args['building_id'] );
+		}
 
 		return array( 'updated' => true, 'id' => $id, 'summary' => $summary );
 	}
@@ -836,6 +964,212 @@ Regole:
 		}
 
 		return array( 'created' => true, 'id' => (int) $new_id, 'edit_link' => get_edit_post_link( $new_id, 'raw' ) );
+	}
+
+	/**
+	 * Tool: cambia stato di pubblicazione.
+	 *
+	 * @param int    $id     ID post.
+	 * @param string $status Stato richiesto.
+	 * @return array
+	 */
+	private function tool_set_status( $id, $status ) {
+		if ( ! in_array( $status, array( 'publish', 'draft', 'pending' ), true ) ) {
+			return array( 'error' => 'invalid_status' );
+		}
+		$post = $id ? get_post( $id ) : null;
+		if ( ! $post || ! in_array( $post->post_type, array( 'pll_edificio', 'pll_unita', 'pll_scenario' ), true ) ) {
+			return array( 'error' => 'not_found' );
+		}
+		if ( ! current_user_can( 'edit_post', $id ) ) {
+			return array( 'error' => 'permission_denied' );
+		}
+		if ( 'publish' === $status ) {
+			$pt_obj = get_post_type_object( $post->post_type );
+			if ( $pt_obj && ! current_user_can( $pt_obj->cap->publish_posts ) ) {
+				return array( 'error' => 'permission_denied' );
+			}
+		}
+
+		$result = wp_update_post( array( 'ID' => $id, 'post_status' => $status ), true );
+		if ( is_wp_error( $result ) ) {
+			return array( 'error' => $result->get_error_message() );
+		}
+
+		return array(
+			'updated' => true,
+			'id'      => $id,
+			'status'  => $status,
+			'link'    => 'publish' === $status ? get_permalink( $id ) : '',
+		);
+	}
+
+	/**
+	 * Tool: sposta un elemento nel cestino (recuperabile).
+	 *
+	 * @param int $id ID post.
+	 * @return array
+	 */
+	private function tool_delete( $id ) {
+		$post = $id ? get_post( $id ) : null;
+		if ( ! $post || ! in_array( $post->post_type, array( 'pll_edificio', 'pll_unita', 'pll_scenario' ), true ) ) {
+			return array( 'error' => 'not_found' );
+		}
+		if ( ! current_user_can( 'delete_post', $id ) ) {
+			return array( 'error' => 'permission_denied' );
+		}
+
+		// Protezioni: un edificio con unità collegate non si cestina alla cieca.
+		if ( 'pll_edificio' === $post->post_type ) {
+			$units = get_posts( array( 'post_type' => 'pll_unita', 'post_parent' => $id, 'post_status' => 'any', 'posts_per_page' => 1, 'fields' => 'ids', 'no_found_rows' => true ) );
+			if ( $units ) {
+				return array(
+					'error'   => 'has_units',
+					'message' => 'L’edificio ha unità collegate: cestina o sposta prima le unità, poi l’edificio.',
+				);
+			}
+			if ( (int) get_option( 'palladio_home_building', 0 ) === $id ) {
+				delete_option( 'palladio_home_building' );
+			}
+		}
+
+		$trashed = wp_trash_post( $id );
+		if ( ! $trashed ) {
+			return array( 'error' => 'trash_failed' );
+		}
+
+		return array( 'trashed' => true, 'id' => $id, 'title' => $post->post_title );
+	}
+
+	/**
+	 * Tool: imposta (o rimuove) l'edificio homepage.
+	 *
+	 * @param int $building_id ID edificio, 0 per rimuovere.
+	 * @return array
+	 */
+	private function tool_set_home( $building_id ) {
+		if ( 0 === $building_id ) {
+			delete_option( 'palladio_home_building' );
+			return array( 'updated' => true, 'home_building' => 0 );
+		}
+		if ( 'pll_edificio' !== get_post_type( $building_id ) ) {
+			return array( 'error' => 'invalid_building' );
+		}
+
+		update_option( 'palladio_home_building', $building_id );
+
+		$note = ( 'publish' !== get_post_status( $building_id ) )
+			? 'Attenzione: l’edificio non è pubblicato — la homepage resterà quella standard finché non lo pubblichi.'
+			: '';
+
+		return array( 'updated' => true, 'home_building' => $building_id, 'note' => $note );
+	}
+
+	/**
+	 * Tool: elenca i termini di una tassonomia del plugin.
+	 *
+	 * @param string $short Nome breve (tipologia|piano|stato).
+	 * @return array
+	 */
+	private function tool_list_terms( $short ) {
+		$map = array( 'tipologia' => 'pll_tipologia', 'piano' => 'pll_piano', 'stato' => 'pll_stato' );
+		if ( ! isset( $map[ $short ] ) ) {
+			return array( 'error' => 'invalid_taxonomy' );
+		}
+
+		$terms = get_terms( array( 'taxonomy' => $map[ $short ], 'hide_empty' => false ) );
+		if ( is_wp_error( $terms ) ) {
+			return array( 'error' => $terms->get_error_message() );
+		}
+
+		$out = array();
+		foreach ( $terms as $term ) {
+			$out[] = array( 'slug' => $term->slug, 'name' => $term->name, 'count' => (int) $term->count );
+		}
+
+		return array( 'taxonomy' => $short, 'terms' => $out );
+	}
+
+	/**
+	 * Tool: audit dei contenuti — campi importanti ancora vuoti per elemento.
+	 *
+	 * @return array
+	 */
+	private function tool_audit() {
+		$targets = array(
+			'pll_edificio' => array(
+				'meta'      => array( 'claim', 'sottotitolo', 'indirizzo', 'anno_costruzione', 'mq_totali', 'num_piani' ),
+				'editorial' => array( 'eyebrow', 'lead', 'manifesto', 'timeline', 'narrative', 'gallery' ),
+			),
+			'pll_unita'    => array(
+				'meta'      => array( 'codice', 'prezzo', 'mq_commerciali', 'camere', 'bagni', 'esposizione' ),
+				'editorial' => array( 'eyebrow', 'lead', 'narrative', 'tech', 'gallery', 'floorplan', 'position' ),
+			),
+			'pll_scenario' => array(
+				'meta'      => array( 'scenario_tipo', 'scenario_unita', 'scenario_prezzo', 'scenario_stato' ),
+				'editorial' => array( 'lead' ),
+			),
+		);
+
+		$report = array();
+		foreach ( $targets as $post_type => $checks ) {
+			$posts = get_posts( array(
+				'post_type'      => $post_type,
+				'post_status'    => array( 'publish', 'draft', 'pending', 'future', 'private' ),
+				'posts_per_page' => 100,
+				'no_found_rows'  => true,
+			) );
+
+			foreach ( $posts as $p ) {
+				$missing = array();
+
+				if ( '' === trim( $p->post_excerpt ) ) {
+					$missing[] = 'excerpt';
+				}
+				if ( '' === trim( wp_strip_all_tags( $p->post_content ) ) ) {
+					$missing[] = 'content';
+				}
+				if ( ! get_post_thumbnail_id( $p->ID ) ) {
+					$missing[] = 'hero_image';
+				}
+
+				foreach ( $checks['meta'] as $key ) {
+					$value = get_post_meta( $p->ID, '_pll_' . $key, true );
+					if ( '' === $value || null === $value ) {
+						$missing[] = 'meta.' . $key;
+					}
+				}
+
+				$editorial = function_exists( 'palladio_editorial' ) ? palladio_editorial( $p->ID ) : array();
+				foreach ( $checks['editorial'] as $key ) {
+					$value = $editorial[ $key ] ?? '';
+					$empty = is_array( $value )
+						? ( ! array_filter( $value ) )
+						: ( '' === trim( (string) $value ) );
+					if ( $empty ) {
+						$missing[] = 'editorial.' . $key;
+					}
+				}
+
+				if ( 'pll_unita' === $post_type ) {
+					$stato = get_the_terms( $p->ID, 'pll_stato' );
+					if ( ! $stato || is_wp_error( $stato ) ) {
+						$missing[] = 'taxonomies.stato';
+					}
+				}
+
+				$report[] = array(
+					'id'      => $p->ID,
+					'type'    => $post_type,
+					'title'   => $p->post_title,
+					'status'  => $p->post_status,
+					'missing' => $missing,
+					'complete' => empty( $missing ),
+				);
+			}
+		}
+
+		return array( 'audit' => $report, 'note' => 'missing = campi importanti ancora vuoti; complete = true se tutto compilato.' );
 	}
 
 	/**

@@ -36,10 +36,13 @@ class Palladio_Admin_Fields {
 	/**
 	 * Definizione campi per tipo di post.
 	 *
+	 * Pubblica e statica: è la fonte unica dello schema campi, riusata
+	 * dall'agente Studio per conoscere tutti i campi disponibili.
+	 *
 	 * @param string $post_type CPT.
 	 * @return array<string,array{label:string,type:string,help?:string}>
 	 */
-	private function fields( $post_type ) {
+	public static function fields( $post_type ) {
 		if ( 'pll_edificio' === $post_type ) {
 			return array(
 				'claim'             => array( 'label' => __( 'Claim (titolo grande)', 'palladio' ), 'type' => 'text' ),
@@ -113,7 +116,7 @@ class Palladio_Admin_Fields {
 		}
 
 		echo '<div class="palladio-fields-grid">';
-		foreach ( $this->fields( $post->post_type ) as $key => $conf ) {
+		foreach ( self::fields( $post->post_type ) as $key => $conf ) {
 			$value = get_post_meta( $post->ID, '_pll_' . $key, true );
 			$name  = 'palladio_fields[' . $key . ']';
 			echo '<p class="palladio-field-cell">';
@@ -177,7 +180,7 @@ class Palladio_Admin_Fields {
 			? wp_unslash( $_POST['palladio_fields'] ) // phpcs:ignore WordPress.Security.ValidationSanitization.InputNotSanitized
 			: array();
 
-		foreach ( $this->fields( $post->post_type ) as $key => $conf ) {
+		foreach ( self::fields( $post->post_type ) as $key => $conf ) {
 			$meta = '_pll_' . $key;
 
 			if ( 'checkbox' === $conf['type'] ) {
