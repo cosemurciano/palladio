@@ -449,8 +449,10 @@ class Palladio_AI_Settings {
 			$query,
 			array(
 				'vector_store_ids' => array( $vs ),
-				'max_tokens'       => min( 1500, self::max_tokens( 'agent' ) ),
-				'timeout'          => 45,
+				// Budget pieno: con i modelli reasoning un cap basso viene
+				// consumato dai token di ragionamento → testo vuoto.
+				'max_tokens'       => self::max_tokens( 'agent' ),
+				'timeout'          => 60,
 			)
 		);
 

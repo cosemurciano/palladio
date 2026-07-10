@@ -249,6 +249,30 @@ class Palladio_Admin_Studio {
 	 * @return array{done:bool,reply?:string,status?:string}|WP_Error
 	 */
 	private function step( &$state ) {
+		// Tool in sospeso dal passo precedente: eseguine UNO per richiesta.
+		// Così una ricerca sullo Storage (lenta) non si somma mai alla chiamata
+		// chat nella stessa richiesta HTTP, restando sotto la finestra del proxy.
+		if ( ! empty( $state['pending_tools'] ) ) {
+			$call  = array_shift( $state['pending_tools'] );
+			$name  = $call['function']['name'] ?? '';
+			$targs = json_decode( $call['function']['arguments'] ?? '{}', true );
+			$targs = is_array( $targs ) ? $targs : array();
+
+			$output = $this->run_tool( $name, $targs, $state );
+
+			$state['messages'][] = array(
+				'role'         => 'tool',
+				'tool_call_id' => $call['id'] ?? '',
+				'content'      => wp_json_encode( $output ),
+			);
+
+			return array(
+				'done'   => false,
+				/* translators: %s: nome strumento eseguito. */
+				'status' => sprintf( __( 'Eseguo… (%s)', 'palladio' ), $name ),
+			);
+		}
+
 		$state['rounds'] = (int) $state['rounds'] + 1;
 
 		// Cap di sicurezza: forza una risposta finale senza altri tool.
@@ -286,25 +310,18 @@ class Palladio_Admin_Studio {
 			return array( 'done' => true, 'reply' => $content );
 		}
 
+		// Non eseguire i tool in questa richiesta: accodali e lascia che i
+		// prossimi passi li eseguano uno alla volta (vedi sopra).
+		$state['pending_tools'] = array_values( $assistant['tool_calls'] );
+
 		$names = array();
 		foreach ( $assistant['tool_calls'] as $call ) {
-			$name   = $call['function']['name'] ?? '';
-			$names[] = $name;
-			$targs  = json_decode( $call['function']['arguments'] ?? '{}', true );
-			$targs  = is_array( $targs ) ? $targs : array();
-
-			$output = $this->run_tool( $name, $targs, $state );
-
-			$state['messages'][] = array(
-				'role'         => 'tool',
-				'tool_call_id' => $call['id'] ?? '',
-				'content'      => wp_json_encode( $output ),
-			);
+			$names[] = $call['function']['name'] ?? '';
 		}
 
 		return array(
 			'done'   => false,
-			/* translators: %s: elenco strumenti eseguiti. */
+			/* translators: %s: elenco strumenti richiesti. */
 			'status' => sprintf( __( 'Elaboro… (%s)', 'palladio' ), implode( ', ', array_filter( $names ) ) ),
 		);
 	}
@@ -583,9 +600,10 @@ Regole:
 			$query,
 			array(
 				'vector_store_ids' => array( $vs ),
-				// La sintesi di una ricerca non richiede molti token: limitali per
-				// mantenere veloce il singolo passo.
-				'max_tokens'       => min( 1200, Palladio_AI_Settings::max_tokens( 'agent' ) ),
+				// Serve il budget pieno: con i modelli reasoning i token di
+				// ragionamento consumano il limite prima del testo (un cap
+				// basso produceva risposte vuote = "nessun risultato").
+				'max_tokens'       => Palladio_AI_Settings::max_tokens( 'agent' ),
 				'timeout'          => $this->step_timeout(),
 			)
 		);
