@@ -22,6 +22,21 @@ class Palladio_Admin_Studio {
 	const CAP = 'manage_palladio';
 
 	/**
+	 * User meta con lo storico persistente della chat (per utente).
+	 */
+	const HISTORY_META = '_palladio_studio_history';
+
+	/**
+	 * Opzione con la memoria di progetto dell'agente (condivisa).
+	 */
+	const MEMORY_OPTION = 'palladio_studio_memory';
+
+	/**
+	 * Numero massimo di messaggi conservati nello storico.
+	 */
+	const HISTORY_MAX = 60;
+
+	/**
 	 * Se true, i tool di scrittura (create_*, update_entity) sono consentiti.
 	 * In modalità progettazione (false) l'agente non modifica nulla.
 	 *
@@ -48,6 +63,7 @@ class Palladio_Admin_Studio {
 		add_action( 'admin_menu', array( $this, 'menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'assets' ) );
 		add_action( 'wp_ajax_palladio_studio_chat', array( $this, 'ajax_chat' ) );
+		add_action( 'wp_ajax_palladio_studio_reset', array( $this, 'ajax_reset' ) );
 	}
 
 	/**
@@ -100,13 +116,21 @@ class Palladio_Admin_Studio {
 			'palladio-studio',
 			'PalladioStudio',
 			array(
-				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( 'palladio_studio' ),
-				'i18n'    => array(
+				'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
+				'nonce'     => wp_create_nonce( 'palladio_studio' ),
+				'history'   => array_values( self::history() ),
+				'hasMemory' => '' !== self::memory(),
+				'i18n'      => array(
 					'working'      => __( 'L’agente sta lavorando…', 'palladio' ),
 					'error'        => __( 'Errore', 'palladio' ),
 					'send'         => __( 'Invia', 'palladio' ),
 					'tooManySteps' => __( 'troppi passi: riprova con una richiesta più semplice.', 'palladio' ),
+					'you'          => __( 'Tu', 'palladio' ),
+					'agent'        => __( 'Agente', 'palladio' ),
+					'confirmReset' => __( 'Iniziare una nuova conversazione? Lo storico della chat verrà cancellato.', 'palladio' ),
+					'confirmWipe'  => __( 'Vuoi cancellare anche la memoria di progetto dell’agente (appunti e decisioni salvate)? OK = cancella tutto, Annulla = conserva la memoria.', 'palladio' ),
+					'memoryOn'     => __( 'Memoria di progetto: attiva', 'palladio' ),
+					'memoryOff'    => __( 'Memoria di progetto: vuota', 'palladio' ),
 				),
 			)
 		);
@@ -136,12 +160,19 @@ class Palladio_Admin_Studio {
 				<p class="description"><?php esc_html_e( 'L’agente conosce l’intera struttura (edifici, unità, scenari) e i documenti su OpenAI Storage. Chiedigli di popolare o aggiornare i contenuti: agisce con i tuoi permessi.', 'palladio' ); ?></p>
 
 				<div class="palladio-studio__box" data-focus="<?php echo esc_attr( $focus ); ?>">
+					<div class="palladio-studio__bar">
+						<span class="palladio-studio__bar-title"><?php esc_html_e( 'Conversazione', 'palladio' ); ?></span>
+						<span class="palladio-studio__memory" data-studio-memory>
+							<?php echo '' !== self::memory() ? esc_html__( 'Memoria di progetto: attiva', 'palladio' ) : esc_html__( 'Memoria di progetto: vuota', 'palladio' ); ?>
+						</span>
+						<button type="button" class="button" data-studio-reset><?php esc_html_e( 'Nuova conversazione', 'palladio' ); ?></button>
+					</div>
 					<div class="palladio-studio__log" data-studio-log aria-live="polite"></div>
 					<form class="palladio-studio__form" data-studio-form>
 						<textarea class="palladio-studio__input" data-studio-input rows="2" placeholder="<?php esc_attr_e( 'Es. “Popola l’edificio Palazzo Sambiasi e le sue unità usando i documenti su Storage.”', 'palladio' ); ?>"></textarea>
 						<span class="palladio-studio__actions"><label class="palladio-studio__apply"><input type="checkbox" data-studio-apply> <?php esc_html_e( 'Applica modifiche (crea/aggiorna)', 'palladio' ); ?></label> <button type="submit" class="button button-primary"><?php esc_html_e( 'Invia', 'palladio' ); ?></button></span>
 					</form>
-					<p class="palladio-studio__hint description"><?php esc_html_e( 'Modalità progettazione: finché “Applica modifiche” è disattivato l’agente non crea né modifica nulla — puoi discutere e progettare. Attivalo quando vuoi dare il via alla costruzione.', 'palladio' ); ?></p>
+					<p class="palladio-studio__hint description"><?php esc_html_e( 'Modalità progettazione: finché “Applica modifiche” è disattivato l’agente non crea né modifica nulla — puoi discutere e progettare. Attivalo quando vuoi dare il via alla costruzione. La conversazione e la memoria di progetto vengono conservate: puoi chiudere la pagina e riprendere il discorso in seguito.', 'palladio' ); ?></p>
 					<p class="palladio-studio__status" data-studio-status role="status"></p>
 				</div>
 			<?php endif; ?>
@@ -180,19 +211,20 @@ class Palladio_Admin_Studio {
 				wp_send_json_error( array( 'message' => __( 'Sessione dell’agente scaduta. Reinvia il messaggio.', 'palladio' ) ), 410 );
 			}
 		} else {
-			// Nuovo turno: costruisce lo stato iniziale.
+			// Nuovo turno: costruisce lo stato iniziale. Lo storico è quello
+			// persistente lato server (user meta), non quello del client.
 			$message = isset( $_POST['message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['message'] ) ) : '';
 			if ( '' === $message ) {
 				wp_send_json_error( array( 'message' => __( 'Messaggio vuoto.', 'palladio' ) ), 400 );
 			}
-			$history = isset( $_POST['history'] ) ? json_decode( wp_unslash( $_POST['history'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidationSanitization.InputNotSanitized
-			$focus   = isset( $_POST['focus'] ) ? absint( wp_unslash( $_POST['focus'] ) ) : 0;
+			$focus = isset( $_POST['focus'] ) ? absint( wp_unslash( $_POST['focus'] ) ) : 0;
 
 			$state = array(
 				'user'     => get_current_user_id(),
 				'apply'    => ! empty( $_POST['apply'] ),
 				'rounds'   => 0,
-				'messages' => $this->build_messages( $message, is_array( $history ) ? $history : array(), $focus ),
+				'message'  => $message,
+				'messages' => $this->build_messages( $message, self::history(), $focus ),
 			);
 			$turn = wp_generate_password( 20, false );
 		}
@@ -214,7 +246,16 @@ class Palladio_Admin_Studio {
 
 		if ( ! empty( $step['done'] ) ) {
 			delete_transient( 'palladio_studio_' . $turn );
-			wp_send_json_success( array( 'done' => true, 'reply' => (string) $step['reply'] ) );
+			// Turno completato: rende persistente lo scambio (memoria chat).
+			self::remember_exchange( (string) ( $state['message'] ?? '' ), (string) $step['reply'] );
+			wp_send_json_success(
+				array(
+					'done'      => true,
+					'reply'     => (string) $step['reply'],
+					'time'      => time(),
+					'hasMemory' => '' !== self::memory(),
+				)
+			);
 		}
 
 		// Passo intermedio: salva lo stato e chiedi al client di proseguire.
@@ -239,6 +280,71 @@ class Palladio_Admin_Studio {
 		}
 		$messages[] = array( 'role' => 'user', 'content' => $message );
 		return $messages;
+	}
+
+	/**
+	 * Storico chat persistente dell'utente corrente.
+	 *
+	 * @return array<int,array{role:string,content:string,time:int}>
+	 */
+	private static function history() {
+		$history = get_user_meta( get_current_user_id(), self::HISTORY_META, true );
+		return is_array( $history ) ? $history : array();
+	}
+
+	/**
+	 * Aggiunge uno scambio (utente + agente) allo storico persistente.
+	 *
+	 * @param string $message Messaggio utente.
+	 * @param string $reply   Risposta agente.
+	 * @return void
+	 */
+	private static function remember_exchange( $message, $reply ) {
+		if ( '' === $message && '' === $reply ) {
+			return;
+		}
+
+		$history   = self::history();
+		$now       = time();
+		$history[] = array( 'role' => 'user', 'content' => $message, 'time' => $now );
+		$history[] = array( 'role' => 'assistant', 'content' => $reply, 'time' => $now );
+
+		if ( count( $history ) > self::HISTORY_MAX ) {
+			$history = array_slice( $history, -self::HISTORY_MAX );
+		}
+
+		update_user_meta( get_current_user_id(), self::HISTORY_META, $history );
+	}
+
+	/**
+	 * Memoria di progetto dell'agente (appunti persistenti tra le sessioni).
+	 *
+	 * @return string
+	 */
+	private static function memory() {
+		return (string) get_option( self::MEMORY_OPTION, '' );
+	}
+
+	/**
+	 * Handler AJAX: nuova conversazione (svuota storico, opz. anche memoria).
+	 *
+	 * @return void
+	 */
+	public function ajax_reset() {
+		check_ajax_referer( 'palladio_studio', 'nonce' );
+
+		if ( ! current_user_can( self::CAP ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permesso negato.', 'palladio' ) ), 403 );
+		}
+
+		delete_user_meta( get_current_user_id(), self::HISTORY_META );
+
+		$wipe_memory = ! empty( $_POST['wipe_memory'] );
+		if ( $wipe_memory ) {
+			delete_option( self::MEMORY_OPTION );
+		}
+
+		wp_send_json_success( array( 'hasMemory' => '' !== self::memory() ) );
 	}
 
 	/**
@@ -357,7 +463,13 @@ Regole:
 - Puoi creare nuovi edifici (create_edificio), unità (create_unit, collegate a un edificio) o scenari (create_scenario) se richiesto.
 - Prima di modifiche massicce, riepiloga brevemente cosa stai per fare. Al termine, riassumi cosa hai aggiornato.
 - MODALITÀ PROGETTAZIONE: puoi sempre leggere e progettare. Se un tool di scrittura restituisce "planning_mode", NON riprovare a scrivere: proponi invece un piano chiaro (quali edifici/unità/scenari creerai e quali campi popolerai) e invita l’utente ad attivare “Applica modifiche” per dare il via. Procedi con le scritture solo quando l’utente lo conferma.
+- MEMORIA DI PROGETTO: hai una memoria persistente tra le sessioni. Quando con l’utente prendete decisioni di progettazione importanti (naming scelti, struttura concordata, piani approvati, preferenze espresse), salvale con save_memory: scrivi appunti sintetici e completi (il nuovo testo SOSTITUISCE il precedente, quindi includi anche ciò che va conservato). Così potrai riprendere il discorso in una sessione futura.
 - Rispondi in italiano, in modo conciso.', 'palladio' );
+
+		$memory = self::memory();
+		if ( '' !== $memory ) {
+			$prompt .= "\n\n" . __( 'MEMORIA DI PROGETTO (appunti salvati nelle sessioni precedenti — tienine conto):', 'palladio' ) . "\n" . $memory;
+		}
 
 		if ( $focus ) {
 			$prompt .= "\n\n" . sprintf(
@@ -415,6 +527,7 @@ Regole:
 			$fn( 'create_edificio', 'Crea un nuovo edificio (bozza).', array( 'title' => array( 'type' => 'string' ) ), array( 'title' ) ),
 			$fn( 'create_unit', 'Crea una nuova unità (bozza) collegata a un edificio.', array( 'building_id' => array( 'type' => 'integer' ), 'title' => array( 'type' => 'string' ) ), array( 'building_id', 'title' ) ),
 			$fn( 'create_scenario', 'Crea un nuovo scenario (bozza).', array( 'title' => array( 'type' => 'string' ) ), array( 'title' ) ),
+			$fn( 'save_memory', 'Salva la memoria di progetto persistente (decisioni, naming, piani concordati con l’utente). Il testo SOSTITUISCE la memoria precedente: includi tutto ciò che va ricordato, in forma sintetica.', array( 'notes' => array( 'type' => 'string' ) ), array( 'notes' ) ),
 		);
 	}
 
@@ -453,9 +566,34 @@ Regole:
 				return $this->tool_create( 'pll_unita', $args );
 			case 'create_scenario':
 				return $this->tool_create( 'pll_scenario', $args );
+			case 'save_memory':
+				return $this->tool_save_memory( (string) ( $args['notes'] ?? '' ) );
 			default:
 				return array( 'error' => 'unknown_tool' );
 		}
+	}
+
+	/**
+	 * Tool: salva la memoria di progetto (consentito anche in progettazione:
+	 * sono appunti dell'agente, non contenuti del sito).
+	 *
+	 * @param string $notes Appunti.
+	 * @return array
+	 */
+	private function tool_save_memory( $notes ) {
+		$notes = sanitize_textarea_field( $notes );
+		if ( strlen( $notes ) > 8000 ) {
+			$notes = substr( $notes, 0, 8000 );
+		}
+
+		if ( '' === $notes ) {
+			delete_option( self::MEMORY_OPTION );
+			return array( 'saved' => true, 'empty' => true );
+		}
+
+		update_option( self::MEMORY_OPTION, $notes, false );
+
+		return array( 'saved' => true, 'length' => strlen( $notes ) );
 	}
 
 	/**

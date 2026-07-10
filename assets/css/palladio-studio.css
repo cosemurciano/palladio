@@ -11,6 +11,35 @@
 	margin-top: 1rem;
 }
 
+.palladio-studio__bar {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.6rem 1rem;
+	background: #fff;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.palladio-studio__bar-title {
+	font-weight: 600;
+	margin-right: auto;
+}
+
+.palladio-studio__memory {
+	font-size: 12px;
+	color: #646970;
+	padding: 0.15rem 0.6rem;
+	border: 1px solid #dcdcde;
+	border-radius: 999px;
+	background: #f6f7f7;
+}
+
+.palladio-studio__memory.is-on {
+	color: #1a4731;
+	border-color: #9ec6b0;
+	background: #edf7f1;
+}
+
 .palladio-studio__log {
 	min-height: 18rem;
 	max-height: 60vh;
@@ -18,12 +47,33 @@
 	padding: 1.25rem;
 	display: flex;
 	flex-direction: column;
-	gap: 0.75rem;
+	gap: 0.9rem;
 	background: #f6f7f7;
 }
 
 .palladio-studio__msg {
 	max-width: 80%;
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+}
+
+.palladio-studio__msg-meta {
+	display: flex;
+	align-items: baseline;
+	gap: 0.5rem;
+	font-size: 11px;
+	color: #646970;
+	padding: 0 0.25rem;
+}
+
+.palladio-studio__msg-who {
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.palladio-studio__msg-body {
 	padding: 0.6rem 0.9rem;
 	border-radius: 0.75rem;
 	line-height: 1.5;
@@ -33,6 +83,13 @@
 
 .palladio-studio__msg--user {
 	align-self: flex-end;
+}
+
+.palladio-studio__msg--user .palladio-studio__msg-meta {
+	justify-content: flex-end;
+}
+
+.palladio-studio__msg--user .palladio-studio__msg-body {
 	background: #6e2b2b;
 	color: #f7f2e7;
 	border-bottom-right-radius: 0.2rem;
@@ -40,9 +97,51 @@
 
 .palladio-studio__msg--assistant {
 	align-self: flex-start;
+}
+
+.palladio-studio__msg--assistant .palladio-studio__msg-body {
 	background: #fff;
 	border: 1px solid #e2e2e6;
 	border-bottom-left-radius: 0.2rem;
+}
+
+/* Indicatore "sta scrivendo…" */
+.palladio-studio__typing {
+	align-self: flex-start;
+	display: flex;
+	gap: 0.3rem;
+	padding: 0.7rem 0.9rem;
+	background: #fff;
+	border: 1px solid #e2e2e6;
+	border-radius: 0.75rem;
+	border-bottom-left-radius: 0.2rem;
+}
+
+.palladio-studio__typing span {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: #a4906a;
+	animation: palladio-studio-typing 1.2s infinite ease-in-out;
+}
+
+.palladio-studio__typing span:nth-child(2) {
+	animation-delay: 0.15s;
+}
+
+.palladio-studio__typing span:nth-child(3) {
+	animation-delay: 0.3s;
+}
+
+@keyframes palladio-studio-typing {
+	0%, 60%, 100% {
+		opacity: 0.35;
+		transform: translateY(0);
+	}
+	30% {
+		opacity: 1;
+		transform: translateY(-3px);
+	}
 }
 
 .palladio-studio__form {
