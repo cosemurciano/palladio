@@ -30,6 +30,7 @@ class Palladio_AI_Settings {
 	public function register() {
 		add_action( 'admin_menu', array( $this, 'menu' ) );
 		add_action( 'admin_post_palladio_save_ai', array( $this, 'save' ) );
+		add_action( 'wp_ajax_palladio_ai_diag_storage', array( $this, 'ajax_diag_storage' ) );
 	}
 
 	/**
@@ -243,6 +244,11 @@ class Palladio_AI_Settings {
 						<td>
 							<input type="text" id="pll-ai-vs" name="vector_store" class="regular-text" value="<?php echo esc_attr( $config['vector_store'] ); ?>" placeholder="vs_...">
 							<p class="description"><?php esc_html_e( 'ID del vector store su platform.openai.com/storage usato dal File Search per popolare le pagine con i documenti del progetto (dossier, planimetrie, atti).', 'palladio' ); ?></p>
+							<p>
+								<button type="button" class="button" id="pll-vs-test"><?php esc_html_e( 'Verifica Storage', 'palladio' ); ?></button>
+								<span class="description"><?php esc_html_e( 'Controlla che l’ID sia valido, quanti documenti sono indicizzati e prova una ricerca. Salva prima l’ID se lo hai appena inserito.', 'palladio' ); ?></span>
+							</p>
+							<div id="pll-vs-result" style="display:none;margin-top:8px;padding:10px 12px;border:1px solid #c3c4c7;border-radius:4px;background:#fff;"></div>
 						</td>
 					</tr>
 					<tr>
@@ -317,7 +323,147 @@ class Palladio_AI_Settings {
 				?>
 			</p>
 		</div>
+		<script>
+		( function () {
+			var btn = document.getElementById( 'pll-vs-test' );
+			var box = document.getElementById( 'pll-vs-result' );
+			if ( ! btn || ! box ) { return; }
+			var ajaxUrl = <?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ); ?>;
+			var nonce   = <?php echo wp_json_encode( wp_create_nonce( 'palladio_ai_diag' ) ); ?>;
+			var esc = function ( s ) {
+				return String( s == null ? '' : s ).replace( /[&<>]/g, function ( c ) {
+					return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ c ];
+				} );
+			};
+			btn.addEventListener( 'click', function () {
+				btn.disabled = true;
+				box.style.display = 'block';
+				box.innerHTML = '<?php echo esc_js( __( 'Verifica in corso… (può richiedere qualche secondo)', 'palladio' ) ); ?>';
+				var body = new URLSearchParams();
+				body.append( 'action', 'palladio_ai_diag_storage' );
+				body.append( 'nonce', nonce );
+				fetch( ajaxUrl, {
+					method: 'POST',
+					credentials: 'same-origin',
+					headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+					body: body.toString()
+				} ).then( function ( r ) {
+					return r.text().then( function ( raw ) {
+						var d = null;
+						try { d = JSON.parse( raw ); } catch ( e ) {}
+						return { status: r.status, d: d, raw: raw };
+					} );
+				} ).then( function ( res ) {
+					btn.disabled = false;
+					var d = res.d;
+					if ( ! d ) {
+						box.innerHTML = '<strong style="color:#b32d2e"><?php echo esc_js( __( 'Risposta non valida dal server', 'palladio' ) ); ?>:</strong> ' + esc( ( res.raw || '' ).slice( 0, 200 ) );
+						return;
+					}
+					if ( ! d.success ) {
+						box.innerHTML = '<strong style="color:#b32d2e">&#10007;</strong> ' + esc( d.data && d.data.message ? d.data.message : 'Errore' );
+						return;
+					}
+					var x = d.data;
+					var h = '';
+					h += '<p style="margin:0 0 6px"><strong><?php echo esc_js( __( 'Vector store', 'palladio' ) ); ?>:</strong> <code>' + esc( x.vector_store ) + '</code>' + ( x.name ? ' &mdash; ' + esc( x.name ) : '' ) + ' <em>(' + esc( x.status ) + ')</em></p>';
+					h += '<p style="margin:0 0 6px"><strong><?php echo esc_js( __( 'Documenti', 'palladio' ) ); ?>:</strong> ' + x.files_ready + ' / ' + x.files_total + ' <?php echo esc_js( __( 'indicizzati', 'palladio' ) ); ?>';
+					if ( x.files_progress ) { h += ' &middot; ' + x.files_progress + ' <?php echo esc_js( __( 'in elaborazione', 'palladio' ) ); ?>'; }
+					if ( x.files_failed ) { h += ' &middot; <span style="color:#b32d2e">' + x.files_failed + ' <?php echo esc_js( __( 'falliti', 'palladio' ) ); ?></span>'; }
+					h += '</p>';
+					if ( x.search_ok ) {
+						h += '<p style="margin:8px 0 4px"><strong style="color:#008a20">&#10003; <?php echo esc_js( __( 'File Search operativo — risposta di prova', 'palladio' ) ); ?>:</strong></p>';
+						h += '<div style="white-space:pre-wrap;max-height:220px;overflow:auto;font-size:12px;background:#f6f7f7;padding:8px;border-radius:3px">' + esc( x.search_reply ) + '</div>';
+					} else {
+						h += '<p style="margin:8px 0 0"><strong style="color:#b32d2e">&#10007; <?php echo esc_js( __( 'La ricerca non ha prodotto testo', 'palladio' ) ); ?>.</strong> ' + esc( x.search_error || '<?php echo esc_js( __( 'Se i documenti risultano 0/0 o “in elaborazione”, attendi il completamento dell’indicizzazione su OpenAI.', 'palladio' ) ); ?>' ) + '</p>';
+					}
+					box.innerHTML = h;
+				} ).catch( function ( err ) {
+					btn.disabled = false;
+					box.innerHTML = '<strong style="color:#b32d2e">&#10007;</strong> ' + esc( err && err.message ? err.message : 'rete' );
+				} );
+			} );
+		}() );
+		</script>
 		<?php
+	}
+
+	/**
+	 * Diagnostica Storage (AJAX): verifica raggiungibilità del vector store,
+	 * conteggio documenti indicizzati e una ricerca di prova con File Search.
+	 *
+	 * @return void
+	 */
+	public function ajax_diag_storage() {
+		check_ajax_referer( 'palladio_ai_diag', 'nonce' );
+
+		if ( ! current_user_can( self::CAP ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permesso negato.', 'palladio' ) ), 403 );
+		}
+		if ( ! self::is_ready() ) {
+			wp_send_json_error( array( 'message' => __( 'Configura la chiave OpenAI prima di verificare lo Storage.', 'palladio' ) ), 400 );
+		}
+
+		if ( function_exists( 'set_time_limit' ) ) {
+			@set_time_limit( 90 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		}
+
+		$vs = self::vector_store();
+		if ( '' === $vs ) {
+			wp_send_json_error( array( 'message' => __( 'Nessun Vector Store configurato: incolla l’ID (vs_…) nel campo qui sopra e salva.', 'palladio' ) ), 400 );
+		}
+
+		$out = array( 'vector_store' => $vs );
+
+		// 1) Stato del vector store (esiste? quanti file indicizzati?).
+		$info = Palladio_AI_Openai::vector_store_info( $vs );
+		if ( is_wp_error( $info ) ) {
+			wp_send_json_error(
+				array(
+					'message' => sprintf(
+						/* translators: 1: id vector store, 2: messaggio errore. */
+						__( 'Vector store “%1$s” non raggiungibile: %2$s — controlla che l’ID sia corretto e che la chiave API appartenga allo stesso account/organizzazione OpenAI dello Storage.', 'palladio' ),
+						$vs,
+						$info->get_error_message()
+					),
+				)
+			);
+		}
+
+		$counts = isset( $info['file_counts'] ) && is_array( $info['file_counts'] ) ? $info['file_counts'] : array();
+		$out['name']        = (string) ( $info['name'] ?? '' );
+		$out['status']      = (string) ( $info['status'] ?? '' );
+		$out['files_total'] = (int) ( $counts['total'] ?? 0 );
+		$out['files_ready'] = (int) ( $counts['completed'] ?? 0 );
+		$out['files_progress'] = (int) ( $counts['in_progress'] ?? 0 );
+		$out['files_failed']   = (int) ( $counts['failed'] ?? 0 );
+
+		// 2) Ricerca di prova con File Search.
+		$query = isset( $_POST['query'] ) ? sanitize_text_field( wp_unslash( $_POST['query'] ) ) : '';
+		if ( '' === $query ) {
+			$query = __( 'Elenca i documenti disponibili e riassumi i dati principali dell’immobile (indirizzo, superfici, prezzi, unità).', 'palladio' );
+		}
+
+		$res = Palladio_AI_Openai::responses(
+			__( 'Usa esclusivamente i documenti forniti tramite File Search. Elenca da quali file provengono le informazioni e cita valori esatti.', 'palladio' ),
+			$query,
+			array(
+				'vector_store_ids' => array( $vs ),
+				'max_tokens'       => min( 1500, self::max_tokens( 'agent' ) ),
+				'timeout'          => 45,
+			)
+		);
+
+		if ( is_wp_error( $res ) ) {
+			$out['search_ok']    = false;
+			$out['search_error'] = $res->get_error_message();
+		} else {
+			$text                = trim( (string) $res['text'] );
+			$out['search_ok']    = ( '' !== $text );
+			$out['search_reply'] = $text;
+		}
+
+		wp_send_json_success( $out );
 	}
 
 	/**
