@@ -352,3 +352,54 @@ function palladio_render_unit_card( $unit_id ) {
 	</article>
 	<?php
 }
+
+/**
+ * Card unità in stile editoriale (griglia "residenze" e archivio unità).
+ *
+ * Ogni elemento ha un id stabile (palladio-unit-{ID}, -media, -eyebrow,
+ * -title, -excerpt, -price, -status) per la personalizzazione CSS manuale.
+ *
+ * @param int $unit_id ID unità.
+ * @return void
+ */
+function palladio_render_unit_card_editorial( $unit_id ) {
+	$unit_id = (int) $unit_id;
+	$status  = palladio_get_unit_status( $unit_id );
+	$thumb   = get_the_post_thumbnail_url( $unit_id, 'large' );
+	$eyebrow = palladio_unit_eyebrow( $unit_id );
+	$excerpt = has_excerpt( $unit_id ) ? get_the_excerpt( $unit_id ) : '';
+	$price   = (float) palladio_meta( $unit_id, 'prezzo' );
+	$piano   = get_the_terms( $unit_id, 'pll_piano' );
+	$piano   = ( ! empty( $piano ) && ! is_wp_error( $piano ) ) ? $piano[0]->slug : '';
+	$outside = ( (float) palladio_meta( $unit_id, 'terrazza_mq' ) > 0 || (float) palladio_meta( $unit_id, 'giardino_mq' ) > 0 ) ? '1' : '0';
+	$shot    = wp_get_attachment_caption( get_post_thumbnail_id( $unit_id ) );
+	?>
+	<a class="pll-e-sister pll-e-unit-card" id="palladio-unit-<?php echo esc_attr( $unit_id ); ?>"
+		href="<?php echo esc_url( get_permalink( $unit_id ) ); ?>"
+		data-piano="<?php echo esc_attr( $piano ); ?>"
+		data-prezzo="<?php echo esc_attr( $price ); ?>"
+		data-esterno="<?php echo esc_attr( $outside ); ?>">
+		<span class="pll-e-sister__media" id="palladio-unit-<?php echo esc_attr( $unit_id ); ?>-media">
+			<?php if ( $thumb ) : ?>
+				<img src="<?php echo esc_url( $thumb ); ?>" alt="" loading="lazy">
+			<?php endif; ?>
+			<?php if ( $status['label'] ) : ?>
+				<span class="palladio-badge palladio-badge--<?php echo esc_attr( $status['slug'] ); ?>" id="palladio-unit-<?php echo esc_attr( $unit_id ); ?>-status"><?php echo esc_html( $status['label'] ); ?></span>
+			<?php endif; ?>
+			<?php if ( $shot ) : ?>
+				<span class="pll-e-unit-card__shot"><?php echo esc_html( $shot ); ?></span>
+			<?php endif; ?>
+		</span>
+		<span class="pll-e-sister__body">
+			<?php if ( $eyebrow ) : ?>
+				<span class="pll-e-sister__eyebrow" id="palladio-unit-<?php echo esc_attr( $unit_id ); ?>-eyebrow"><?php echo esc_html( $eyebrow ); ?></span>
+			<?php endif; ?>
+			<span class="pll-e-sister__title" id="palladio-unit-<?php echo esc_attr( $unit_id ); ?>-title"><?php echo esc_html( get_the_title( $unit_id ) ); ?></span>
+			<?php if ( $excerpt ) : ?>
+				<span class="pll-e-sister__desc" id="palladio-unit-<?php echo esc_attr( $unit_id ); ?>-excerpt"><?php echo esc_html( wp_trim_words( $excerpt, 26 ) ); ?></span>
+			<?php endif; ?>
+			<span class="pll-e-sister__price" id="palladio-unit-<?php echo esc_attr( $unit_id ); ?>-price"><?php echo esc_html( palladio_format_price( $price ) ); ?></span>
+		</span>
+	</a>
+	<?php
+}

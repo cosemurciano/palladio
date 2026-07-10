@@ -357,14 +357,21 @@
 	display: grid;
 	gap: 1.5rem;
 	grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+	align-items: stretch;
 }
 
+/* La card è una colonna flessibile: media in alto, corpo che riempie,
+ * prezzo ancorato in basso — tutte le card hanno la stessa struttura
+ * anche senza fotografia o senza descrizione. */
 .pll-e-sister {
 	background: var(--pll-e-surface);
 	border: 1px solid var(--pll-e-line);
 	text-decoration: none;
 	color: inherit;
-	display: block;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	overflow: hidden;
 	transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 
@@ -373,46 +380,104 @@
 	box-shadow: 0 16px 34px -18px rgba(46, 42, 35, 0.5);
 }
 
+/* Gli elementi interni sono <span>: senza display esplicito restavano
+ * inline (titolo e prezzo sulla stessa riga, media collassata, badge
+ * fluttuante fuori dalla card). */
 .pll-e-sister__media {
+	display: block;
+	position: relative;
 	aspect-ratio: 3 / 2;
-	background: var(--pll-e-paper-2);
+	background:
+		linear-gradient(135deg, var(--pll-e-paper-2) 0%, rgba(164, 144, 106, 0.18) 100%);
 	overflow: hidden;
+	flex-shrink: 0;
+}
+
+.pll-e-sister__media::after {
+	/* Filigrana per le card senza fotografia. */
+	content: '';
+	position: absolute;
+	inset: 0;
+	background-image: radial-gradient(circle at 30% 40%, rgba(110, 43, 43, 0.06), transparent 60%);
+	pointer-events: none;
 }
 
 .pll-e-sister__media img {
+	position: relative;
+	z-index: 1;
+	display: block;
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
+	transition: transform 0.35s ease;
 }
 
+.pll-e-sister:hover .pll-e-sister__media img {
+	transform: scale(1.03);
+}
+
+.pll-e-sister__media .palladio-badge { z-index: 2; }
+.pll-e-unit-card__shot { z-index: 2; }
+
 .pll-e-sister__body {
-	padding: 1rem 1.25rem 1.35rem;
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	padding: 1.1rem 1.25rem 1.25rem;
 }
 
 .pll-e-sister__eyebrow {
+	display: block;
 	font-size: 0.68rem;
 	text-transform: uppercase;
 	letter-spacing: 0.12em;
 	color: var(--pll-e-taupe);
+	margin-bottom: 0.35rem;
 }
 
 .pll-e-sister__title {
+	display: block;
 	font-family: var(--pll-e-display);
 	font-size: 1.5rem;
-	margin: 0.2rem 0 0.4rem;
+	line-height: 1.15;
+	margin: 0 0 0.4rem;
 }
 
 .pll-e-sister__desc {
 	display: block;
-	margin: 0.4rem 0 0.6rem;
+	margin: 0.15rem 0 0.75rem;
 	color: var(--pll-e-taupe);
 	font-size: 0.95rem;
 	line-height: 1.5;
 }
 
 .pll-e-sister__price {
+	display: block;
+	margin-top: auto;
+	padding-top: 0.85rem;
+	border-top: 1px solid var(--pll-e-line);
 	color: var(--pll-e-wine);
 	font-weight: 600;
+	font-size: 0.95rem;
+	letter-spacing: 0.02em;
+}
+
+/* Paginazione archivio unità */
+.pll-e-archive-pagination { margin-top: 2.5rem; text-align: center; }
+.pll-e-archive-pagination .page-numbers {
+	display: inline-block;
+	padding: 0.45rem 0.9rem;
+	margin: 0 0.15rem;
+	border: 1px solid var(--pll-e-line);
+	border-radius: 999px;
+	color: var(--pll-e-ink);
+	text-decoration: none;
+}
+.pll-e-archive-pagination .page-numbers.current,
+.pll-e-archive-pagination .page-numbers:hover {
+	background: var(--pll-e-wine);
+	border-color: var(--pll-e-wine);
+	color: #f7f2e7;
 }
 
 .pll-e-residenze-range {

@@ -52,8 +52,8 @@ class Palladio_Frontend_Assets {
 			true
 		);
 
-		// Direzione visiva editoriale sulle schede singole (edificio/unità/scenario).
-		if ( is_singular( array( 'pll_edificio', 'pll_unita', 'pll_scenario' ) ) ) {
+		// Direzione visiva editoriale su schede singole e archivio unità.
+		if ( is_singular( array( 'pll_edificio', 'pll_unita', 'pll_scenario' ) ) || is_post_type_archive( 'pll_unita' ) ) {
 			/**
 			 * Consente di disattivare lo stile editoriale (es. tema con design proprio).
 			 *
@@ -86,7 +86,7 @@ class Palladio_Frontend_Assets {
 			return true;
 		}
 
-		if ( is_post_type_archive( 'pll_edificio' ) ) {
+		if ( is_post_type_archive( array( 'pll_edificio', 'pll_unita' ) ) ) {
 			return true;
 		}
 

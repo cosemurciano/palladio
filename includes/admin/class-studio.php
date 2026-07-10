@@ -399,8 +399,26 @@ class Palladio_Admin_Studio {
 
 		$result = Palladio_AI_Openai::chat( $state['messages'], $args );
 		if ( is_wp_error( $result ) ) {
+			// Timeout di un singolo passo: non è fatale — riprova fino a 2 volte
+			// (il modello o l'API possono essere momentaneamente lenti).
+			if ( 'palladio_ai_timeout' === $result->get_error_code() ) {
+				$state['rounds']   = (int) $state['rounds'] - 1; // Il round non è avvenuto.
+				$state['timeouts'] = (int) ( $state['timeouts'] ?? 0 ) + 1;
+				if ( $state['timeouts'] <= 2 ) {
+					return array(
+						'done'   => false,
+						/* translators: %d: numero tentativo. */
+						'status' => sprintf( __( 'Il modello è lento: nuovo tentativo (%d/3)…', 'palladio' ), $state['timeouts'] + 1 ),
+					);
+				}
+				return new WP_Error(
+					'palladio_ai_timeout',
+					__( 'Il modello non risponde entro il tempo di un passo (~50 secondi, limite imposto dal web server). Usa un modello più veloce (es. gpt-4.1-mini) o riduci “Token massimi — agente” in Palladio → AI.', 'palladio' )
+				);
+			}
 			return $result;
 		}
+		$state['timeouts'] = 0;
 
 		$assistant           = $result['message'];
 		$state['messages'][] = $assistant;
@@ -442,8 +460,8 @@ class Palladio_Admin_Studio {
 	 * @return int
 	 */
 	private function step_timeout() {
-		$configured = class_exists( 'Palladio_AI_Settings' ) ? (int) Palladio_AI_Settings::http_timeout() : 45;
-		return max( 20, min( 45, $configured ) );
+		$configured = class_exists( 'Palladio_AI_Settings' ) ? (int) Palladio_AI_Settings::http_timeout() : 50;
+		return max( 20, min( 50, $configured ) );
 	}
 
 	/**
