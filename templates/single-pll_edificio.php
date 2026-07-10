@@ -91,29 +91,59 @@ while ( have_posts() ) :
 			</section>
 		<?php endif; ?>
 
-		<?php // TIMELINE / scroll-telling. ?>
+		<?php // TIMELINE / scroll-telling: media fissato a sinistra, capitoli che avanzano con lo scroll. ?>
 		<?php if ( $ed['timeline'] ) : ?>
-			<section class="pll-e-timeline">
-				<?php
-				$years = array_filter( wp_list_pluck( $ed['timeline'], 'year' ) );
-				if ( $years ) :
-					?>
-					<div class="pll-e-wrap pll-e-timeline__index">
-						<?php foreach ( $years as $y ) : ?><span><?php echo esc_html( $y ); ?></span><?php endforeach; ?>
-					</div>
-				<?php endif; ?>
-				<?php foreach ( $ed['timeline'] as $t ) : ?>
-					<?php $timg = palladio_image_url( $t['image'] ?? 0, 'large' ); ?>
-					<div class="pll-e-timeline__row pll-e-wrap">
-						<figure class="pll-e-timeline__media"><?php if ( $timg ) : ?><img src="<?php echo esc_url( $timg ); ?>" alt="" loading="lazy"><?php endif; ?></figure>
-						<div class="pll-e-timeline__text pll-reveal">
-							<?php if ( ! empty( $t['kicker'] ) ) : ?><p class="pll-e-kicker"><?php echo esc_html( $t['kicker'] ); ?></p><?php endif; ?>
-							<?php if ( ! empty( $t['year'] ) ) : ?><p class="pll-e-timeline__year"><?php echo esc_html( $t['year'] ); ?></p><?php endif; ?>
-							<?php if ( ! empty( $t['heading'] ) ) : ?><h2 class="pll-e-h"><?php echo esc_html( $t['heading'] ); ?></h2><?php endif; ?>
-							<?php if ( ! empty( $t['body'] ) ) : ?><div class="pll-e-prose"><?php echo wp_kses_post( wpautop( $t['body'] ) ); ?></div><?php endif; ?>
-						</div>
-					</div>
-				<?php endforeach; ?>
+			<?php
+			$chapters = array_values( $ed['timeline'] );
+			$roman    = array( 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII' );
+			?>
+			<section class="pll-e-scrolly" id="palladio-timeline" data-palladio-scrolly>
+				<div class="pll-e-scrolly__media" id="palladio-timeline-media" aria-hidden="true">
+					<?php foreach ( $chapters as $i => $t ) : ?>
+						<?php $timg = palladio_image_url( $t['image'] ?? 0, 'full' ); ?>
+						<span class="pll-e-scrolly__frame<?php echo 0 === $i ? ' is-active' : ''; ?>" data-scrolly-frame="<?php echo esc_attr( $i ); ?>"<?php if ( $timg ) : ?> style="background-image:url('<?php echo esc_url( $timg ); ?>')"<?php endif; ?>></span>
+					<?php endforeach; ?>
+					<span class="pll-e-scrolly__hint"><?php esc_html_e( 'Scroll-telling · i capitoli avanzano con lo scroll', 'palladio' ); ?></span>
+				</div>
+
+				<div class="pll-e-scrolly__chapters" id="palladio-timeline-chapters">
+					<?php foreach ( $chapters as $i => $t ) : ?>
+						<?php
+						$timg   = palladio_image_url( $t['image'] ?? 0, 'large' );
+						$anchor = 'palladio-timeline-capitolo-' . ( $i + 1 );
+						?>
+						<article class="pll-e-scrolly__chapter" id="<?php echo esc_attr( $anchor ); ?>" data-scrolly-chapter="<?php echo esc_attr( $i ); ?>">
+							<?php // Figura inline: mobile e degradazione senza JS (figura + testo impilati). ?>
+							<?php if ( $timg ) : ?>
+								<figure class="pll-e-scrolly__figure"><img src="<?php echo esc_url( $timg ); ?>" alt="" loading="lazy"></figure>
+							<?php endif; ?>
+							<div class="pll-e-scrolly__body">
+								<p class="pll-e-kicker" id="<?php echo esc_attr( $anchor ); ?>-eyebrow">
+									<?php
+									/* translators: %s: numero romano del capitolo. */
+									printf( esc_html__( 'Capitolo %s', 'palladio' ), esc_html( $roman[ $i ] ?? (string) ( $i + 1 ) ) );
+									if ( ! empty( $t['kicker'] ) ) {
+										echo ' · ' . esc_html( $t['kicker'] );
+									}
+									?>
+								</p>
+								<?php if ( ! empty( $t['year'] ) ) : ?><p class="pll-e-scrolly__year" id="<?php echo esc_attr( $anchor ); ?>-year"><?php echo esc_html( $t['year'] ); ?></p><?php endif; ?>
+								<?php if ( ! empty( $t['heading'] ) ) : ?><h2 class="pll-e-h pll-e-scrolly__heading" id="<?php echo esc_attr( $anchor ); ?>-title"><?php echo esc_html( $t['heading'] ); ?></h2><?php endif; ?>
+								<?php if ( ! empty( $t['body'] ) ) : ?><div class="pll-e-prose" id="<?php echo esc_attr( $anchor ); ?>-body"><?php echo wp_kses_post( wpautop( $t['body'] ) ); ?></div><?php endif; ?>
+
+								<nav class="pll-e-scrolly__nav" aria-label="<?php esc_attr_e( 'Capitoli della timeline', 'palladio' ); ?>">
+									<?php foreach ( $chapters as $j => $other ) : ?>
+										<?php $label = ! empty( $other['year'] ) ? $other['year'] : ( $roman[ $j ] ?? (string) ( $j + 1 ) ); ?>
+										<a href="#palladio-timeline-capitolo-<?php echo esc_attr( $j + 1 ); ?>"
+											class="<?php echo $j === $i ? 'is-active' : ''; ?>"
+											data-scrolly-goto="<?php echo esc_attr( $j ); ?>"
+											<?php echo $j === $i ? 'aria-current="true"' : ''; ?>><?php echo esc_html( $label ); ?></a>
+									<?php endforeach; ?>
+								</nav>
+							</div>
+						</article>
+					<?php endforeach; ?>
+				</div>
 			</section>
 		<?php endif; ?>
 

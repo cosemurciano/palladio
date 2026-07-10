@@ -588,40 +588,121 @@
 	font-style: italic;
 }
 
-/* Timeline / scroll-telling */
-.pll-e-timeline__index {
-	display: flex;
-	gap: 1.5rem;
-	flex-wrap: wrap;
-	padding-top: 2.5rem;
-	color: var(--pll-e-gold);
+/* ---------------------------------------------------------------------------
+ * Timeline / scroll-telling
+ * Media fissato (sticky) a sinistra con crossfade; i capitoli avanzano con lo
+ * scroll a destra. Senza JS (o su mobile) degrada a figura + testo impilati.
+ * ------------------------------------------------------------------------- */
+.pll-e-scrolly {
+	width: 100vw;
+	margin-left: calc(50% - 50vw);
+	background: var(--pll-e-paper);
+}
+
+/* Rotaia media: visibile solo quando il JS attiva lo scroll-telling. */
+.pll-e-scrolly__media {
+	display: none;
+	position: sticky;
+	top: 0;
+	height: 100vh;
+	height: 100dvh;
+	overflow: hidden;
+	background: linear-gradient(150deg, #b39a6f 0%, #8f7a52 55%, #a4906a 100%);
+}
+
+.pll-e-scrolly__frame {
+	position: absolute;
+	inset: 0;
+	background-size: cover;
+	background-position: center;
+	background-color: transparent;
+	opacity: 0;
+	transition: opacity 0.7s ease;
+}
+
+.pll-e-scrolly__frame.is-active { opacity: 1; }
+
+.pll-e-scrolly__hint {
+	position: absolute;
+	z-index: 2;
+	top: 1.5rem;
+	left: 1.5rem;
+	padding: 0.35rem 0.9rem;
+	border-radius: 999px;
+	background: rgba(46, 42, 35, 0.6);
+	color: #f2ead9;
+	font-size: 0.66rem;
 	font-weight: 600;
-	letter-spacing: 0.08em;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
 }
-.pll-e-timeline__row {
-	display: grid;
-	gap: clamp(1.5rem, 4vw, 3rem);
-	grid-template-columns: 1fr;
-	align-items: start;
-	padding-block: clamp(2rem, 5vw, 4rem);
+
+.pll-e-scrolly__chapter {
+	padding: clamp(2.5rem, 6vw, 4rem) clamp(1.25rem, 5vw, 4rem);
 }
-@media (min-width: 880px) {
-	.pll-e-timeline__row { grid-template-columns: 1fr 1fr; }
-	.pll-e-timeline__media { position: sticky; top: 4rem; }
-}
-.pll-e-timeline__media {
-	margin: 0;
+
+.pll-e-scrolly__figure {
+	margin: 0 0 1.5rem;
 	background: var(--pll-e-paper-2);
 	aspect-ratio: 4 / 3;
 	overflow: hidden;
 }
-.pll-e-timeline__media img { width: 100%; height: 100%; object-fit: cover; }
-.pll-e-timeline__year {
+.pll-e-scrolly__figure img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.pll-e-scrolly__body { max-width: 34rem; }
+
+.pll-e-scrolly__year {
 	font-family: var(--pll-e-display);
-	font-size: clamp(3rem, 8vw, 5.5rem);
+	font-size: clamp(3.25rem, 7vw, 5.5rem);
+	font-feature-settings: 'onum' 1;
 	line-height: 1;
 	color: var(--pll-e-gold);
-	margin: 0.5rem 0 0.5rem;
+	margin: 0.75rem 0 1rem;
+}
+
+.pll-e-scrolly__heading { margin-bottom: 1rem; }
+
+/* Navigazione anni: cliccabile, il corrente è marcato. */
+.pll-e-scrolly__nav {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1.4rem;
+	margin-top: clamp(1.75rem, 4vw, 3rem);
+}
+.pll-e-scrolly__nav a {
+	color: var(--pll-e-taupe);
+	text-decoration: none;
+	font-weight: 600;
+	letter-spacing: 0.05em;
+	padding-bottom: 3px;
+	border-bottom: 2px solid transparent;
+	transition: color 0.15s ease, border-color 0.15s ease;
+}
+.pll-e-scrolly__nav a:hover { color: var(--pll-e-wine); }
+.pll-e-scrolly__nav a.is-active {
+	color: var(--pll-e-ink);
+	border-bottom-color: var(--pll-e-wine);
+}
+
+/* Desktop + JS attivo: due colonne, media sticky, figure inline nascoste. */
+@media (min-width: 960px) {
+	.pll-e-scrolly.is-scrolly {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		align-items: start;
+	}
+	.pll-e-scrolly.is-scrolly .pll-e-scrolly__media { display: block; }
+	.pll-e-scrolly.is-scrolly .pll-e-scrolly__figure { display: none; }
+	.pll-e-scrolly.is-scrolly .pll-e-scrolly__chapter {
+		min-height: 100vh;
+		min-height: 100dvh;
+		display: flex;
+		align-items: center;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.pll-e-scrolly__frame { transition: none; }
 }
 
 /* Ambient loop */
