@@ -83,10 +83,11 @@
 			status.textContent = i18n.working || 'Working…';
 
 			// Ogni richiesta esegue un passo dell'agente (una chiamata al
-			// modello). Finché il server risponde done:false, reinviamo con il
-			// "turn" ricevuto per far proseguire il loop di tool, senza mai
-			// tenere aperta una singola richiesta lunga (che veniva troncata).
-			var MAX_STEPS = 24;
+			// modello OPPURE un tool). Finché il server risponde done:false,
+			// reinviamo con il "turn" ricevuto per far proseguire il loop,
+			// senza mai tenere aperta una singola richiesta lunga (che veniva
+			// troncata). Il cap server-side resta 10 round di modello.
+			var MAX_STEPS = 60;
 
 			function finish( reply ) {
 				busy = false;

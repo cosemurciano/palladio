@@ -209,7 +209,30 @@ class Palladio_AI_Openai {
 
 		self::record_usage( $args['model'], $response['usage'] ?? array() );
 
-		return array( 'text' => self::extract_output_text( $response ) );
+		$text = self::extract_output_text( $response );
+
+		// Risposta senza testo: fai emergere il motivo reale invece di un
+		// generico "nessun risultato". Con i modelli reasoning il caso tipico è
+		// status=incomplete / reason=max_output_tokens: i token di ragionamento
+		// e la ricerca file esauriscono il limite prima di produrre testo.
+		if ( '' === trim( $text ) ) {
+			$status = (string) ( $response['status'] ?? '' );
+			$reason = (string) ( $response['incomplete_details']['reason'] ?? '' );
+
+			if ( 'max_output_tokens' === $reason || 'incomplete' === $status ) {
+				return new WP_Error(
+					'palladio_ai_incomplete',
+					sprintf(
+						/* translators: 1: stato, 2: motivo. */
+						__( 'Il modello non ha prodotto testo (stato: %1$s, motivo: %2$s). Con i modelli reasoning i token di ragionamento consumano il limite: aumenta “Token massimi — agente (chat)” in Palladio → AI (consigliati 8000+), oppure usa un modello non-reasoning come gpt-4.1-mini.', 'palladio' ),
+						$status ? $status : '?',
+						$reason ? $reason : '?'
+					)
+				);
+			}
+		}
+
+		return array( 'text' => $text );
 	}
 
 	/**
