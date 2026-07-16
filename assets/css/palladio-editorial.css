@@ -991,3 +991,92 @@ body.pll-lightbox-open { overflow: hidden; }
 	.pll-lightbox__arrow--next { right: 25%; }
 	.pll-lightbox__stage img { max-height: 72vh; }
 }
+
+/* ---------------------------------------------------------------------------
+ * Form contatti nella landing edificio (stile editoriale)
+ * ------------------------------------------------------------------------- */
+.pll-e-contact .palladio-lead-form {
+	max-width: 46rem;
+	margin-top: 1.5rem;
+	padding: clamp(1.25rem, 3vw, 2rem);
+	background: var(--pll-e-surface);
+	border: 1px solid var(--pll-e-line);
+}
+
+.pll-e-contact .palladio-lead-form__grid {
+	display: grid;
+	gap: 0.9rem 1.25rem;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+}
+
+.pll-e-contact .palladio-field label {
+	display: block;
+	font-size: 0.78rem;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: var(--pll-e-taupe);
+	margin-bottom: 0.3rem;
+}
+
+.pll-e-contact .palladio-field input[type="text"],
+.pll-e-contact .palladio-field input[type="email"],
+.pll-e-contact .palladio-field input[type="tel"],
+.pll-e-contact .palladio-field select,
+.pll-e-contact .palladio-field textarea {
+	width: 100%;
+	padding: 0.6rem 0.75rem;
+	border: 1px solid var(--pll-e-line);
+	border-radius: 2px;
+	background: #fffdf8;
+	color: var(--pll-e-ink);
+	font: inherit;
+}
+
+.pll-e-contact .palladio-field input:focus-visible,
+.pll-e-contact .palladio-field select:focus-visible,
+.pll-e-contact .palladio-field textarea:focus-visible {
+	outline: 2px solid var(--pll-e-wine);
+	outline-offset: 1px;
+}
+
+.pll-e-contact .palladio-field--consent label {
+	display: flex;
+	gap: 0.6rem;
+	align-items: flex-start;
+	text-transform: none;
+	letter-spacing: 0;
+	font-size: 0.85rem;
+	color: var(--pll-e-taupe);
+}
+
+.pll-e-contact .palladio-cta {
+	display: inline-block;
+	font-weight: 600;
+	text-decoration: none;
+	padding: 0.7rem 1.6rem;
+	border-radius: 2px;
+	background: var(--pll-e-wine);
+	color: #f7f2e7;
+	border: 1px solid var(--pll-e-wine);
+	cursor: pointer;
+	font: inherit;
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.pll-e-contact .palladio-cta:hover {
+	background: transparent;
+	color: var(--pll-e-wine);
+}
+
+.pll-e-contact .palladio-notice {
+	padding: 0.7rem 1rem;
+	border-radius: 2px;
+	font-weight: 600;
+}
+.pll-e-contact .palladio-notice--ok { background: #edf7f1; color: #1a4731; border: 1px solid #9ec6b0; }
+.pll-e-contact .palladio-notice--error { background: #fbeaea; color: #7a1f1f; border: 1px solid #d8a0a0; }
+
+.pll-e-contact .palladio-hp {
+	position: absolute !important;
+	left: -9999px;
+}
