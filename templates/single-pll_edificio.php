@@ -103,7 +103,6 @@ while ( have_posts() ) :
 						<?php $timg = palladio_image_url( $t['image'] ?? 0, 'full' ); ?>
 						<span class="pll-e-scrolly__frame<?php echo 0 === $i ? ' is-active' : ''; ?>" data-scrolly-frame="<?php echo esc_attr( $i ); ?>"<?php if ( $timg ) : ?> style="background-image:url('<?php echo esc_url( $timg ); ?>')"<?php endif; ?>></span>
 					<?php endforeach; ?>
-					<span class="pll-e-scrolly__hint"><?php esc_html_e( 'Scroll-telling · i capitoli avanzano con lo scroll', 'palladio' ); ?></span>
 				</div>
 
 				<div class="pll-e-scrolly__chapters" id="palladio-timeline-chapters">
@@ -211,14 +210,24 @@ while ( have_posts() ) :
 						<p class="pll-e-kicker"><?php esc_html_e( 'Galleria', 'palladio' ); ?></p>
 						<h2 class="pll-e-h"><?php esc_html_e( 'Il palazzo in luce', 'palladio' ); ?></h2>
 					</div>
-					<p class="pll-e-prose pll-e-gallery-note"><?php esc_html_e( 'Composizione editoriale asimmetrica: tagli e proporzioni diverse, mai griglia uniforme.', 'palladio' ); ?></p>
 				</div>
-				<div class="pll-e-gallery">
+				<div class="pll-e-gallery" id="palladio-gallery" data-pll-lightbox-group>
 					<?php foreach ( $ed['gallery'] as $shot ) : ?>
-						<?php $gi = palladio_image_url( $shot['image'] ?? 0, 'large' ); if ( ! $gi ) { continue; } ?>
+						<?php
+						$gi = palladio_image_url( $shot['image'] ?? 0, 'large' );
+						if ( ! $gi ) {
+							continue;
+						}
+						$gfull = palladio_image_url( $shot['image'], 'full' );
+						?>
 						<figure class="pll-e-gallery__item" style="aspect-ratio:<?php echo esc_attr( $ratio_css( $shot['ratio'] ?? '4:3' ) ); ?>">
-							<img src="<?php echo esc_url( $gi ); ?>" alt="" loading="lazy">
-							<?php if ( ! empty( $shot['caption'] ) ) : ?><figcaption><?php echo esc_html( $shot['caption'] ); ?><?php if ( ! empty( $shot['ratio'] ) ) : ?> · <?php echo esc_html( $shot['ratio'] ); ?><?php endif; ?></figcaption><?php endif; ?>
+							<a class="pll-e-gallery__zoom" href="<?php echo esc_url( $gfull ? $gfull : $gi ); ?>"
+								data-pll-lightbox="<?php echo esc_url( $gfull ? $gfull : $gi ); ?>"
+								data-pll-caption="<?php echo esc_attr( $shot['caption'] ?? '' ); ?>"
+								aria-label="<?php esc_attr_e( 'Ingrandisci immagine', 'palladio' ); ?>">
+								<img src="<?php echo esc_url( $gi ); ?>" alt="<?php echo esc_attr( $shot['caption'] ?? '' ); ?>" loading="lazy">
+							</a>
+							<?php if ( ! empty( $shot['caption'] ) ) : ?><figcaption><?php echo esc_html( $shot['caption'] ); ?></figcaption><?php endif; ?>
 						</figure>
 					<?php endforeach; ?>
 				</div>

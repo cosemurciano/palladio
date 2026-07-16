@@ -27,11 +27,91 @@
 		rows.appendChild( node );
 	}
 
+	// ---------------------------------------------------------------- riordino
+	// Le righe si riordinano trascinando la maniglia, con i pulsanti ↑/↓ o con
+	// i tasti freccia quando la maniglia ha il focus. L'ordine salvato segue
+	// l'ordine del DOM (PHP conserva l'ordine di invio del form).
+	function moveRow( row, dir ) {
+		var sibling = ( dir < 0 ) ? row.previousElementSibling : row.nextElementSibling;
+		if ( ! sibling ) {
+			return;
+		}
+		if ( dir < 0 ) {
+			row.parentNode.insertBefore( row, sibling );
+		} else {
+			row.parentNode.insertBefore( sibling, row );
+		}
+	}
+
+	var dragged = null;
+
+	document.addEventListener( 'dragstart', function ( e ) {
+		var row = e.target.closest ? e.target.closest( '.pll-rep__row' ) : null;
+		if ( ! row ) {
+			return;
+		}
+		dragged = row;
+		row.classList.add( 'is-dragging' );
+		if ( e.dataTransfer ) {
+			e.dataTransfer.effectAllowed = 'move';
+			try { e.dataTransfer.setData( 'text/plain', '' ); } catch ( err ) { /* IE */ }
+		}
+	} );
+
+	document.addEventListener( 'dragover', function ( e ) {
+		if ( ! dragged ) {
+			return;
+		}
+		var over = e.target.closest ? e.target.closest( '.pll-rep__row' ) : null;
+		if ( ! over || over === dragged || over.parentNode !== dragged.parentNode ) {
+			return;
+		}
+		e.preventDefault();
+		var rect = over.getBoundingClientRect();
+		var after = ( e.clientY - rect.top ) > rect.height / 2;
+		over.parentNode.insertBefore( dragged, after ? over.nextSibling : over );
+	} );
+
+	document.addEventListener( 'dragend', function () {
+		if ( dragged ) {
+			dragged.classList.remove( 'is-dragging' );
+			dragged = null;
+		}
+	} );
+
+	document.addEventListener( 'keydown', function ( e ) {
+		if ( ! e.target.classList || ! e.target.classList.contains( 'pll-rep__handle' ) ) {
+			return;
+		}
+		if ( 'ArrowUp' === e.key || 'ArrowDown' === e.key ) {
+			e.preventDefault();
+			var row = e.target.closest( '.pll-rep__row' );
+			if ( row ) {
+				moveRow( row, 'ArrowUp' === e.key ? -1 : 1 );
+				e.target.focus();
+			}
+		}
+	} );
+
 	document.addEventListener( 'click', function ( e ) {
 		var add = e.target.closest( '.pll-rep__add' );
 		if ( add ) {
 			e.preventDefault();
 			addRow( add.getAttribute( 'data-add' ) );
+			return;
+		}
+
+		var up = e.target.closest( '.pll-rep__move--up' );
+		if ( up ) {
+			e.preventDefault();
+			moveRow( up.closest( '.pll-rep__row' ), -1 );
+			return;
+		}
+
+		var down = e.target.closest( '.pll-rep__move--down' );
+		if ( down ) {
+			e.preventDefault();
+			moveRow( down.closest( '.pll-rep__row' ), 1 );
 			return;
 		}
 
