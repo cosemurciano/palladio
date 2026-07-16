@@ -173,12 +173,12 @@ class Palladio_Admin_Content {
 			<textarea class="widefat" rows="2" name="palladio_editorial[floorplan][notes]"><?php echo esc_textarea( $d['floorplan']['notes'] ); ?></textarea></label></p>
 
 		<h4><?php esc_html_e( 'Galleria', 'palladio' ); ?></h4>
+		<?php $this->gallery_layout_field( $d['gallery_layout'] ); ?>
 		<?php
 		$this->repeater( 'gallery', $d['gallery'], array(
 			'image'   => array( 'type' => 'media', 'label' => __( 'Immagine', 'palladio' ) ),
 			'caption' => array( 'type' => 'text', 'label' => __( 'Didascalia', 'palladio' ) ),
-			'ratio'   => array( 'type' => 'select', 'label' => __( 'Proporzione', 'palladio' ), 'options' => array( '3:2' => '3:2', '4:3' => '4:3', '4:5' => '4:5', '1:1' => '1:1' ) ),
-		) );
+		), true );
 		?>
 
 		<h4><?php esc_html_e( 'Posizione nell’edificio', 'palladio' ); ?></h4>
@@ -224,10 +224,14 @@ class Palladio_Admin_Content {
 		) );
 		?>
 
-		<h4><?php esc_html_e( 'Ambient loop (fascia a piena larghezza)', 'palladio' ); ?></h4>
-		<?php $this->media_field( 'palladio_editorial[ambient][image]', (int) $d['ambient']['image'] ); ?>
-		<p><label><?php esc_html_e( 'Didascalia', 'palladio' ); ?><br>
-			<input type="text" class="widefat" name="palladio_editorial[ambient][caption]" value="<?php echo esc_attr( $d['ambient']['caption'] ); ?>" placeholder="<?php esc_attr_e( 'Ambient loop · il glicine della loggetta, 6s, senza audio', 'palladio' ); ?>"></label></p>
+		<h4><?php esc_html_e( 'Ambient loop (fascia a piena larghezza, dopo le unità)', 'palladio' ); ?></h4>
+		<p class="description"><?php esc_html_e( 'Più immagini vanno in dissolvenza automatica, navigabili con le frecce.', 'palladio' ); ?></p>
+		<?php
+		$this->repeater( 'ambient_images', $d['ambient_images'], array(
+			'image'   => array( 'type' => 'media', 'label' => __( 'Immagine', 'palladio' ) ),
+			'caption' => array( 'type' => 'text', 'label' => __( 'Didascalia', 'palladio' ) ),
+		), true );
+		?>
 
 		<h4><?php esc_html_e( 'Sezione unità', 'palladio' ); ?></h4>
 		<div class="palladio-fields-grid">
@@ -239,12 +243,12 @@ class Palladio_Admin_Content {
 		<p><label><input type="checkbox" name="palladio_editorial[units_filters]" value="1" <?php checked( $d['units_filters'], true ); ?>> <?php esc_html_e( 'Mostra i filtri (Tutte / Piano / Prezzo / Con spazio esterno)', 'palladio' ); ?></label></p>
 
 		<h4><?php esc_html_e( 'Galleria', 'palladio' ); ?></h4>
+		<?php $this->gallery_layout_field( $d['gallery_layout'] ); ?>
 		<?php
 		$this->repeater( 'gallery', $d['gallery'], array(
 			'image'   => array( 'type' => 'media', 'label' => __( 'Immagine', 'palladio' ) ),
 			'caption' => array( 'type' => 'text', 'label' => __( 'Didascalia', 'palladio' ) ),
-			'ratio'   => array( 'type' => 'select', 'label' => __( 'Proporzione', 'palladio' ), 'options' => array( '3:2' => '3:2', '4:3' => '4:3', '4:5' => '4:5', '1:1' => '1:1', '16:9' => '16:9' ) ),
-		) );
+		), true );
 		?>
 		<div class="palladio-fields-grid">
 			<p class="palladio-field-cell"><label><?php esc_html_e( 'Link “Tutta la galleria”', 'palladio' ); ?>
@@ -252,7 +256,36 @@ class Palladio_Admin_Content {
 			<p class="palladio-field-cell"><label><?php esc_html_e( 'Numero di fotografie', 'palladio' ); ?>
 				<input type="text" class="widefat" name="palladio_editorial[gallery_count]" value="<?php echo esc_attr( $d['gallery_count'] ); ?>" placeholder="42"></label></p>
 		</div>
+
+		<h4><?php esc_html_e( 'Come funziona l’acquisto', 'palladio' ); ?></h4>
+		<p class="description"><?php esc_html_e( 'Sezione di chiusura della landing. Se lasciata vuota usa il campo “Vincoli e note legali” dei Dati principali.', 'palladio' ); ?></p>
+		<p><label><?php esc_html_e( 'Titolo', 'palladio' ); ?><br>
+			<input type="text" class="widefat" name="palladio_editorial[purchase][heading]" value="<?php echo esc_attr( $d['purchase']['heading'] ); ?>" placeholder="<?php esc_attr_e( 'La chiarezza è parte dell’architettura', 'palladio' ); ?>"></label></p>
+		<p><label><?php esc_html_e( 'Testo', 'palladio' ); ?><br>
+			<textarea class="widefat" rows="4" name="palladio_editorial[purchase][text]"><?php echo esc_textarea( $d['purchase']['text'] ); ?></textarea></label></p>
 		<?php
+	}
+
+	/**
+	 * Selettore del layout automatico della galleria.
+	 *
+	 * @param string $current Layout corrente.
+	 * @return void
+	 */
+	private function gallery_layout_field( $current ) {
+		$layouts = array(
+			'masonry'   => __( 'Masonry — colonne a incastro (editoriale)', 'palladio' ),
+			'grid'      => __( 'Griglia — celle uniformi', 'palladio' ),
+			'mosaic'    => __( 'Mosaico — una foto grande ogni cinque', 'palladio' ),
+			'filmstrip' => __( 'Filmstrip — pellicola orizzontale scorrevole', 'palladio' ),
+			'offset'    => __( 'Sfalsata — due colonne a quote alternate', 'palladio' ),
+		);
+		echo '<p><label>' . esc_html__( 'Layout della galleria (automatico)', 'palladio' ) . '<br>';
+		echo '<select name="palladio_editorial[gallery_layout]" class="widefat" style="max-width:26rem">';
+		foreach ( $layouts as $value => $label ) {
+			printf( '<option value="%s"%s>%s</option>', esc_attr( $value ), selected( $current, $value, false ), esc_html( $label ) );
+		}
+		echo '</select></label></p>';
 	}
 
 	/**
@@ -263,7 +296,7 @@ class Palladio_Admin_Content {
 	 * @param array  $fields  Definizione campi.
 	 * @return void
 	 */
-	private function repeater( $section, $rows, $fields ) {
+	private function repeater( $section, $rows, $fields, $multi = false ) {
 		echo '<div class="pll-rep" data-section="' . esc_attr( $section ) . '">';
 		echo '<div class="pll-rep__rows">';
 
@@ -284,6 +317,15 @@ class Palladio_Admin_Content {
 			esc_attr( $section ),
 			esc_html__( '+ Aggiungi', 'palladio' )
 		);
+
+		if ( $multi ) {
+			// Selezione multipla dal media picker: una riga per ogni immagine scelta.
+			printf(
+				' <button type="button" class="button pll-rep__add-multi" data-add="%s">%s</button>',
+				esc_attr( $section ),
+				esc_html__( '+ Aggiungi più immagini', 'palladio' )
+			);
+		}
 		echo '</div>';
 	}
 
@@ -390,7 +432,8 @@ class Palladio_Admin_Content {
 			'chapters'        => $this->clean_rows( $raw['chapters'] ?? array(), array( 'time' => 'text', 'label' => 'text' ) ),
 			'narrative'       => $this->clean_rows( $raw['narrative'] ?? array(), array( 'kicker' => 'text', 'heading' => 'text', 'body' => 'html', 'image' => 'int', 'caption' => 'text', 'layout' => 'key' ) ),
 			'tech'            => $this->clean_rows( $raw['tech'] ?? array(), array( 'label' => 'text', 'value' => 'text' ) ),
-			'gallery'         => $this->clean_rows( $raw['gallery'] ?? array(), array( 'image' => 'int', 'caption' => 'text', 'ratio' => 'text' ) ),
+			'gallery'         => $this->clean_rows( $raw['gallery'] ?? array(), array( 'image' => 'int', 'caption' => 'text' ) ),
+			'gallery_layout'  => in_array( $raw['gallery_layout'] ?? '', array( 'masonry', 'grid', 'mosaic', 'filmstrip', 'offset' ), true ) ? $raw['gallery_layout'] : 'masonry',
 			'floorplan'       => array(
 				'image'   => absint( $raw['floorplan']['image'] ?? 0 ),
 				'caption' => sanitize_text_field( $raw['floorplan']['caption'] ?? '' ),
@@ -404,6 +447,11 @@ class Palladio_Admin_Content {
 			'ambient'         => array(
 				'image'   => absint( $raw['ambient']['image'] ?? 0 ),
 				'caption' => sanitize_text_field( $raw['ambient']['caption'] ?? '' ),
+			),
+			'ambient_images'  => $this->clean_rows( $raw['ambient_images'] ?? array(), array( 'image' => 'int', 'caption' => 'text' ) ),
+			'purchase'        => array(
+				'heading' => sanitize_text_field( $raw['purchase']['heading'] ?? '' ),
+				'text'    => sanitize_textarea_field( $raw['purchase']['text'] ?? '' ),
 			),
 			'manifesto'       => $this->clean_rows( $raw['manifesto'] ?? array(), array( 'text' => 'text', 'emphasis' => 'text' ) ),
 			'timeline'        => $this->clean_rows( $raw['timeline'] ?? array(), array( 'kicker' => 'text', 'year' => 'text', 'heading' => 'text', 'body' => 'html', 'image' => 'int' ) ),

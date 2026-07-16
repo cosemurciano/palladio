@@ -43,9 +43,6 @@ while ( have_posts() ) :
 		$facts[] = array( (string) absint( $uv ), __( 'Unità in vendita', 'palladio' ) );
 	}
 
-	$ratio_css = static function ( $ratio ) {
-		return in_array( $ratio, array( '3:2', '4:3', '4:5', '1:1', '16:9' ), true ) ? str_replace( ':', ' / ', $ratio ) : '4 / 3';
-	};
 	?>
 	<div class="palladio-editorial palladio-edificio-editorial">
 
@@ -146,14 +143,6 @@ while ( have_posts() ) :
 			</section>
 		<?php endif; ?>
 
-		<?php // AMBIENT LOOP. ?>
-		<?php $ambient = palladio_image_url( $ed['ambient']['image'], 'full' ); ?>
-		<?php if ( $ambient ) : ?>
-			<section class="pll-e-ambient" style="background-image:url('<?php echo esc_url( $ambient ); ?>')">
-				<?php if ( $ed['ambient']['caption'] ) : ?><span class="pll-e-ambient__caption"><?php echo esc_html( $ed['ambient']['caption'] ); ?></span><?php endif; ?>
-			</section>
-		<?php endif; ?>
-
 		<?php // UNITÀ — "Scegli le tue stanze". ?>
 		<?php
 		$units = palladio_get_building_units( $building_id );
@@ -202,6 +191,33 @@ while ( have_posts() ) :
 			</section>
 		<?php endif; ?>
 
+		<?php // AMBIENT LOOP — fascia a piena larghezza dopo le unità, più immagini in dissolvenza. ?>
+		<?php
+		$ambient_frames = array();
+		foreach ( $ed['ambient_images'] as $ai ) {
+			$aurl = palladio_image_url( $ai['image'] ?? 0, 'full' );
+			if ( $aurl ) {
+				$ambient_frames[] = array( 'url' => $aurl, 'caption' => (string) ( $ai['caption'] ?? '' ) );
+			}
+		}
+		if ( $ambient_frames ) :
+			?>
+			<section class="pll-e-ambient" id="palladio-ambient" data-pll-ambient>
+				<?php foreach ( $ambient_frames as $ai => $frame ) : ?>
+					<span class="pll-e-ambient__frame<?php echo 0 === $ai ? ' is-active' : ''; ?>" data-ambient-frame="<?php echo esc_attr( $ai ); ?>" style="background-image:url('<?php echo esc_url( $frame['url'] ); ?>')"></span>
+				<?php endforeach; ?>
+				<?php foreach ( $ambient_frames as $ai => $frame ) : ?>
+					<?php if ( '' !== $frame['caption'] ) : ?>
+						<span class="pll-e-ambient__caption<?php echo 0 === $ai ? ' is-active' : ''; ?>" data-ambient-caption="<?php echo esc_attr( $ai ); ?>"><?php echo esc_html( $frame['caption'] ); ?></span>
+					<?php endif; ?>
+				<?php endforeach; ?>
+				<?php if ( count( $ambient_frames ) > 1 ) : ?>
+					<button type="button" class="pll-e-ambient__arrow pll-e-ambient__arrow--prev" data-ambient-prev aria-label="<?php esc_attr_e( 'Immagine precedente', 'palladio' ); ?>">&#8592;</button>
+					<button type="button" class="pll-e-ambient__arrow pll-e-ambient__arrow--next" data-ambient-next aria-label="<?php esc_attr_e( 'Immagine successiva', 'palladio' ); ?>">&#8594;</button>
+				<?php endif; ?>
+			</section>
+		<?php endif; ?>
+
 		<?php // GALLERIA asimmetrica. ?>
 		<?php if ( $ed['gallery'] ) : ?>
 			<section class="pll-e-section pll-e-wrap">
@@ -211,26 +227,7 @@ while ( have_posts() ) :
 						<h2 class="pll-e-h"><?php esc_html_e( 'Il palazzo in luce', 'palladio' ); ?></h2>
 					</div>
 				</div>
-				<div class="pll-e-gallery" id="palladio-gallery" data-pll-lightbox-group>
-					<?php foreach ( $ed['gallery'] as $shot ) : ?>
-						<?php
-						$gi = palladio_image_url( $shot['image'] ?? 0, 'large' );
-						if ( ! $gi ) {
-							continue;
-						}
-						$gfull = palladio_image_url( $shot['image'], 'full' );
-						?>
-						<figure class="pll-e-gallery__item" style="aspect-ratio:<?php echo esc_attr( $ratio_css( $shot['ratio'] ?? '4:3' ) ); ?>">
-							<a class="pll-e-gallery__zoom" href="<?php echo esc_url( $gfull ? $gfull : $gi ); ?>"
-								data-pll-lightbox="<?php echo esc_url( $gfull ? $gfull : $gi ); ?>"
-								data-pll-caption="<?php echo esc_attr( $shot['caption'] ?? '' ); ?>"
-								aria-label="<?php esc_attr_e( 'Ingrandisci immagine', 'palladio' ); ?>">
-								<img src="<?php echo esc_url( $gi ); ?>" alt="<?php echo esc_attr( $shot['caption'] ?? '' ); ?>" loading="lazy">
-							</a>
-							<?php if ( ! empty( $shot['caption'] ) ) : ?><figcaption><?php echo esc_html( $shot['caption'] ); ?></figcaption><?php endif; ?>
-						</figure>
-					<?php endforeach; ?>
-				</div>
+				<?php palladio_render_gallery( $ed['gallery'], $ed['gallery_layout'], 'palladio-gallery' ); ?>
 				<?php if ( $ed['gallery_url'] ) : ?>
 					<p class="pll-e-gallery-more"><a href="<?php echo esc_url( $ed['gallery_url'] ); ?>">
 						<?php
@@ -244,14 +241,17 @@ while ( have_posts() ) :
 		<?php endif; ?>
 
 		<?php
-		$vincoli = palladio_meta( $building_id, 'vincoli_note' );
-		if ( $vincoli ) :
+		// Come funziona l'acquisto: campi editoriali dedicati, con fallback
+		// al meta "Vincoli e note legali" dei Dati principali.
+		$purchase_text    = $ed['purchase']['text'] ? $ed['purchase']['text'] : (string) palladio_meta( $building_id, 'vincoli_note' );
+		$purchase_heading = $ed['purchase']['heading'] ? $ed['purchase']['heading'] : __( 'La chiarezza è parte dell’architettura', 'palladio' );
+		if ( $purchase_text ) :
 			?>
-			<section class="pll-e-tech">
+			<section class="pll-e-tech" id="palladio-purchase">
 				<div class="pll-e-wrap pll-e-section">
-					<p class="pll-e-kicker"><?php esc_html_e( 'Come funziona l’acquisto', 'palladio' ); ?></p>
-					<h2 class="pll-e-h"><?php esc_html_e( 'La chiarezza è parte dell’architettura', 'palladio' ); ?></h2>
-					<p class="pll-e-prose"><?php echo esc_html( $vincoli ); ?></p>
+					<p class="pll-e-kicker" id="palladio-purchase-eyebrow"><?php esc_html_e( 'Come funziona l’acquisto', 'palladio' ); ?></p>
+					<h2 class="pll-e-h" id="palladio-purchase-title"><?php echo esc_html( $purchase_heading ); ?></h2>
+					<div class="pll-e-prose" id="palladio-purchase-text"><?php echo wp_kses_post( wpautop( $purchase_text ) ); ?></div>
 				</div>
 			</section>
 		<?php endif; ?>

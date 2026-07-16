@@ -289,6 +289,69 @@
 		} );
 	}
 
+	// -------------------------------------------------------------------------
+	// Ambient loop: più immagini in dissolvenza automatica (6s), navigabili
+	// con le frecce o con lo swipe. Con una sola immagine resta statico.
+	// -------------------------------------------------------------------------
+	function initAmbient( section ) {
+		var frames = section.querySelectorAll( '[data-ambient-frame]' );
+		if ( frames.length < 2 ) {
+			return;
+		}
+		var captions = section.querySelectorAll( '[data-ambient-caption]' );
+		var current = 0;
+		var timer = null;
+		var reduced = window.matchMedia && window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
+
+		function show( index ) {
+			current = ( index + frames.length ) % frames.length;
+			Array.prototype.forEach.call( frames, function ( f ) {
+				f.classList.toggle( 'is-active', parseInt( f.getAttribute( 'data-ambient-frame' ), 10 ) === current );
+			} );
+			Array.prototype.forEach.call( captions, function ( c ) {
+				c.classList.toggle( 'is-active', parseInt( c.getAttribute( 'data-ambient-caption' ), 10 ) === current );
+			} );
+		}
+
+		function restart() {
+			if ( timer ) {
+				clearInterval( timer );
+			}
+			if ( ! reduced ) {
+				timer = setInterval( function () { show( current + 1 ); }, 6000 );
+			}
+		}
+
+		section.addEventListener( 'click', function ( e ) {
+			if ( e.target.closest( '[data-ambient-prev]' ) ) {
+				show( current - 1 );
+				restart();
+			} else if ( e.target.closest( '[data-ambient-next]' ) ) {
+				show( current + 1 );
+				restart();
+			}
+		} );
+
+		// Swipe orizzontale su touch.
+		var touchX = null;
+		section.addEventListener( 'touchstart', function ( e ) {
+			touchX = e.changedTouches[0].clientX;
+		}, { passive: true } );
+		section.addEventListener( 'touchend', function ( e ) {
+			if ( null === touchX ) {
+				return;
+			}
+			var delta = e.changedTouches[0].clientX - touchX;
+			touchX = null;
+			if ( Math.abs( delta ) > 40 ) {
+				show( current + ( delta < 0 ? 1 : -1 ) );
+				restart();
+			}
+		}, { passive: true } );
+
+		restart();
+	}
+
 	document.addEventListener( 'DOMContentLoaded', function () {
 		var groups = document.querySelectorAll( '[data-palladio-filters]' );
 		Array.prototype.forEach.call( groups, initGroup );
@@ -301,6 +364,9 @@
 
 		var lightboxes = document.querySelectorAll( '[data-pll-lightbox-group]' );
 		Array.prototype.forEach.call( lightboxes, initLightbox );
+
+		var ambients = document.querySelectorAll( '[data-pll-ambient]' );
+		Array.prototype.forEach.call( ambients, initAmbient );
 
 		initReveal();
 	} );

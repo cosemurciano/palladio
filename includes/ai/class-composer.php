@@ -518,10 +518,30 @@ class Palladio_AI_Composer {
 					$editorial['gallery'][] = array(
 						'image'   => $img,
 						'caption' => sanitize_text_field( $g['caption'] ?? '' ),
-						'ratio'   => in_array( $g['ratio'] ?? '', array( '3:2', '4:3', '4:5', '1:1', '16:9' ), true ) ? $g['ratio'] : '4:3',
 					);
 				}
 			}
+		}
+		if ( isset( $ed['gallery_layout'] ) ) {
+			$editorial['gallery_layout'] = in_array( $ed['gallery_layout'], array( 'masonry', 'grid', 'mosaic', 'filmstrip', 'offset' ), true ) ? $ed['gallery_layout'] : 'masonry';
+		}
+		if ( isset( $ed['ambient_images'] ) ) {
+			$editorial['ambient_images'] = array();
+			foreach ( (array) $ed['ambient_images'] as $a ) {
+				$img = is_array( $a ) ? $vid( $a['image'] ?? 0 ) : 0;
+				if ( $img ) {
+					$editorial['ambient_images'][] = array(
+						'image'   => $img,
+						'caption' => sanitize_text_field( $a['caption'] ?? '' ),
+					);
+				}
+			}
+		}
+		if ( isset( $ed['purchase'] ) && is_array( $ed['purchase'] ) ) {
+			$editorial['purchase'] = array(
+				'heading' => sanitize_text_field( $ed['purchase']['heading'] ?? '' ),
+				'text'    => sanitize_textarea_field( $ed['purchase']['text'] ?? '' ),
+			);
 		}
 		if ( isset( $ed['manifesto'] ) ) {
 			$editorial['manifesto'] = array();
