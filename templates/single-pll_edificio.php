@@ -66,7 +66,12 @@ while ( have_posts() ) :
 							<span class="pll-e-fact"><b><?php echo esc_html( $fact[0] ); ?></b><span><?php echo esc_html( $fact[1] ); ?></span></span>
 						<?php endforeach; ?>
 					</div>
-					<a class="pll-e-cta" href="#residenze"><?php esc_html_e( 'Richiedi il dossier', 'palladio' ); ?></a>
+					<?php
+				// CTA dossier: testo e destinazione configurabili in Palladio → Impostazioni.
+				$dossier_label = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'dossier_label' ) : __( 'Richiedi il dossier', 'palladio' );
+				$dossier_url   = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'dossier_url' ) : '';
+				?>
+				<a class="pll-e-cta" id="palladio-dossier-cta" href="<?php echo esc_url( $dossier_url ? $dossier_url : '#palladio-contact' ); ?>"><?php echo esc_html( $dossier_label ); ?></a>
 				</div>
 			</div>
 		<?php endif; ?>
@@ -239,6 +244,17 @@ while ( have_posts() ) :
 				<?php endif; ?>
 			</section>
 		<?php endif; ?>
+
+		<?php // FORM CONTATTI — richiesta visita, dossier o informazioni. ?>
+		<section class="pll-e-section pll-e-wrap pll-e-contact" id="palladio-contact">
+			<p class="pll-e-kicker" id="palladio-contact-eyebrow"><?php esc_html_e( 'Contatti', 'palladio' ); ?></p>
+			<h2 class="pll-e-h" id="palladio-contact-title"><?php echo esc_html( class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'contact_heading' ) : __( 'Richiedi una visita o informazioni', 'palladio' ) ); ?></h2>
+			<?php $contact_text = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'contact_text' ) : ''; ?>
+			<?php if ( $contact_text ) : ?>
+				<p class="pll-e-prose" id="palladio-contact-text"><?php echo esc_html( $contact_text ); ?></p>
+			<?php endif; ?>
+			<?php do_action( 'palladio/edificio/contact_form', $building_id ); ?>
+		</section>
 
 		<?php
 		// Come funziona l'acquisto: campi editoriali dedicati, con fallback

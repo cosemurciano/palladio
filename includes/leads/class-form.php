@@ -29,6 +29,9 @@ class Palladio_Leads_Form {
 		// Iniezione automatica nel pannello contatti dell'unità (Presenter).
 		add_action( 'palladio/unita/after_contact', array( $this, 'render' ) );
 
+		// Form contatti nella landing dell'edificio (prima di "Come funziona l'acquisto").
+		add_action( 'palladio/edificio/contact_form', array( $this, 'render_building' ) );
+
 		// Handler invio (utenti loggati e non).
 		add_action( 'admin_post_nopriv_palladio_submit_lead', array( $this, 'handle' ) );
 		add_action( 'admin_post_palladio_submit_lead', array( $this, 'handle' ) );
@@ -54,16 +57,42 @@ class Palladio_Leads_Form {
 	}
 
 	/**
-	 * Stampa il form.
+	 * Stampa il form nel contesto della landing edificio.
 	 *
-	 * @param int $unit_id ID unità collegata (0 se generico).
+	 * @param int $building_id ID edificio.
 	 * @return void
 	 */
-	public function render( $unit_id = 0 ) {
-		$unit_id = absint( $unit_id );
-		$notice  = isset( $_GET['palladio_lead'] ) ? sanitize_key( wp_unslash( $_GET['palladio_lead'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$usi     = Palladio_Leads_Store::usi();
-		$gdpr    = $this->gdpr_text();
+	public function render_building( $building_id ) {
+		$this->render( 0, absint( $building_id ) );
+	}
+
+	/**
+	 * Motivi selezionabili della richiesta.
+	 *
+	 * @return array<string,string>
+	 */
+	public static function motivi() {
+		return array(
+			'visita'       => __( 'Richiedere una visita in loco', 'palladio' ),
+			'dossier'      => __( 'Ricevere il dossier completo', 'palladio' ),
+			'informazioni' => __( 'Informazioni generali', 'palladio' ),
+			'altro'        => __( 'Altro', 'palladio' ),
+		);
+	}
+
+	/**
+	 * Stampa il form.
+	 *
+	 * @param int $unit_id     ID unità collegata (0 se generico).
+	 * @param int $building_id ID edificio collegato (0 se generico).
+	 * @return void
+	 */
+	public function render( $unit_id = 0, $building_id = 0 ) {
+		$unit_id     = absint( $unit_id );
+		$building_id = absint( $building_id );
+		$notice      = isset( $_GET['palladio_lead'] ) ? sanitize_key( wp_unslash( $_GET['palladio_lead'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$usi         = Palladio_Leads_Store::usi();
+		$gdpr        = $this->gdpr_text();
 		?>
 		<form class="palladio-lead-form" id="palladio-lead-form" method="post"
 			action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -76,6 +105,7 @@ class Palladio_Leads_Form {
 
 			<input type="hidden" name="action" value="palladio_submit_lead">
 			<input type="hidden" name="unita_id" value="<?php echo esc_attr( $unit_id ); ?>">
+			<input type="hidden" name="edificio_id" value="<?php echo esc_attr( $building_id ); ?>">
 			<input type="hidden" name="redirect" value="<?php echo esc_url( $this->current_url() ); ?>">
 			<input type="hidden" name="source" value="<?php echo esc_attr( $this->detect_source() ); ?>">
 			<input type="hidden" name="utm_source" value="<?php echo esc_attr( $this->utm( 'utm_source' ) ); ?>">
@@ -108,6 +138,14 @@ class Palladio_Leads_Form {
 					<select id="pll-uso" name="uso_previsto">
 						<option value=""><?php esc_html_e( '—', 'palladio' ); ?></option>
 						<?php foreach ( $usi as $slug => $label ) : ?>
+							<option value="<?php echo esc_attr( $slug ); ?>"><?php echo esc_html( $label ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				</p>
+				<p class="palladio-field">
+					<label for="pll-motivo"><?php esc_html_e( 'Vorrei', 'palladio' ); ?></label>
+					<select id="pll-motivo" name="motivo">
+						<?php foreach ( self::motivi() as $slug => $label ) : ?>
 							<option value="<?php echo esc_attr( $slug ); ?>"><?php echo esc_html( $label ); ?></option>
 						<?php endforeach; ?>
 					</select>
@@ -163,7 +201,28 @@ class Palladio_Leads_Form {
 			$this->redirect_back( $redirect, 'error' );
 		}
 
-		$unit_id = isset( $_POST['unita_id'] ) ? absint( wp_unslash( $_POST['unita_id'] ) ) : 0;
+		$unit_id     = isset( $_POST['unita_id'] ) ? absint( wp_unslash( $_POST['unita_id'] ) ) : 0;
+		$building_id = isset( $_POST['edificio_id'] ) ? absint( wp_unslash( $_POST['edificio_id'] ) ) : 0;
+
+		$motivi = self::motivi();
+		$motivo = isset( $_POST['motivo'] ) ? sanitize_key( wp_unslash( $_POST['motivo'] ) ) : '';
+		$motivo = isset( $motivi[ $motivo ] ) ? $motivo : '';
+
+		// Contesto della richiesta in testa alle note, così resta leggibile
+		// nell'archivio lead (Palladio → Lead).
+		$note    = isset( $_POST['note'] ) ? sanitize_textarea_field( wp_unslash( $_POST['note'] ) ) : '';
+		$context = array();
+		if ( $motivo ) {
+			/* translators: %s: motivo della richiesta. */
+			$context[] = sprintf( __( 'Richiesta: %s', 'palladio' ), $motivi[ $motivo ] );
+		}
+		if ( $building_id ) {
+			/* translators: %s: titolo edificio. */
+			$context[] = sprintf( __( 'Edificio: %s', 'palladio' ), get_the_title( $building_id ) );
+		}
+		if ( $context ) {
+			$note = implode( "\n", $context ) . ( $note ? "\n\n" . $note : '' );
+		}
 
 		$data = array(
 			'source'         => isset( $_POST['source'] ) ? sanitize_text_field( wp_unslash( $_POST['source'] ) ) : 'form',
@@ -175,7 +234,7 @@ class Palladio_Leads_Form {
 			'email'          => $email,
 			'telefono'       => isset( $_POST['telefono'] ) ? sanitize_text_field( wp_unslash( $_POST['telefono'] ) ) : '',
 			'uso_previsto'   => isset( $_POST['uso_previsto'] ) ? sanitize_key( wp_unslash( $_POST['uso_previsto'] ) ) : '',
-			'note'           => isset( $_POST['note'] ) ? sanitize_textarea_field( wp_unslash( $_POST['note'] ) ) : '',
+			'note'           => $note,
 			'unita_ids'      => $unit_id ? array( $unit_id ) : array(),
 			'consenso_gdpr'  => true,
 			'consenso_testo' => wp_strip_all_tags( $this->gdpr_text() ),
@@ -195,7 +254,7 @@ class Palladio_Leads_Form {
 		 */
 		do_action( 'palladio/lead_created', $lead_id, $data );
 
-		$this->notify( $lead_id, $data, $unit_id );
+		$this->notify( $lead_id, $data, $unit_id, $building_id );
 
 		$this->redirect_back( $redirect, 'ok' );
 	}
@@ -203,37 +262,49 @@ class Palladio_Leads_Form {
 	/**
 	 * Invia la notifica email del nuovo lead alla regia/agenzia.
 	 *
-	 * @param int   $lead_id ID lead.
-	 * @param array $data    Dati lead.
-	 * @param int   $unit_id ID unità collegata.
+	 * Destinatari, in ordine di priorità: elenco configurato in
+	 * Palladio → Impostazioni; email di contatto dell'edificio; email admin.
+	 *
+	 * @param int   $lead_id     ID lead.
+	 * @param array $data        Dati lead.
+	 * @param int   $unit_id     ID unità collegata.
+	 * @param int   $building_id ID edificio collegato.
 	 * @return void
 	 */
-	private function notify( $lead_id, $data, $unit_id ) {
-		$recipient = '';
+	private function notify( $lead_id, $data, $unit_id, $building_id = 0 ) {
+		$recipient = array();
 
-		if ( $unit_id ) {
-			$building_id = wp_get_post_parent_id( $unit_id );
-			if ( $building_id ) {
-				$recipient = get_post_meta( $building_id, '_pll_contatto_email', true );
-			}
+		if ( class_exists( 'Palladio_Admin_Settings' ) ) {
+			$recipient = Palladio_Admin_Settings::notify_emails();
 		}
 
-		if ( ! is_email( $recipient ) ) {
-			$recipient = get_option( 'admin_email' );
+		if ( ! $recipient ) {
+			if ( ! $building_id && $unit_id ) {
+				$building_id = wp_get_post_parent_id( $unit_id );
+			}
+			$building_email = $building_id ? get_post_meta( $building_id, '_pll_contatto_email', true ) : '';
+			$recipient      = is_email( $building_email ) ? array( $building_email ) : array( get_option( 'admin_email' ) );
 		}
 
 		/**
-		 * Filtra il destinatario della notifica lead.
+		 * Filtra i destinatari della notifica lead.
 		 *
-		 * @param string $recipient Email destinatario.
-		 * @param int    $lead_id   ID lead.
+		 * @param string|string[] $recipient Email destinatari.
+		 * @param int             $lead_id   ID lead.
 		 */
 		$recipient = apply_filters( 'palladio/lead/notify_recipient', $recipient, $lead_id );
 
+		if ( $unit_id ) {
+			$subject_label = get_the_title( $unit_id );
+		} elseif ( $building_id ) {
+			$subject_label = get_the_title( $building_id );
+		} else {
+			$subject_label = __( '(richiesta generica)', 'palladio' );
+		}
 		$unit_label = $unit_id ? get_the_title( $unit_id ) : __( '(nessuna unità)', 'palladio' );
 
-		/* translators: %s: titolo dell'unità. */
-		$subject = sprintf( __( 'Nuovo lead Palladio: %s', 'palladio' ), $unit_label );
+		/* translators: %s: titolo dell'unità o edificio. */
+		$subject = sprintf( __( 'Nuovo lead Palladio: %s', 'palladio' ), $subject_label );
 
 		$lines = array(
 			sprintf( __( 'Nome: %s', 'palladio' ), $data['nome'] ),

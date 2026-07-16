@@ -111,6 +111,7 @@ final class Palladio {
 				'agent_rest'          => 'Palladio_Agent_Rest',
 				'agent_widget'        => 'Palladio_Agent_Widget',
 				'feeds_manager'       => 'Palladio_Feeds_Manager',
+				'admin_settings'      => 'Palladio_Admin_Settings',
 			)
 		);
 
