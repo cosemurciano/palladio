@@ -12,19 +12,56 @@
 	function addRow( section ) {
 		var rep = document.querySelector( '.pll-rep[data-section="' + section + '"]' );
 		if ( ! rep ) {
-			return;
+			return null;
 		}
 		var tpl = rep.querySelector( '.pll-rep__tpl' );
 		var rows = rep.querySelector( '.pll-rep__rows' );
 		if ( ! tpl || ! rows ) {
-			return;
+			return null;
 		}
-		var index = Date.now().toString( 36 ) + Math.floor( Math.random() * 1000 );
+		var index = Date.now().toString( 36 ) + Math.floor( Math.random() * 100000 );
 		var html = tpl.textContent.replace( /__i__/g, index );
 		var wrap = document.createElement( 'div' );
 		wrap.innerHTML = html.trim();
 		var node = wrap.firstElementChild;
 		rows.appendChild( node );
+		return node;
+	}
+
+	// Selezione multipla: una riga per ogni immagine scelta nel media picker.
+	function addMulti( section ) {
+		if ( ! window.wp || ! window.wp.media ) {
+			return;
+		}
+		var frame = window.wp.media( {
+			title: cfg.choose || 'Images',
+			button: { text: cfg.use || 'Use' },
+			library: { type: 'image' },
+			multiple: 'add',
+		} );
+
+		frame.on( 'select', function () {
+			frame.state().get( 'selection' ).each( function ( model ) {
+				var att = model.toJSON();
+				var row = addRow( section );
+				if ( ! row ) {
+					return;
+				}
+				var box = row.querySelector( '[data-pll-media]' );
+				if ( box ) {
+					box.querySelector( '.pll-media__id' ).value = att.id;
+					var url = ( att.sizes && att.sizes.thumbnail ) ? att.sizes.thumbnail.url : att.url;
+					box.querySelector( '.pll-media__preview' ).innerHTML = '<img src="' + url + '" alt="">';
+				}
+				// Didascalia precompilata da quella del media, se presente.
+				var caption = row.querySelector( 'input[name*="[caption]"]' );
+				if ( caption && ! caption.value && att.caption ) {
+					caption.value = att.caption;
+				}
+			} );
+		} );
+
+		frame.open();
 	}
 
 	// ---------------------------------------------------------------- riordino
@@ -94,6 +131,13 @@
 	} );
 
 	document.addEventListener( 'click', function ( e ) {
+		var multi = e.target.closest( '.pll-rep__add-multi' );
+		if ( multi ) {
+			e.preventDefault();
+			addMulti( multi.getAttribute( 'data-add' ) );
+			return;
+		}
+
 		var add = e.target.closest( '.pll-rep__add' );
 		if ( add ) {
 			e.preventDefault();

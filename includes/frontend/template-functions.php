@@ -76,8 +76,11 @@ function palladio_editorial( $post_id ) {
 		'gallery'         => array(), // [ {image,caption,ratio} ]
 		'floorplan'       => array( 'image' => 0, 'caption' => '', 'notes' => '' ), // unità
 		'position'        => array( 'heading' => '', 'text' => '' ), // unità
+		// Layout automatico della galleria: masonry|grid|mosaic|filmstrip|offset.
+		'gallery_layout'  => 'masonry',
 		// Campi specifici della landing Edificio.
-		'ambient'         => array( 'image' => 0, 'caption' => '' ),
+		'ambient'         => array( 'image' => 0, 'caption' => '' ), // legacy singola immagine
+		'ambient_images'  => array(), // [ {image,caption} ] — loop multi-immagine
 		'manifesto'       => array(), // [ {text,emphasis} ]
 		'timeline'        => array(), // [ {kicker,year,heading,body,image} ]
 		'gallery_url'     => '',
@@ -85,18 +88,35 @@ function palladio_editorial( $post_id ) {
 		'units_eyebrow'   => '',
 		'units_heading'   => '',
 		'units_filters'   => false,
+		// Sezione "Come funziona l'acquisto" (fallback: meta vincoli_note).
+		'purchase'        => array( 'heading' => '', 'text' => '' ),
 	);
 
 	$data              = wp_parse_args( $data, $defaults );
 	$data['floorplan'] = wp_parse_args( is_array( $data['floorplan'] ) ? $data['floorplan'] : array(), $defaults['floorplan'] );
 	$data['position']  = wp_parse_args( is_array( $data['position'] ) ? $data['position'] : array(), $defaults['position'] );
 	$data['ambient']   = wp_parse_args( is_array( $data['ambient'] ) ? $data['ambient'] : array(), $defaults['ambient'] );
+	$data['purchase']  = wp_parse_args( is_array( $data['purchase'] ) ? $data['purchase'] : array(), $defaults['purchase'] );
 	$data['units_filters'] = ! empty( $data['units_filters'] );
 
-	foreach ( array( 'chapters', 'narrative', 'tech', 'gallery', 'manifesto', 'timeline' ) as $rep ) {
+	if ( ! in_array( $data['gallery_layout'], array( 'masonry', 'grid', 'mosaic', 'filmstrip', 'offset' ), true ) ) {
+		$data['gallery_layout'] = 'masonry';
+	}
+
+	foreach ( array( 'chapters', 'narrative', 'tech', 'gallery', 'manifesto', 'timeline', 'ambient_images' ) as $rep ) {
 		if ( ! is_array( $data[ $rep ] ) ) {
 			$data[ $rep ] = array();
 		}
+	}
+
+	// Compat: la vecchia immagine ambient singola confluisce nel loop.
+	if ( ! $data['ambient_images'] && ! empty( $data['ambient']['image'] ) ) {
+		$data['ambient_images'] = array(
+			array(
+				'image'   => (int) $data['ambient']['image'],
+				'caption' => (string) $data['ambient']['caption'],
+			),
+		);
 	}
 
 	return $data;
@@ -401,5 +421,49 @@ function palladio_render_unit_card_editorial( $unit_id ) {
 			<span class="pll-e-sister__price" id="palladio-unit-<?php echo esc_attr( $unit_id ); ?>-price"><?php echo esc_html( palladio_format_price( $price ) ); ?></span>
 		</span>
 	</a>
+	<?php
+}
+
+/**
+ * Galleria editoriale con layout automatico e lightbox.
+ *
+ * Layout: masonry (colonne a incastro), grid (celle uniformi), mosaic (una
+ * foto grande ogni cinque), filmstrip (pellicola orizzontale a scorrimento),
+ * offset (due colonne a quote alternate). Il formato immagine è automatico.
+ *
+ * @param array  $shots  Righe galleria [{image,caption}].
+ * @param string $layout Layout scelto.
+ * @param string $id     ID CSS del contenitore.
+ * @return void
+ */
+function palladio_render_gallery( $shots, $layout = 'masonry', $id = 'palladio-gallery' ) {
+	if ( ! is_array( $shots ) || ! $shots ) {
+		return;
+	}
+	if ( ! in_array( $layout, array( 'masonry', 'grid', 'mosaic', 'filmstrip', 'offset' ), true ) ) {
+		$layout = 'masonry';
+	}
+	?>
+	<div class="pll-e-gallery pll-e-gallery--<?php echo esc_attr( $layout ); ?>" id="<?php echo esc_attr( $id ); ?>" data-pll-lightbox-group>
+		<?php foreach ( $shots as $i => $shot ) : ?>
+			<?php
+			$gi = palladio_image_url( $shot['image'] ?? 0, 'large' );
+			if ( ! $gi ) {
+				continue;
+			}
+			$gfull   = palladio_image_url( $shot['image'], 'full' );
+			$caption = (string) ( $shot['caption'] ?? '' );
+			?>
+			<figure class="pll-e-gallery__item" id="<?php echo esc_attr( $id . '-item-' . ( $i + 1 ) ); ?>">
+				<a class="pll-e-gallery__zoom" href="<?php echo esc_url( $gfull ? $gfull : $gi ); ?>"
+					data-pll-lightbox="<?php echo esc_url( $gfull ? $gfull : $gi ); ?>"
+					data-pll-caption="<?php echo esc_attr( $caption ); ?>"
+					aria-label="<?php esc_attr_e( 'Ingrandisci immagine', 'palladio' ); ?>">
+					<img src="<?php echo esc_url( $gi ); ?>" alt="<?php echo esc_attr( $caption ); ?>" loading="lazy">
+				</a>
+				<?php if ( '' !== $caption ) : ?><figcaption><?php echo esc_html( $caption ); ?></figcaption><?php endif; ?>
+			</figure>
+		<?php endforeach; ?>
+	</div>
 	<?php
 }

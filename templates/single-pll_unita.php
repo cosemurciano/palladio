@@ -191,14 +191,7 @@ while ( have_posts() ) :
 			<section class="pll-e-section pll-e-wrap">
 				<p class="pll-e-kicker"><?php esc_html_e( 'Galleria', 'palladio' ); ?></p>
 				<h2 class="pll-e-h"><?php esc_html_e( 'In luce', 'palladio' ); ?></h2>
-				<div class="pll-e-sisters">
-					<?php foreach ( $ed['gallery'] as $shot ) : ?>
-						<?php $gi = palladio_image_url( $shot['image'] ?? 0, 'large' ); if ( ! $gi ) { continue; } ?>
-						<figure class="pll-e-sister"><span class="pll-e-sister__media"><img src="<?php echo esc_url( $gi ); ?>" alt="" loading="lazy"></span>
-							<?php if ( ! empty( $shot['caption'] ) ) : ?><figcaption class="pll-e-sister__body pll-e-sister__eyebrow"><?php echo esc_html( $shot['caption'] ); ?></figcaption><?php endif; ?>
-						</figure>
-					<?php endforeach; ?>
-				</div>
+				<?php palladio_render_gallery( $ed['gallery'], $ed['gallery_layout'], 'palladio-unit-gallery' ); ?>
 			</section>
 		<?php endif; ?>
 
