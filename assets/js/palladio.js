@@ -183,6 +183,112 @@
 		} );
 	}
 
+	// -------------------------------------------------------------------------
+	// Lightbox galleria: zoom modale con frecce (pulsanti + tastiera ←/→/Esc)
+	// e swipe su touch. Senza JS i link aprono l'immagine grande direttamente.
+	// -------------------------------------------------------------------------
+	function initLightbox( group ) {
+		var items = Array.prototype.slice.call( group.querySelectorAll( '[data-pll-lightbox]' ) );
+		if ( ! items.length ) {
+			return;
+		}
+
+		var overlay = null;
+		var current = -1;
+		var lastFocus = null;
+
+		function build() {
+			overlay = document.createElement( 'div' );
+			overlay.className = 'pll-lightbox';
+			overlay.setAttribute( 'role', 'dialog' );
+			overlay.setAttribute( 'aria-modal', 'true' );
+			overlay.innerHTML =
+				'<button type="button" class="pll-lightbox__close" aria-label="Chiudi">&times;</button>' +
+				'<button type="button" class="pll-lightbox__arrow pll-lightbox__arrow--prev" aria-label="Precedente">&#8592;</button>' +
+				'<figure class="pll-lightbox__stage"><img alt=""><figcaption></figcaption></figure>' +
+				'<button type="button" class="pll-lightbox__arrow pll-lightbox__arrow--next" aria-label="Successiva">&#8594;</button>' +
+				'<span class="pll-lightbox__counter"></span>';
+			document.body.appendChild( overlay );
+
+			overlay.addEventListener( 'click', function ( e ) {
+				if ( e.target.closest( '.pll-lightbox__close' ) || e.target === overlay ) {
+					close();
+				} else if ( e.target.closest( '.pll-lightbox__arrow--prev' ) ) {
+					show( current - 1 );
+				} else if ( e.target.closest( '.pll-lightbox__arrow--next' ) ) {
+					show( current + 1 );
+				}
+			} );
+
+			// Swipe su touch: soglia 40px in orizzontale.
+			var touchX = null;
+			overlay.addEventListener( 'touchstart', function ( e ) {
+				touchX = e.changedTouches[0].clientX;
+			}, { passive: true } );
+			overlay.addEventListener( 'touchend', function ( e ) {
+				if ( null === touchX ) {
+					return;
+				}
+				var delta = e.changedTouches[0].clientX - touchX;
+				touchX = null;
+				if ( Math.abs( delta ) > 40 ) {
+					show( current + ( delta < 0 ? 1 : -1 ) );
+				}
+			}, { passive: true } );
+		}
+
+		function onKey( e ) {
+			if ( 'Escape' === e.key ) {
+				close();
+			} else if ( 'ArrowLeft' === e.key ) {
+				show( current - 1 );
+			} else if ( 'ArrowRight' === e.key ) {
+				show( current + 1 );
+			}
+		}
+
+		function show( index ) {
+			current = ( index + items.length ) % items.length;
+			var item = items[ current ];
+			overlay.querySelector( 'img' ).src = item.getAttribute( 'data-pll-lightbox' );
+			overlay.querySelector( 'figcaption' ).textContent = item.getAttribute( 'data-pll-caption' ) || '';
+			overlay.querySelector( '.pll-lightbox__counter' ).textContent = ( current + 1 ) + ' / ' + items.length;
+			var single = items.length < 2;
+			overlay.querySelector( '.pll-lightbox__arrow--prev' ).hidden = single;
+			overlay.querySelector( '.pll-lightbox__arrow--next' ).hidden = single;
+		}
+
+		function open( index ) {
+			if ( ! overlay ) {
+				build();
+			}
+			lastFocus = document.activeElement;
+			overlay.classList.add( 'is-open' );
+			document.body.classList.add( 'pll-lightbox-open' );
+			document.addEventListener( 'keydown', onKey );
+			show( index );
+			overlay.querySelector( '.pll-lightbox__close' ).focus();
+		}
+
+		function close() {
+			overlay.classList.remove( 'is-open' );
+			document.body.classList.remove( 'pll-lightbox-open' );
+			document.removeEventListener( 'keydown', onKey );
+			if ( lastFocus && lastFocus.focus ) {
+				lastFocus.focus();
+			}
+		}
+
+		group.addEventListener( 'click', function ( e ) {
+			var link = e.target.closest( '[data-pll-lightbox]' );
+			if ( ! link ) {
+				return;
+			}
+			e.preventDefault();
+			open( items.indexOf( link ) );
+		} );
+	}
+
 	document.addEventListener( 'DOMContentLoaded', function () {
 		var groups = document.querySelectorAll( '[data-palladio-filters]' );
 		Array.prototype.forEach.call( groups, initGroup );
@@ -192,6 +298,9 @@
 
 		var scrolly = document.querySelectorAll( '[data-palladio-scrolly]' );
 		Array.prototype.forEach.call( scrolly, initScrolly );
+
+		var lightboxes = document.querySelectorAll( '[data-pll-lightbox-group]' );
+		Array.prototype.forEach.call( lightboxes, initLightbox );
 
 		initReveal();
 	} );

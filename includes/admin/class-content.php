@@ -297,7 +297,14 @@ class Palladio_Admin_Content {
 	 * @return void
 	 */
 	private function repeater_row( $section, $index, $fields, $values ) {
-		echo '<div class="pll-rep__row">';
+		echo '<div class="pll-rep__row" draggable="true">';
+		// Maniglia di riordino: trascinabile, oppure frecce su/giù (anche con
+		// i tasti freccia della tastiera quando la maniglia ha il focus).
+		echo '<span class="pll-rep__order">';
+		echo '<button type="button" class="pll-rep__handle" title="' . esc_attr__( 'Trascina per riordinare (o usa le frecce)', 'palladio' ) . '" aria-label="' . esc_attr__( 'Riordina elemento', 'palladio' ) . '">⋮⋮</button>';
+		echo '<button type="button" class="pll-rep__move pll-rep__move--up" aria-label="' . esc_attr__( 'Sposta su', 'palladio' ) . '">↑</button>';
+		echo '<button type="button" class="pll-rep__move pll-rep__move--down" aria-label="' . esc_attr__( 'Sposta giù', 'palladio' ) . '">↓</button>';
+		echo '</span>';
 		echo '<div class="pll-rep__fields">';
 		foreach ( $fields as $key => $conf ) {
 			$name  = 'palladio_editorial[' . $section . '][' . $index . '][' . $key . ']';
