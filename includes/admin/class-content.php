@@ -24,7 +24,7 @@ class Palladio_Admin_Content {
 	 *
 	 * @var string[]
 	 */
-	private $post_types = array( 'pll_edificio', 'pll_unita' );
+	private $post_types = array( 'pll_edificio', 'pll_unita', 'pll_storia' );
 
 	/**
 	 * Registra hook admin.
@@ -113,6 +113,8 @@ class Palladio_Admin_Content {
 			<?php
 			if ( 'pll_edificio' === $post->post_type ) {
 				$this->render_edificio_fields( $d );
+			} elseif ( 'pll_storia' === $post->post_type ) {
+				$this->render_storia_fields( $d );
 			} else {
 				$this->render_unita_fields( $d );
 			}
@@ -263,6 +265,97 @@ class Palladio_Admin_Content {
 			<input type="text" class="widefat" name="palladio_editorial[purchase][heading]" value="<?php echo esc_attr( $d['purchase']['heading'] ); ?>" placeholder="<?php esc_attr_e( 'La chiarezza è parte dell’architettura', 'palladio' ); ?>"></label></p>
 		<p><label><?php esc_html_e( 'Testo', 'palladio' ); ?><br>
 			<textarea class="widefat" rows="4" name="palladio_editorial[purchase][text]"><?php echo esc_textarea( $d['purchase']['text'] ); ?></textarea></label></p>
+		<?php
+	}
+
+	/**
+	 * Campi della pagina "La Storia" (tavola d'archivio).
+	 *
+	 * @param array $d Struttura editoriale.
+	 * @return void
+	 */
+	private function render_storia_fields( $d ) {
+		?>
+		<h4><?php esc_html_e( 'Testata', 'palladio' ); ?></h4>
+		<p class="description"><?php esc_html_e( 'L’immagine in evidenza del post è lo sfondo del hero; il titolo del post è il titolo grande (es. “Venticinque secoli, una pietra.”).', 'palladio' ); ?></p>
+		<p><label><?php esc_html_e( 'Occhiello (eyebrow)', 'palladio' ); ?><br>
+			<input type="text" class="widefat" name="palladio_editorial[eyebrow]" value="<?php echo esc_attr( $d['eyebrow'] ); ?>" placeholder="<?php esc_attr_e( 'Palazzo Sambiasi · Lecce', 'palladio' ); ?>"></label></p>
+		<p><label><?php esc_html_e( 'Frase di apertura (lead)', 'palladio' ); ?><br>
+			<textarea class="widefat" rows="2" name="palladio_editorial[lead]" placeholder="<?php esc_attr_e( 'Dalle tombe messapiche di Lupiae al decreto di tutela del 1987…', 'palladio' ); ?>"><?php echo esc_textarea( $d['lead'] ); ?></textarea></label></p>
+
+		<h4><?php esc_html_e( 'Affermazioni introduttive (manifesto)', 'palladio' ); ?></h4>
+		<p class="description"><?php esc_html_e( 'Frasi brevi rivelate allo scroll, es. “Sotto questo giardino, l’antica Lupiae.” — l’enfasi è resa in corsivo bordeaux.', 'palladio' ); ?></p>
+		<?php
+		$this->repeater( 'manifesto', $d['manifesto'], array(
+			'text'     => array( 'type' => 'text', 'label' => __( 'Testo', 'palladio' ) ),
+			'emphasis' => array( 'type' => 'text', 'label' => __( 'Enfasi (corsivo)', 'palladio' ) ),
+		) );
+		?>
+
+		<h4><?php esc_html_e( 'Cronologia — tavola d’archivio', 'palladio' ); ?></h4>
+		<p class="description"><?php esc_html_e( 'Ogni evento: era, anno grande (es. ’500), sottotitolo (es. XVI SEC.), titolo, racconto, immagine e didascalia. L’asse del tempo alterna gli eventi a destra e sinistra; su mobile si impilano.', 'palladio' ); ?></p>
+		<?php
+		$this->repeater( 'timeline', $d['timeline'], array(
+			'kicker'   => array( 'type' => 'text', 'label' => __( 'Era (es. Il Rinascimento)', 'palladio' ) ),
+			'year'     => array( 'type' => 'text', 'label' => __( 'Anno (grande)', 'palladio' ), 'width' => '7rem' ),
+			'year_sub' => array( 'type' => 'text', 'label' => __( 'Sottotitolo anno (es. XVI SEC.)', 'palladio' ), 'width' => '10rem' ),
+			'heading'  => array( 'type' => 'text', 'label' => __( 'Titolo', 'palladio' ) ),
+			'body'     => array( 'type' => 'textarea', 'label' => __( 'Racconto', 'palladio' ) ),
+			'image'    => array( 'type' => 'media', 'label' => __( 'Immagine', 'palladio' ) ),
+			'caption'  => array( 'type' => 'text', 'label' => __( 'Didascalia immagine', 'palladio' ) ),
+		) );
+		?>
+
+		<h4><?php esc_html_e( 'L’araldica — blasoni e famiglie', 'palladio' ); ?></h4>
+		<?php
+		$this->repeater( 'heraldry', $d['heraldry'], array(
+			'initial' => array( 'type' => 'text', 'label' => __( 'Iniziale (monogramma)', 'palladio' ), 'width' => '7rem' ),
+			'image'   => array( 'type' => 'media', 'label' => __( 'Foto stemma (opz.)', 'palladio' ) ),
+			'name'    => array( 'type' => 'text', 'label' => __( 'Casata', 'palladio' ) ),
+			'blazon'  => array( 'type' => 'text', 'label' => __( 'Blasone (corsivo)', 'palladio' ) ),
+			'note'    => array( 'type' => 'textarea', 'label' => __( 'Nota', 'palladio' ) ),
+		) );
+		?>
+		<div class="palladio-fields-grid">
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Occhiello sezione araldica', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[heraldry_eyebrow]" value="<?php echo esc_attr( $d['heraldry_eyebrow'] ); ?>" placeholder="<?php esc_attr_e( 'L’araldica', 'palladio' ); ?>"></label></p>
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Titolo sezione araldica', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[heraldry_heading]" value="<?php echo esc_attr( $d['heraldry_heading'] ); ?>" placeholder="<?php esc_attr_e( 'Tre blasoni, una dimora', 'palladio' ); ?>"></label></p>
+		</div>
+
+		<h4><?php esc_html_e( 'Il lessico della pietra — glossario illustrato', 'palladio' ); ?></h4>
+		<?php
+		$this->repeater( 'glossary', $d['glossary'], array(
+			'image'      => array( 'type' => 'media', 'label' => __( 'Immagine', 'palladio' ) ),
+			'caption'    => array( 'type' => 'text', 'label' => __( 'Didascalia immagine', 'palladio' ) ),
+			'term'       => array( 'type' => 'text', 'label' => __( 'Termine', 'palladio' ) ),
+			'sub'        => array( 'type' => 'text', 'label' => __( 'Sottotitolo (etimologia)', 'palladio' ) ),
+			'definition' => array( 'type' => 'textarea', 'label' => __( 'Definizione', 'palladio' ) ),
+		), true );
+		?>
+		<div class="palladio-fields-grid">
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Occhiello sezione glossario', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[glossary_eyebrow]" value="<?php echo esc_attr( $d['glossary_eyebrow'] ); ?>" placeholder="<?php esc_attr_e( 'Il lessico della pietra', 'palladio' ); ?>"></label></p>
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Titolo sezione glossario', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[glossary_heading]" value="<?php echo esc_attr( $d['glossary_heading'] ); ?>" placeholder="<?php esc_attr_e( 'Le parole per capirlo', 'palladio' ); ?>"></label></p>
+		</div>
+		<p><label><?php esc_html_e( 'Testo introduttivo glossario', 'palladio' ); ?><br>
+			<textarea class="widefat" rows="2" name="palladio_editorial[glossary_text]"><?php echo esc_textarea( $d['glossary_text'] ); ?></textarea></label></p>
+
+		<h4><?php esc_html_e( 'Chiusura — il prossimo capitolo', 'palladio' ); ?></h4>
+		<div class="palladio-fields-grid">
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Occhiello', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[closing][kicker]" value="<?php echo esc_attr( $d['closing']['kicker'] ); ?>" placeholder="<?php esc_attr_e( 'Il prossimo capitolo', 'palladio' ); ?>"></label></p>
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Titolo (riga 1)', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[closing][heading]" value="<?php echo esc_attr( $d['closing']['heading'] ); ?>" placeholder="<?php esc_attr_e( 'La storia continua', 'palladio' ); ?>"></label></p>
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Titolo — enfasi (riga 2, corsivo)', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[closing][emphasis]" value="<?php echo esc_attr( $d['closing']['emphasis'] ); ?>" placeholder="<?php esc_attr_e( 'con chi la abiterà.', 'palladio' ); ?>"></label></p>
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Pulsante — testo', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[closing][primary_label]" value="<?php echo esc_attr( $d['closing']['primary_label'] ); ?>" placeholder="<?php esc_attr_e( 'Vedi le residenze', 'palladio' ); ?>"></label></p>
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Pulsante — URL', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[closing][primary_url]" value="<?php echo esc_attr( $d['closing']['primary_url'] ); ?>" placeholder="/unita/"></label></p>
+		</div>
+		<p class="description"><?php esc_html_e( 'Il secondo pulsante è la CTA “Richiedi il dossier” configurata in Palladio → Impostazioni.', 'palladio' ); ?></p>
 		<?php
 	}
 
@@ -454,7 +547,22 @@ class Palladio_Admin_Content {
 				'text'    => sanitize_textarea_field( $raw['purchase']['text'] ?? '' ),
 			),
 			'manifesto'       => $this->clean_rows( $raw['manifesto'] ?? array(), array( 'text' => 'text', 'emphasis' => 'text' ) ),
-			'timeline'        => $this->clean_rows( $raw['timeline'] ?? array(), array( 'kicker' => 'text', 'year' => 'text', 'heading' => 'text', 'body' => 'html', 'image' => 'int' ) ),
+			'timeline'        => $this->clean_rows( $raw['timeline'] ?? array(), array( 'kicker' => 'text', 'year' => 'text', 'year_sub' => 'text', 'heading' => 'text', 'body' => 'html', 'image' => 'int', 'caption' => 'text' ) ),
+			// Campi della pagina "La Storia".
+			'heraldry'         => $this->clean_rows( $raw['heraldry'] ?? array(), array( 'initial' => 'text', 'image' => 'int', 'name' => 'text', 'blazon' => 'text', 'note' => 'text' ) ),
+			'heraldry_eyebrow' => sanitize_text_field( $raw['heraldry_eyebrow'] ?? '' ),
+			'heraldry_heading' => sanitize_text_field( $raw['heraldry_heading'] ?? '' ),
+			'glossary'         => $this->clean_rows( $raw['glossary'] ?? array(), array( 'image' => 'int', 'caption' => 'text', 'term' => 'text', 'sub' => 'text', 'definition' => 'text' ) ),
+			'glossary_eyebrow' => sanitize_text_field( $raw['glossary_eyebrow'] ?? '' ),
+			'glossary_heading' => sanitize_text_field( $raw['glossary_heading'] ?? '' ),
+			'glossary_text'    => sanitize_textarea_field( $raw['glossary_text'] ?? '' ),
+			'closing'          => array(
+				'kicker'        => sanitize_text_field( $raw['closing']['kicker'] ?? '' ),
+				'heading'       => sanitize_text_field( $raw['closing']['heading'] ?? '' ),
+				'emphasis'      => sanitize_text_field( $raw['closing']['emphasis'] ?? '' ),
+				'primary_label' => sanitize_text_field( $raw['closing']['primary_label'] ?? '' ),
+				'primary_url'   => sanitize_text_field( $raw['closing']['primary_url'] ?? '' ),
+			),
 			'gallery_url'     => esc_url_raw( $raw['gallery_url'] ?? '' ),
 			'gallery_count'   => sanitize_text_field( $raw['gallery_count'] ?? '' ),
 			'units_eyebrow'   => sanitize_text_field( $raw['units_eyebrow'] ?? '' ),

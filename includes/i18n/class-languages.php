@@ -26,7 +26,7 @@ class Palladio_I18n_Languages {
 	 *
 	 * @var string[]
 	 */
-	private $post_types = array( 'pll_edificio', 'pll_unita', 'pll_scenario' );
+	private $post_types = array( 'pll_edificio', 'pll_unita', 'pll_scenario', 'pll_storia' );
 
 	/**
 	 * Registra hook frontend e admin.
@@ -142,7 +142,7 @@ class Palladio_I18n_Languages {
 			return $current;
 		}
 
-		if ( is_singular( array( 'pll_edificio', 'pll_unita', 'pll_scenario' ) ) ) {
+		if ( is_singular( array( 'pll_edificio', 'pll_unita', 'pll_scenario', 'pll_storia' ) ) ) {
 			$current = Palladio_I18n_Translator::get_lang( get_queried_object_id() );
 			return $current;
 		}

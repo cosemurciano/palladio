@@ -1080,3 +1080,257 @@ body.pll-lightbox-open { overflow: hidden; }
 	position: absolute !important;
 	left: -9999px;
 }
+
+/* ---------------------------------------------------------------------------
+ * Pagina "La Storia" — tavola d'archivio
+ * Asse del tempo centrale in filetto dorato; gli eventi alternano il racconto
+ * a destra/sinistra con l'anno come pietra miliare. Mobile: asse a sinistra,
+ * schede impilate anno → titolo → immagine → racconto.
+ * ------------------------------------------------------------------------- */
+.pll-e-archive .pll-e-wrap { position: relative; }
+
+.pll-e-archive__axis {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 50%;
+	width: 1px;
+	background: linear-gradient(to bottom, transparent, var(--pll-e-gold) 6%, var(--pll-e-gold) 94%, transparent);
+}
+
+.pll-e-archive__event {
+	position: relative;
+	display: grid;
+	gap: 1rem 3rem;
+	padding-block: clamp(2rem, 5vw, 3.5rem);
+}
+
+.pll-e-archive__milestone {
+	display: flex;
+	flex-direction: column;
+	line-height: 1;
+}
+
+.pll-e-archive__year {
+	font-family: var(--pll-e-display);
+	font-size: clamp(3rem, 6vw, 5rem);
+	font-feature-settings: 'onum' 1;
+	color: var(--pll-e-gold);
+}
+
+.pll-e-archive__year-sub {
+	margin-top: 0.5rem;
+	font-size: 0.68rem;
+	font-weight: 600;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	color: var(--pll-e-taupe);
+}
+
+.pll-e-archive__heading { margin-bottom: 1rem; }
+
+.pll-e-archive__media {
+	margin: 0;
+	background: var(--pll-e-paper-2);
+	overflow: hidden;
+	position: relative;
+}
+.pll-e-archive__media img { width: 100%; height: auto; display: block; }
+.pll-e-archive__media figcaption {
+	position: absolute;
+	left: 0; right: 0; bottom: 0;
+	padding: 0.6rem 0.9rem;
+	background: linear-gradient(to top, rgba(20, 16, 12, 0.6), transparent);
+	color: #f2ead9;
+	font-size: 0.66rem;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+/* Desktop: alternanza destra/sinistra attorno all'asse. */
+@media (min-width: 900px) {
+	.pll-e-archive__event {
+		grid-template-columns: 1fr 1fr;
+		align-items: center;
+	}
+	/* Evento "right": testo a destra, immagine a sinistra. */
+	.pll-e-archive__event--right .pll-e-archive__media { grid-column: 1; grid-row: 1 / span 2; padding-right: 3rem; }
+	.pll-e-archive__event--right .pll-e-archive__milestone { grid-column: 2; padding-left: 3rem; }
+	.pll-e-archive__event--right .pll-e-archive__body { grid-column: 2; padding-left: 3rem; }
+	/* Evento "left": testo a sinistra, immagine a destra. */
+	.pll-e-archive__event--left .pll-e-archive__media { grid-column: 2; grid-row: 1 / span 2; padding-left: 3rem; }
+	.pll-e-archive__event--left .pll-e-archive__milestone { grid-column: 1; grid-row: 1; padding-right: 3rem; align-items: flex-end; text-align: right; }
+	.pll-e-archive__event--left .pll-e-archive__body { grid-column: 1; grid-row: 2; padding-right: 3rem; }
+
+	/* Pallino sulla pietra miliare. */
+	.pll-e-archive__event::before {
+		content: '';
+		position: absolute;
+		top: clamp(2.6rem, 6vw, 4.2rem);
+		left: 50%;
+		transform: translateX(-50%);
+		width: 11px;
+		height: 11px;
+		border-radius: 50%;
+		background: var(--pll-e-paper);
+		border: 2px solid var(--pll-e-gold);
+	}
+}
+
+/* Mobile: asse a sinistra, schede impilate. */
+@media (max-width: 899px) {
+	.pll-e-archive__axis { left: 1.1rem; }
+	.pll-e-archive__event {
+		grid-template-columns: 1fr;
+		padding-left: 2.6rem;
+	}
+	.pll-e-archive__event::before {
+		content: '';
+		position: absolute;
+		top: clamp(2.3rem, 8vw, 3rem);
+		left: 1.1rem;
+		transform: translateX(-50%);
+		width: 11px;
+		height: 11px;
+		border-radius: 50%;
+		background: var(--pll-e-paper);
+		border: 2px solid var(--pll-e-gold);
+	}
+	/* Ordine: anno → titolo/racconto → immagine. */
+	.pll-e-archive__milestone { order: 1; }
+	.pll-e-archive__body { order: 2; }
+	.pll-e-archive__media { order: 3; }
+}
+
+/* Araldica */
+.pll-e-heraldry {
+	display: grid;
+	gap: 1.25rem;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+	margin-top: 1rem;
+}
+
+.pll-e-heraldry__card {
+	background: var(--pll-e-surface);
+	border: 1px solid var(--pll-e-line);
+	padding: 1.75rem 1.5rem;
+	text-align: center;
+}
+
+.pll-e-heraldry__shield {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 5rem;
+	height: 5.6rem;
+	margin: 0 auto 1.1rem;
+	border: 1px solid var(--pll-e-gold);
+	border-radius: 0 0 2.6rem 2.6rem;
+	background: var(--pll-e-paper);
+	overflow: hidden;
+}
+.pll-e-heraldry__shield img { width: 100%; height: 100%; object-fit: cover; }
+
+.pll-e-heraldry__initial {
+	font-family: var(--pll-e-display);
+	font-size: 2.4rem;
+	color: var(--pll-e-wine);
+}
+
+.pll-e-heraldry__name {
+	font-size: 1.45rem;
+	margin: 0 0 0.35rem;
+}
+
+.pll-e-heraldry__blazon {
+	font-family: var(--pll-e-display);
+	font-style: italic;
+	color: var(--pll-e-wine);
+	margin: 0 0 0.6rem;
+}
+
+.pll-e-heraldry__note {
+	font-size: 0.9rem;
+	color: var(--pll-e-taupe);
+	margin: 0;
+}
+
+/* Lessico della pietra */
+.pll-e-glossary {
+	display: grid;
+	gap: 1.25rem;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+	margin-top: 1.5rem;
+}
+
+.pll-e-glossary__card {
+	background: var(--pll-e-surface);
+	border: 1px solid var(--pll-e-line);
+	overflow: hidden;
+}
+
+.pll-e-glossary__media {
+	margin: 0;
+	aspect-ratio: 4 / 3;
+	background: var(--pll-e-paper-2);
+	position: relative;
+	overflow: hidden;
+}
+.pll-e-glossary__media .pll-e-gallery__zoom { display: block; width: 100%; height: 100%; cursor: zoom-in; }
+.pll-e-glossary__media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pll-e-glossary__media figcaption {
+	position: absolute;
+	left: 0; right: 0; bottom: 0;
+	padding: 0.5rem 0.8rem;
+	background: linear-gradient(to top, rgba(20, 16, 12, 0.6), transparent);
+	color: #f2ead9;
+	font-size: 0.64rem;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.pll-e-glossary__term {
+	font-size: 1.5rem;
+	margin: 1rem 1.25rem 0.15rem;
+}
+
+.pll-e-glossary__sub {
+	font-family: var(--pll-e-display);
+	font-style: italic;
+	color: var(--pll-e-gold);
+	margin: 0 1.25rem 0.6rem;
+	font-size: 0.95rem;
+}
+
+.pll-e-glossary__definition {
+	color: var(--pll-e-taupe);
+	font-size: 0.95rem;
+	line-height: 1.55;
+	margin: 0 1.25rem 1.25rem;
+}
+
+/* Chiusura */
+.pll-e-closing {
+	text-align: center;
+	background: var(--pll-e-paper-2);
+	width: 100vw;
+	margin-left: calc(50% - 50vw);
+}
+
+.pll-e-closing__heading {
+	font-size: clamp(2.2rem, 5vw, 3.6rem);
+	margin: 0 0 2rem;
+}
+
+.pll-e-closing__heading em {
+	display: block;
+	font-style: italic;
+	color: var(--pll-e-wine);
+}
+
+.pll-e-closing__actions {
+	display: flex;
+	gap: 1rem;
+	justify-content: center;
+	flex-wrap: wrap;
+}
