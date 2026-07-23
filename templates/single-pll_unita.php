@@ -155,17 +155,6 @@ while ( have_posts() ) :
 			</div>
 		</section>
 
-		<?php // Planimetria. ?>
-		<?php $fp = palladio_image_url( $ed['floorplan']['image'], 'full' ); ?>
-		<?php if ( $fp || $ed['floorplan']['notes'] ) : ?>
-			<section class="pll-e-section pll-e-wrap">
-				<p class="pll-e-kicker"><?php esc_html_e( 'Planimetria', 'palladio' ); ?></p>
-				<h2 class="pll-e-h"><?php echo esc_html( $ed['floorplan']['caption'] ? $ed['floorplan']['caption'] : __( 'La pianta, quotata', 'palladio' ) ); ?></h2>
-				<?php if ( $fp ) : ?><figure class="pll-e-narrative__media"><img src="<?php echo esc_url( $fp ); ?>" alt="" loading="lazy"></figure><?php endif; ?>
-				<?php if ( $ed['floorplan']['notes'] ) : ?><p class="pll-e-prose"><?php echo esc_html( $ed['floorplan']['notes'] ); ?></p><?php endif; ?>
-			</section>
-		<?php endif; ?>
-
 		<?php // Walkthrough con capitoli. ?>
 		<?php if ( $ed['walkthrough_url'] || $ed['chapters'] ) : ?>
 			<section class="pll-e-tour">
@@ -192,6 +181,17 @@ while ( have_posts() ) :
 				<p class="pll-e-kicker"><?php esc_html_e( 'Galleria', 'palladio' ); ?></p>
 				<h2 class="pll-e-h"><?php esc_html_e( 'In luce', 'palladio' ); ?></h2>
 				<?php palladio_render_gallery( $ed['gallery'], $ed['gallery_layout'], 'palladio-unit-gallery' ); ?>
+			</section>
+		<?php endif; ?>
+
+		<?php // Planimetria (dopo la galleria fotografica). ?>
+		<?php $fp = palladio_image_url( $ed['floorplan']['image'], 'full' ); ?>
+		<?php if ( $fp || $ed['floorplan']['notes'] ) : ?>
+			<section class="pll-e-section pll-e-wrap" id="palladio-floorplan">
+				<p class="pll-e-kicker"><?php esc_html_e( 'Planimetria', 'palladio' ); ?></p>
+				<h2 class="pll-e-h"><?php echo esc_html( $ed['floorplan']['caption'] ? $ed['floorplan']['caption'] : __( 'La pianta, quotata', 'palladio' ) ); ?></h2>
+				<?php if ( $fp ) : ?><figure class="pll-e-narrative__media"><img src="<?php echo esc_url( $fp ); ?>" alt="" loading="lazy"></figure><?php endif; ?>
+				<?php if ( $ed['floorplan']['notes'] ) : ?><p class="pll-e-prose"><?php echo esc_html( $ed['floorplan']['notes'] ); ?></p><?php endif; ?>
 			</section>
 		<?php endif; ?>
 

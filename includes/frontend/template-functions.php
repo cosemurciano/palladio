@@ -88,8 +88,6 @@ function palladio_editorial( $post_id ) {
 		'units_eyebrow'   => '',
 		'units_heading'   => '',
 		'units_filters'   => false,
-		// Sezione "Come funziona l'acquisto" (fallback: meta vincoli_note).
-		'purchase'        => array( 'heading' => '', 'text' => '' ),
 		// Campi della pagina "La Storia" (pll_storia).
 		'heraldry'         => array(), // [ {initial,image,name,blazon,note} ]
 		'heraldry_eyebrow' => '',
@@ -105,7 +103,6 @@ function palladio_editorial( $post_id ) {
 	$data['floorplan'] = wp_parse_args( is_array( $data['floorplan'] ) ? $data['floorplan'] : array(), $defaults['floorplan'] );
 	$data['position']  = wp_parse_args( is_array( $data['position'] ) ? $data['position'] : array(), $defaults['position'] );
 	$data['ambient']   = wp_parse_args( is_array( $data['ambient'] ) ? $data['ambient'] : array(), $defaults['ambient'] );
-	$data['purchase']  = wp_parse_args( is_array( $data['purchase'] ) ? $data['purchase'] : array(), $defaults['purchase'] );
 	$data['closing']   = wp_parse_args( is_array( $data['closing'] ) ? $data['closing'] : array(), $defaults['closing'] );
 	$data['units_filters'] = ! empty( $data['units_filters'] );
 

@@ -259,12 +259,6 @@ class Palladio_Admin_Content {
 				<input type="text" class="widefat" name="palladio_editorial[gallery_count]" value="<?php echo esc_attr( $d['gallery_count'] ); ?>" placeholder="42"></label></p>
 		</div>
 
-		<h4><?php esc_html_e( 'Come funziona l’acquisto', 'palladio' ); ?></h4>
-		<p class="description"><?php esc_html_e( 'Sezione di chiusura della landing. Se lasciata vuota usa il campo “Vincoli e note legali” dei Dati principali.', 'palladio' ); ?></p>
-		<p><label><?php esc_html_e( 'Titolo', 'palladio' ); ?><br>
-			<input type="text" class="widefat" name="palladio_editorial[purchase][heading]" value="<?php echo esc_attr( $d['purchase']['heading'] ); ?>" placeholder="<?php esc_attr_e( 'La chiarezza è parte dell’architettura', 'palladio' ); ?>"></label></p>
-		<p><label><?php esc_html_e( 'Testo', 'palladio' ); ?><br>
-			<textarea class="widefat" rows="4" name="palladio_editorial[purchase][text]"><?php echo esc_textarea( $d['purchase']['text'] ); ?></textarea></label></p>
 		<?php
 	}
 
@@ -355,7 +349,7 @@ class Palladio_Admin_Content {
 			<p class="palladio-field-cell"><label><?php esc_html_e( 'Pulsante — URL', 'palladio' ); ?>
 				<input type="text" class="widefat" name="palladio_editorial[closing][primary_url]" value="<?php echo esc_attr( $d['closing']['primary_url'] ); ?>" placeholder="/unita/"></label></p>
 		</div>
-		<p class="description"><?php esc_html_e( 'Il secondo pulsante è la CTA “Richiedi il dossier” configurata in Palladio → Impostazioni.', 'palladio' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Il secondo pulsante è la CTA “Richiedi una visita” configurata in Palladio → Impostazioni.', 'palladio' ); ?></p>
 		<?php
 	}
 
@@ -542,10 +536,6 @@ class Palladio_Admin_Content {
 				'caption' => sanitize_text_field( $raw['ambient']['caption'] ?? '' ),
 			),
 			'ambient_images'  => $this->clean_rows( $raw['ambient_images'] ?? array(), array( 'image' => 'int', 'caption' => 'text' ) ),
-			'purchase'        => array(
-				'heading' => sanitize_text_field( $raw['purchase']['heading'] ?? '' ),
-				'text'    => sanitize_textarea_field( $raw['purchase']['text'] ?? '' ),
-			),
 			'manifesto'       => $this->clean_rows( $raw['manifesto'] ?? array(), array( 'text' => 'text', 'emphasis' => 'text' ) ),
 			'timeline'        => $this->clean_rows( $raw['timeline'] ?? array(), array( 'kicker' => 'text', 'year' => 'text', 'year_sub' => 'text', 'heading' => 'text', 'body' => 'html', 'image' => 'int', 'caption' => 'text' ) ),
 			// Campi della pagina "La Storia".

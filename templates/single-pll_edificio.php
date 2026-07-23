@@ -68,7 +68,7 @@ while ( have_posts() ) :
 					</div>
 					<?php
 				// CTA dossier: testo e destinazione configurabili in Palladio → Impostazioni.
-				$dossier_label = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'dossier_label' ) : __( 'Richiedi il dossier', 'palladio' );
+				$dossier_label = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'dossier_label' ) : __( 'Richiedi una visita', 'palladio' );
 				$dossier_url   = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'dossier_url' ) : '';
 				?>
 				<a class="pll-e-cta" id="palladio-dossier-cta" href="<?php echo esc_url( $dossier_url ? $dossier_url : '#palladio-contact' ); ?>"><?php echo esc_html( $dossier_label ); ?></a>
@@ -255,22 +255,6 @@ while ( have_posts() ) :
 			<?php endif; ?>
 			<?php do_action( 'palladio/edificio/contact_form', $building_id ); ?>
 		</section>
-
-		<?php
-		// Come funziona l'acquisto: campi editoriali dedicati, con fallback
-		// al meta "Vincoli e note legali" dei Dati principali.
-		$purchase_text    = $ed['purchase']['text'] ? $ed['purchase']['text'] : (string) palladio_meta( $building_id, 'vincoli_note' );
-		$purchase_heading = $ed['purchase']['heading'] ? $ed['purchase']['heading'] : __( 'La chiarezza è parte dell’architettura', 'palladio' );
-		if ( $purchase_text ) :
-			?>
-			<section class="pll-e-tech" id="palladio-purchase">
-				<div class="pll-e-wrap pll-e-section">
-					<p class="pll-e-kicker" id="palladio-purchase-eyebrow"><?php esc_html_e( 'Come funziona l’acquisto', 'palladio' ); ?></p>
-					<h2 class="pll-e-h" id="palladio-purchase-title"><?php echo esc_html( $purchase_heading ); ?></h2>
-					<div class="pll-e-prose" id="palladio-purchase-text"><?php echo wp_kses_post( wpautop( $purchase_text ) ); ?></div>
-				</div>
-			</section>
-		<?php endif; ?>
 
 		<?php do_action( 'palladio/edificio/after_units', $building_id ); ?>
 
