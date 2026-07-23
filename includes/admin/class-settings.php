@@ -43,7 +43,7 @@ class Palladio_Admin_Settings {
 	 */
 	public static function config() {
 		$defaults = array(
-			'dossier_label'   => __( 'Richiedi il dossier', 'palladio' ),
+			'dossier_label'   => __( 'Richiedi una visita', 'palladio' ),
 			'dossier_url'     => '', // Vuoto = àncora al form contatti (#palladio-contact).
 			'notify_emails'   => '',
 			'contact_heading' => __( 'Richiedi una visita o informazioni', 'palladio' ),
@@ -51,8 +51,14 @@ class Palladio_Admin_Settings {
 		);
 
 		$config = get_option( self::OPTION, array() );
+		$config = wp_parse_args( is_array( $config ) ? $config : array(), $defaults );
 
-		return wp_parse_args( is_array( $config ) ? $config : array(), $defaults );
+		// Migrazione: il vecchio testo di default diventa "Richiedi una visita".
+		if ( 'Richiedi il dossier' === $config['dossier_label'] ) {
+			$config['dossier_label'] = $defaults['dossier_label'];
+		}
+
+		return $config;
 	}
 
 	/**
@@ -125,7 +131,7 @@ class Palladio_Admin_Settings {
 				<input type="hidden" name="action" value="palladio_save_settings">
 				<?php wp_nonce_field( 'palladio_settings' ); ?>
 
-				<h2><?php esc_html_e( 'Richiedi il dossier', 'palladio' ); ?></h2>
+				<h2><?php esc_html_e( 'Pulsante “Richiedi una visita”', 'palladio' ); ?></h2>
 				<table class="form-table" role="presentation">
 					<tr>
 						<th scope="row"><label for="pll-set-dlabel"><?php esc_html_e( 'Testo del pulsante', 'palladio' ); ?></label></th>

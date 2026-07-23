@@ -29,7 +29,7 @@ class Palladio_Leads_Form {
 		// Iniezione automatica nel pannello contatti dell'unità (Presenter).
 		add_action( 'palladio/unita/after_contact', array( $this, 'render' ) );
 
-		// Form contatti nella landing dell'edificio (prima di "Come funziona l'acquisto").
+		// Form contatti in chiusura della landing dell'edificio.
 		add_action( 'palladio/edificio/contact_form', array( $this, 'render_building' ) );
 
 		// Handler invio (utenti loggati e non).

@@ -24,7 +24,7 @@ while ( have_posts() ) :
 	$hero      = get_the_post_thumbnail_url( $storia_id, 'full' );
 	$lead      = $ed['lead'] ? $ed['lead'] : get_the_excerpt();
 
-	$dossier_label = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'dossier_label' ) : __( 'Richiedi il dossier', 'palladio' );
+	$dossier_label = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'dossier_label' ) : __( 'Richiedi una visita', 'palladio' );
 	$dossier_url   = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'dossier_url' ) : '';
 	?>
 	<div class="palladio-editorial palladio-storia-editorial">

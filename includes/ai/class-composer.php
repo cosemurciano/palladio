@@ -537,12 +537,6 @@ class Palladio_AI_Composer {
 				}
 			}
 		}
-		if ( isset( $ed['purchase'] ) && is_array( $ed['purchase'] ) ) {
-			$editorial['purchase'] = array(
-				'heading' => sanitize_text_field( $ed['purchase']['heading'] ?? '' ),
-				'text'    => sanitize_textarea_field( $ed['purchase']['text'] ?? '' ),
-			);
-		}
 		if ( isset( $ed['manifesto'] ) ) {
 			$editorial['manifesto'] = array();
 			foreach ( (array) $ed['manifesto'] as $m ) {
