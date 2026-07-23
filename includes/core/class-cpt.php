@@ -100,6 +100,27 @@ class Palladio_Core_CPT {
 			)
 		);
 
+		// --- Storia: pagina narrativa "tavola d'archivio" dell'edificio. ---
+		register_post_type(
+			'pll_storia',
+			array(
+				'labels'       => array(
+					'name'          => __( 'Storia', 'palladio' ),
+					'singular_name' => __( 'Pagina Storia', 'palladio' ),
+					'add_new_item'  => __( 'Aggiungi pagina Storia', 'palladio' ),
+					'edit_item'     => __( 'Modifica pagina Storia', 'palladio' ),
+				),
+				'public'       => true,
+				'has_archive'  => false,
+				'show_in_menu' => 'edit.php?post_type=pll_edificio',
+				// Selezionabile in Aspetto → Menu per la navigazione.
+				'show_in_nav_menus' => true,
+				'supports'     => array( 'title', 'editor', 'thumbnail', 'excerpt', 'custom-fields' ),
+				'rewrite'      => array( 'slug' => 'storia' ),
+				'show_in_rest' => true,
+			)
+		);
+
 		// --- Scenario: bundle/split di unità (feature distintiva). ---------
 		register_post_type(
 			'pll_scenario',

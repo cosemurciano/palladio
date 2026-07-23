@@ -559,14 +559,59 @@ class Palladio_AI_Composer {
 			foreach ( (array) $ed['timeline'] as $t ) {
 				if ( is_array( $t ) ) {
 					$editorial['timeline'][] = array(
-						'kicker'  => sanitize_text_field( $t['kicker'] ?? '' ),
-						'year'    => sanitize_text_field( $t['year'] ?? '' ),
-						'heading' => sanitize_text_field( $t['heading'] ?? '' ),
-						'body'    => wp_kses_post( $t['body'] ?? '' ),
-						'image'   => $vid( $t['image'] ?? 0 ),
+						'kicker'   => sanitize_text_field( $t['kicker'] ?? '' ),
+						'year'     => sanitize_text_field( $t['year'] ?? '' ),
+						'year_sub' => sanitize_text_field( $t['year_sub'] ?? '' ),
+						'heading'  => sanitize_text_field( $t['heading'] ?? '' ),
+						'body'     => wp_kses_post( $t['body'] ?? '' ),
+						'image'    => $vid( $t['image'] ?? 0 ),
+						'caption'  => sanitize_text_field( $t['caption'] ?? '' ),
 					);
 				}
 			}
+		}
+		// Campi della pagina "La Storia".
+		if ( isset( $ed['heraldry'] ) ) {
+			$editorial['heraldry'] = array();
+			foreach ( (array) $ed['heraldry'] as $h ) {
+				if ( is_array( $h ) ) {
+					$editorial['heraldry'][] = array(
+						'initial' => sanitize_text_field( $h['initial'] ?? '' ),
+						'image'   => $vid( $h['image'] ?? 0 ),
+						'name'    => sanitize_text_field( $h['name'] ?? '' ),
+						'blazon'  => sanitize_text_field( $h['blazon'] ?? '' ),
+						'note'    => sanitize_text_field( $h['note'] ?? '' ),
+					);
+				}
+			}
+		}
+		if ( isset( $ed['glossary'] ) ) {
+			$editorial['glossary'] = array();
+			foreach ( (array) $ed['glossary'] as $g ) {
+				if ( is_array( $g ) ) {
+					$editorial['glossary'][] = array(
+						'image'      => $vid( $g['image'] ?? 0 ),
+						'caption'    => sanitize_text_field( $g['caption'] ?? '' ),
+						'term'       => sanitize_text_field( $g['term'] ?? '' ),
+						'sub'        => sanitize_text_field( $g['sub'] ?? '' ),
+						'definition' => sanitize_textarea_field( $g['definition'] ?? '' ),
+					);
+				}
+			}
+		}
+		foreach ( array( 'heraldry_eyebrow', 'heraldry_heading', 'glossary_eyebrow', 'glossary_heading', 'glossary_text' ) as $sfield ) {
+			if ( isset( $ed[ $sfield ] ) ) {
+				$editorial[ $sfield ] = sanitize_text_field( (string) $ed[ $sfield ] );
+			}
+		}
+		if ( isset( $ed['closing'] ) && is_array( $ed['closing'] ) ) {
+			$editorial['closing'] = array(
+				'kicker'        => sanitize_text_field( $ed['closing']['kicker'] ?? '' ),
+				'heading'       => sanitize_text_field( $ed['closing']['heading'] ?? '' ),
+				'emphasis'      => sanitize_text_field( $ed['closing']['emphasis'] ?? '' ),
+				'primary_label' => sanitize_text_field( $ed['closing']['primary_label'] ?? '' ),
+				'primary_url'   => sanitize_text_field( $ed['closing']['primary_url'] ?? '' ),
+			);
 		}
 
 		update_post_meta( $post_id, '_pll_editorial', $editorial );

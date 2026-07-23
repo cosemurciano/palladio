@@ -68,6 +68,8 @@ class Palladio_Frontend_Templates {
 			$map = array( 'single-pll_unita.php' );
 		} elseif ( is_singular( 'pll_scenario' ) ) {
 			$map = array( 'single-pll_scenario.php' );
+		} elseif ( is_singular( 'pll_storia' ) ) {
+			$map = array( 'single-pll_storia.php' );
 		} elseif ( is_post_type_archive( 'pll_edificio' ) ) {
 			$map = array( 'archive-pll_edificio.php' );
 		} elseif ( is_post_type_archive( 'pll_unita' ) ) {
@@ -109,7 +111,7 @@ class Palladio_Frontend_Templates {
 	 */
 	public function body_class( $classes ) {
 		if (
-			is_singular( array( 'pll_edificio', 'pll_unita', 'pll_scenario' ) )
+			is_singular( array( 'pll_edificio', 'pll_unita', 'pll_scenario', 'pll_storia' ) )
 			|| is_post_type_archive( array( 'pll_edificio', 'pll_unita' ) )
 		) {
 			$classes[] = 'palladio';

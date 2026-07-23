@@ -90,6 +90,15 @@ function palladio_editorial( $post_id ) {
 		'units_filters'   => false,
 		// Sezione "Come funziona l'acquisto" (fallback: meta vincoli_note).
 		'purchase'        => array( 'heading' => '', 'text' => '' ),
+		// Campi della pagina "La Storia" (pll_storia).
+		'heraldry'         => array(), // [ {initial,image,name,blazon,note} ]
+		'heraldry_eyebrow' => '',
+		'heraldry_heading' => '',
+		'glossary'         => array(), // [ {image,caption,term,sub,definition} ]
+		'glossary_eyebrow' => '',
+		'glossary_heading' => '',
+		'glossary_text'    => '',
+		'closing'          => array( 'kicker' => '', 'heading' => '', 'emphasis' => '', 'primary_label' => '', 'primary_url' => '' ),
 	);
 
 	$data              = wp_parse_args( $data, $defaults );
@@ -97,13 +106,14 @@ function palladio_editorial( $post_id ) {
 	$data['position']  = wp_parse_args( is_array( $data['position'] ) ? $data['position'] : array(), $defaults['position'] );
 	$data['ambient']   = wp_parse_args( is_array( $data['ambient'] ) ? $data['ambient'] : array(), $defaults['ambient'] );
 	$data['purchase']  = wp_parse_args( is_array( $data['purchase'] ) ? $data['purchase'] : array(), $defaults['purchase'] );
+	$data['closing']   = wp_parse_args( is_array( $data['closing'] ) ? $data['closing'] : array(), $defaults['closing'] );
 	$data['units_filters'] = ! empty( $data['units_filters'] );
 
 	if ( ! in_array( $data['gallery_layout'], array( 'masonry', 'grid', 'mosaic', 'filmstrip', 'offset' ), true ) ) {
 		$data['gallery_layout'] = 'masonry';
 	}
 
-	foreach ( array( 'chapters', 'narrative', 'tech', 'gallery', 'manifesto', 'timeline', 'ambient_images' ) as $rep ) {
+	foreach ( array( 'chapters', 'narrative', 'tech', 'gallery', 'manifesto', 'timeline', 'ambient_images', 'heraldry', 'glossary' ) as $rep ) {
 		if ( ! is_array( $data[ $rep ] ) ) {
 			$data[ $rep ] = array();
 		}
