@@ -102,7 +102,7 @@ while ( have_posts() ) :
 						<span class="pll-e-fact"><b><?php echo esc_html( $fact[0] ); ?></b><span><?php echo esc_html( $fact[1] ); ?></span></span>
 					<?php endforeach; ?>
 				</div>
-				<a class="pll-e-cta" href="#dossier"><?php esc_html_e( 'Richiedi una visita', 'palladio' ); ?></a>
+				<a class="pll-e-cta" href="#palladio-contact"><?php esc_html_e( 'Richiedi una visita', 'palladio' ); ?></a>
 			</div>
 		</div>
 

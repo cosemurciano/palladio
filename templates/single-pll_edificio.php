@@ -54,7 +54,8 @@ while ( have_posts() ) :
 				<p class="pll-e-eyebrow"><?php echo esc_html( $location ); ?></p>
 				<h1 class="pll-e-hero__title"><?php echo $claim ? esc_html( $claim ) : get_the_title(); ?></h1>
 				<?php if ( $lead ) : ?><p class="pll-e-hero__lead"><?php echo esc_html( $lead ); ?></p><?php endif; ?>
-				<p><a class="pll-e-cta" href="#residenze"><?php esc_html_e( 'Scopri le residenze', 'palladio' ); ?></a></p>
+				<p><a class="pll-e-cta" href="#residenze"><?php esc_html_e( 'Scopri le residenze', 'palladio' ); ?></a>
+					<a class="pll-e-cta pll-e-cta--ghost" href="#palladio-contact"><?php esc_html_e( 'Richiedi una visita', 'palladio' ); ?></a></p>
 			</div>
 		</header>
 
@@ -245,17 +246,7 @@ while ( have_posts() ) :
 			</section>
 		<?php endif; ?>
 
-		<?php // FORM CONTATTI — richiesta visita, dossier o informazioni. ?>
-		<section class="pll-e-section pll-e-wrap pll-e-contact" id="palladio-contact">
-			<p class="pll-e-kicker" id="palladio-contact-eyebrow"><?php esc_html_e( 'Contatti', 'palladio' ); ?></p>
-			<h2 class="pll-e-h" id="palladio-contact-title"><?php echo esc_html( class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'contact_heading' ) : __( 'Richiedi una visita o informazioni', 'palladio' ) ); ?></h2>
-			<?php $contact_text = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'contact_text' ) : ''; ?>
-			<?php if ( $contact_text ) : ?>
-				<p class="pll-e-prose" id="palladio-contact-text"><?php echo esc_html( $contact_text ); ?></p>
-			<?php endif; ?>
-			<?php do_action( 'palladio/edificio/contact_form', $building_id ); ?>
-		</section>
-
+		<?php // Il form contatti unico è iniettato globalmente in fondo alla pagina. ?>
 		<?php do_action( 'palladio/edificio/after_units', $building_id ); ?>
 
 	</div>

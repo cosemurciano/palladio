@@ -26,15 +26,97 @@ class Palladio_Leads_Form {
 	public function register() {
 		add_shortcode( 'palladio_lead_form', array( $this, 'shortcode' ) );
 
-		// Iniezione automatica nel pannello contatti dell'unità (Presenter).
-		add_action( 'palladio/unita/after_contact', array( $this, 'render' ) );
-
-		// Form contatti in chiusura della landing dell'edificio.
-		add_action( 'palladio/edificio/contact_form', array( $this, 'render_building' ) );
+		// MODULO UNICO: la sezione contatti è iniettata in fondo a TUTTE le
+		// pagine del sito, prima del footer del tema (hook get_footer).
+		add_action( 'get_footer', array( $this, 'render_section' ) );
 
 		// Handler invio (utenti loggati e non).
 		add_action( 'admin_post_nopriv_palladio_submit_lead', array( $this, 'handle' ) );
 		add_action( 'admin_post_palladio_submit_lead', array( $this, 'handle' ) );
+	}
+
+	/**
+	 * Sezione contatti globale: form a sinistra, contatti agenzia a destra.
+	 *
+	 * Renderizzata una sola volta per pagina, in fondo, su tutto il sito.
+	 * Disattivabile via filtro `palladio/contact/enabled`.
+	 *
+	 * @return void
+	 */
+	public function render_section() {
+		static $done = false;
+
+		if ( $done || is_admin() || is_feed() || is_embed() || is_404() ) {
+			return;
+		}
+		/**
+		 * Consente di nascondere la sezione contatti globale.
+		 *
+		 * @param bool $enabled Attiva.
+		 */
+		if ( ! apply_filters( 'palladio/contact/enabled', true ) ) {
+			return;
+		}
+		$done = true;
+
+		$unit_id     = is_singular( 'pll_unita' ) ? get_the_ID() : 0;
+		$building_id = is_singular( 'pll_edificio' ) ? get_the_ID() : 0;
+		if ( ! $building_id && $unit_id ) {
+			$building_id = (int) wp_get_post_parent_id( $unit_id );
+		}
+		if ( ! $building_id && is_front_page() ) {
+			$building_id = (int) get_option( 'palladio_home_building', 0 );
+		}
+
+		$heading = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'contact_heading' ) : __( 'Richiedi una visita o informazioni', 'palladio' );
+		$intro   = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'contact_text' ) : '';
+
+		$emails   = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::agency_emails() : array();
+		$phone    = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'agency_phone' ) : '';
+		$whatsapp = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'agency_whatsapp' ) : '';
+		$has_side = $emails || $phone || $whatsapp;
+		?>
+		<section class="palladio-contact" id="palladio-contact">
+			<div class="palladio-contact__wrap">
+				<p class="palladio-contact__kicker" id="palladio-contact-eyebrow"><?php esc_html_e( 'Contatti', 'palladio' ); ?></p>
+				<h2 class="palladio-contact__heading" id="palladio-contact-title"><?php echo esc_html( $heading ); ?></h2>
+				<?php if ( $intro ) : ?>
+					<p class="palladio-contact__intro" id="palladio-contact-text"><?php echo esc_html( $intro ); ?></p>
+				<?php endif; ?>
+
+				<div class="palladio-contact__grid<?php echo $has_side ? '' : ' palladio-contact__grid--single'; ?>">
+					<div class="palladio-contact__form">
+						<?php $this->render( $unit_id, $building_id ); ?>
+					</div>
+
+					<?php if ( $has_side ) : ?>
+						<aside class="palladio-contact__aside" id="palladio-contact-agenzia">
+							<h3 class="palladio-contact__aside-title"><?php esc_html_e( 'Parla con noi', 'palladio' ); ?></h3>
+							<?php foreach ( $emails as $i => $email ) : ?>
+								<a class="palladio-contact__channel" id="palladio-contact-mail-<?php echo esc_attr( $i + 1 ); ?>" href="mailto:<?php echo esc_attr( $email ); ?>">
+									<span class="palladio-contact__channel-icon" aria-hidden="true">✉</span>
+									<span class="palladio-contact__channel-body"><b><?php esc_html_e( 'Scrivi una mail', 'palladio' ); ?></b><span><?php echo esc_html( $email ); ?></span></span>
+								</a>
+							<?php endforeach; ?>
+							<?php if ( $phone ) : ?>
+								<a class="palladio-contact__channel" id="palladio-contact-cell" href="tel:<?php echo esc_attr( preg_replace( '/[^0-9+]/', '', $phone ) ); ?>">
+									<span class="palladio-contact__channel-icon" aria-hidden="true">✆</span>
+									<span class="palladio-contact__channel-body"><b><?php esc_html_e( 'Chiama', 'palladio' ); ?></b><span><?php echo esc_html( $phone ); ?></span></span>
+								</a>
+							<?php endif; ?>
+							<?php if ( $whatsapp ) : ?>
+								<a class="palladio-contact__channel" id="palladio-contact-whatsapp" href="https://wa.me/<?php echo esc_attr( preg_replace( '/[^0-9]/', '', $whatsapp ) ); ?>" target="_blank" rel="noopener">
+									<span class="palladio-contact__channel-icon" aria-hidden="true">🗨</span>
+									<span class="palladio-contact__channel-body"><b><?php esc_html_e( 'WhatsApp', 'palladio' ); ?></b><span><?php echo esc_html( $whatsapp ); ?></span></span>
+								</a>
+							<?php endif; ?>
+							<p class="palladio-contact__aside-note"><?php esc_html_e( 'Visite private su appuntamento.', 'palladio' ); ?></p>
+						</aside>
+					<?php endif; ?>
+				</div>
+			</div>
+		</section>
+		<?php
 	}
 
 	/**
@@ -74,7 +156,6 @@ class Palladio_Leads_Form {
 	public static function motivi() {
 		return array(
 			'visita'       => __( 'Richiedere una visita in loco', 'palladio' ),
-			'dossier'      => __( 'Ricevere il dossier completo', 'palladio' ),
 			'informazioni' => __( 'Informazioni generali', 'palladio' ),
 			'altro'        => __( 'Altro', 'palladio' ),
 		);
@@ -91,7 +172,6 @@ class Palladio_Leads_Form {
 		$unit_id     = absint( $unit_id );
 		$building_id = absint( $building_id );
 		$notice      = isset( $_GET['palladio_lead'] ) ? sanitize_key( wp_unslash( $_GET['palladio_lead'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$usi         = Palladio_Leads_Store::usi();
 		$gdpr        = $this->gdpr_text();
 		?>
 		<form class="palladio-lead-form" id="palladio-lead-form" method="post"
@@ -133,24 +213,17 @@ class Palladio_Leads_Form {
 					<label for="pll-tel"><?php esc_html_e( 'Telefono', 'palladio' ); ?></label>
 					<input type="tel" id="pll-tel" name="telefono">
 				</p>
-				<p class="palladio-field">
-					<label for="pll-uso"><?php esc_html_e( 'Uso previsto', 'palladio' ); ?></label>
-					<select id="pll-uso" name="uso_previsto">
-						<option value=""><?php esc_html_e( '—', 'palladio' ); ?></option>
-						<?php foreach ( $usi as $slug => $label ) : ?>
-							<option value="<?php echo esc_attr( $slug ); ?>"><?php echo esc_html( $label ); ?></option>
-						<?php endforeach; ?>
-					</select>
-				</p>
-				<p class="palladio-field">
-					<label for="pll-motivo"><?php esc_html_e( 'Vorrei', 'palladio' ); ?></label>
-					<select id="pll-motivo" name="motivo">
-						<?php foreach ( self::motivi() as $slug => $label ) : ?>
-							<option value="<?php echo esc_attr( $slug ); ?>"><?php echo esc_html( $label ); ?></option>
-						<?php endforeach; ?>
-					</select>
-				</p>
 			</div>
+
+			<fieldset class="palladio-field palladio-field--motivi">
+				<legend><?php esc_html_e( 'Vorrei', 'palladio' ); ?></legend>
+				<?php foreach ( self::motivi() as $slug => $label ) : ?>
+					<label class="palladio-motivo">
+						<input type="checkbox" name="motivo[]" value="<?php echo esc_attr( $slug ); ?>">
+						<span><?php echo esc_html( $label ); ?></span>
+					</label>
+				<?php endforeach; ?>
+			</fieldset>
 
 			<p class="palladio-field">
 				<label for="pll-note"><?php esc_html_e( 'Messaggio', 'palladio' ); ?></label>
@@ -204,21 +277,33 @@ class Palladio_Leads_Form {
 		$unit_id     = isset( $_POST['unita_id'] ) ? absint( wp_unslash( $_POST['unita_id'] ) ) : 0;
 		$building_id = isset( $_POST['edificio_id'] ) ? absint( wp_unslash( $_POST['edificio_id'] ) ) : 0;
 
-		$motivi = self::motivi();
-		$motivo = isset( $_POST['motivo'] ) ? sanitize_key( wp_unslash( $_POST['motivo'] ) ) : '';
-		$motivo = isset( $motivi[ $motivo ] ) ? $motivo : '';
+		// "Vorrei": checkbox multiple, facoltative.
+		$motivi   = self::motivi();
+		$selected = isset( $_POST['motivo'] ) ? array_map( 'sanitize_key', (array) wp_unslash( $_POST['motivo'] ) ) : array();
+		$selected = array_values( array_intersect( $selected, array_keys( $motivi ) ) );
 
 		// Contesto della richiesta in testa alle note, così resta leggibile
-		// nell'archivio lead (Palladio → Lead).
+		// nella Pipeline lead (Palladio → Lead).
 		$note    = isset( $_POST['note'] ) ? sanitize_textarea_field( wp_unslash( $_POST['note'] ) ) : '';
 		$context = array();
-		if ( $motivo ) {
-			/* translators: %s: motivo della richiesta. */
-			$context[] = sprintf( __( 'Richiesta: %s', 'palladio' ), $motivi[ $motivo ] );
+		if ( $selected ) {
+			$labels = array_map(
+				static function ( $slug ) use ( $motivi ) {
+					return $motivi[ $slug ];
+				},
+				$selected
+			);
+			/* translators: %s: motivi della richiesta. */
+			$context[] = sprintf( __( 'Richiesta: %s', 'palladio' ), implode( ', ', $labels ) );
 		}
 		if ( $building_id ) {
 			/* translators: %s: titolo edificio. */
 			$context[] = sprintf( __( 'Edificio: %s', 'palladio' ), get_the_title( $building_id ) );
+		}
+		// Pagina di provenienza (URL da cui è partita la richiesta).
+		if ( $redirect ) {
+			/* translators: %s: URL pagina. */
+			$context[] = sprintf( __( 'Pagina: %s', 'palladio' ), $redirect );
 		}
 		if ( $context ) {
 			$note = implode( "\n", $context ) . ( $note ? "\n\n" . $note : '' );
@@ -233,7 +318,7 @@ class Palladio_Leads_Form {
 			'nome'           => $nome,
 			'email'          => $email,
 			'telefono'       => isset( $_POST['telefono'] ) ? sanitize_text_field( wp_unslash( $_POST['telefono'] ) ) : '',
-			'uso_previsto'   => isset( $_POST['uso_previsto'] ) ? sanitize_key( wp_unslash( $_POST['uso_previsto'] ) ) : '',
+			'uso_previsto'   => '',
 			'note'           => $note,
 			'unita_ids'      => $unit_id ? array( $unit_id ) : array(),
 			'consenso_gdpr'  => true,
@@ -310,7 +395,6 @@ class Palladio_Leads_Form {
 			sprintf( __( 'Nome: %s', 'palladio' ), $data['nome'] ),
 			sprintf( __( 'Email: %s', 'palladio' ), $data['email'] ),
 			sprintf( __( 'Telefono: %s', 'palladio' ), $data['telefono'] ),
-			sprintf( __( 'Uso previsto: %s', 'palladio' ), $data['uso_previsto'] ),
 			sprintf( __( 'Unità: %s', 'palladio' ), $unit_label ),
 			'',
 			__( 'Messaggio:', 'palladio' ),
@@ -333,8 +417,12 @@ class Palladio_Leads_Form {
 	 * @return string
 	 */
 	private function gdpr_text() {
-		$default = __( 'Ho letto e accetto l’informativa sulla privacy e autorizzo il trattamento dei miei dati per rispondere alla richiesta.', 'palladio' );
-		$text    = get_option( 'palladio_gdpr_text', '' );
+		$default = sprintf(
+			/* translators: %s: URL della pagina privacy. */
+			__( 'Ho letto e accetto l’<a href="%s" target="_blank" rel="noopener">informativa sulla privacy</a> e autorizzo il trattamento dei miei dati per rispondere alla richiesta.', 'palladio' ),
+			esc_url( home_url( '/privacy' ) )
+		);
+		$text = get_option( 'palladio_gdpr_text', '' );
 		return $text ? $text : $default;
 	}
 
