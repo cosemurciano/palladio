@@ -357,31 +357,19 @@ class Palladio_Leads_Form {
 		$selected = isset( $_POST['motivo'] ) ? array_map( 'sanitize_key', (array) wp_unslash( $_POST['motivo'] ) ) : array();
 		$selected = array_values( array_intersect( $selected, array_keys( $motivi ) ) );
 
-		// Contesto della richiesta in testa alle note, così resta leggibile
-		// nella Pipeline lead (Palladio → Lead).
-		$note    = isset( $_POST['note'] ) ? sanitize_textarea_field( wp_unslash( $_POST['note'] ) ) : '';
-		$context = array();
-		if ( $selected ) {
-			$labels = array_map(
-				static function ( $slug ) use ( $motivi ) {
-					return $motivi[ $slug ];
-				},
-				$selected
-			);
-			/* translators: %s: motivi della richiesta. */
-			$context[] = sprintf( __( 'Richiesta: %s', 'palladio' ), implode( ', ', $labels ) );
-		}
+		// Motivi e pagina di provenienza sono colonne strutturate del lead;
+		// nelle note resta solo l'eventuale contesto edificio + il messaggio.
+		$labels = array_map(
+			static function ( $slug ) use ( $motivi ) {
+				return $motivi[ $slug ];
+			},
+			$selected
+		);
+
+		$note = isset( $_POST['note'] ) ? sanitize_textarea_field( wp_unslash( $_POST['note'] ) ) : '';
 		if ( $building_id ) {
 			/* translators: %s: titolo edificio. */
-			$context[] = sprintf( __( 'Edificio: %s', 'palladio' ), get_the_title( $building_id ) );
-		}
-		// Pagina di provenienza (URL da cui è partita la richiesta).
-		if ( $redirect ) {
-			/* translators: %s: URL pagina. */
-			$context[] = sprintf( __( 'Pagina: %s', 'palladio' ), $redirect );
-		}
-		if ( $context ) {
-			$note = implode( "\n", $context ) . ( $note ? "\n\n" . $note : '' );
+			$note = sprintf( __( 'Edificio: %s', 'palladio' ), get_the_title( $building_id ) ) . ( $note ? "\n\n" . $note : '' );
 		}
 
 		$data = array(
@@ -394,6 +382,8 @@ class Palladio_Leads_Form {
 			'email'          => $email,
 			'telefono'       => isset( $_POST['telefono'] ) ? sanitize_text_field( wp_unslash( $_POST['telefono'] ) ) : '',
 			'uso_previsto'   => '',
+			'motivo'         => implode( ', ', $labels ),
+			'pagina'         => $redirect,
 			'note'           => $note,
 			'unita_ids'      => $unit_id ? array( $unit_id ) : array(),
 			'consenso_gdpr'  => true,

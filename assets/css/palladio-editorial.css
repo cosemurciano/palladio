@@ -1347,3 +1347,73 @@ body.pll-lightbox-open { overflow: hidden; }
 	justify-content: center;
 	flex-wrap: wrap;
 }
+
+/* ---------------------------------------------------------------------------
+ * Scenari — card e scheda: come le unità, ma graficamente distinte
+ * (doppia cornice, nastro "Scenario", prezzo con risparmio in evidenza)
+ * ------------------------------------------------------------------------- */
+.pll-e-scenario-card {
+	border: 1px solid var(--pll-e-gold);
+	box-shadow: inset 0 0 0 4px var(--pll-e-paper), inset 0 0 0 5px var(--pll-e-line);
+	background: linear-gradient(180deg, var(--pll-e-surface) 0%, var(--pll-e-paper-2) 100%);
+}
+
+.pll-e-scenario-card__ribbon {
+	position: absolute;
+	z-index: 2;
+	top: 0.85rem;
+	left: 0;
+	padding: 0.3rem 0.9rem 0.3rem 0.75rem;
+	background: var(--pll-e-wine);
+	color: #f7f2e7;
+	font-size: 0.66rem;
+	font-weight: 700;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	clip-path: polygon(0 0, 100% 0, calc(100% - 0.6rem) 50%, 100% 100%, 0 100%);
+}
+
+.pll-e-scenario-card__price {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+}
+
+.pll-e-scenario-card__sum {
+	color: var(--pll-e-taupe);
+	font-weight: 400;
+	font-size: 0.85rem;
+	margin-right: 0.4rem;
+}
+
+.pll-e-scenario-card__saving {
+	display: inline-block;
+	align-self: flex-start;
+	margin-top: 0.3rem;
+	padding: 0.2rem 0.6rem;
+	border-radius: 999px;
+	background: rgba(110, 43, 43, 0.09);
+	border: 1px solid rgba(110, 43, 43, 0.25);
+	color: var(--pll-e-wine);
+	font-size: 0.76rem;
+	font-weight: 600;
+}
+
+/* Scheda scenario */
+.pll-e-scenario-hero .pll-e-eyebrow { color: var(--pll-e-gold-2); }
+
+.pll-e-scenario-saving {
+	display: inline-block;
+	padding: 0.3rem 0.8rem;
+	border-radius: 999px;
+	background: var(--pll-e-wine);
+	color: #f7f2e7;
+	font-size: 0.8rem;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.pll-e-tech__row--saving dd {
+	color: var(--pll-e-wine);
+	font-weight: 600;
+}

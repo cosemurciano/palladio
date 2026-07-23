@@ -132,9 +132,10 @@ class Palladio_Core_CPT {
 					'edit_item'     => __( 'Modifica scenario', 'palladio' ),
 				),
 				'public'       => true,
-				'has_archive'  => false,
+				'has_archive'  => true, // Pagina dedicata /scenario/.
 				'show_in_menu' => 'edit.php?post_type=pll_edificio',
-				'supports'     => array( 'title', 'editor', 'thumbnail', 'custom-fields' ),
+				'show_in_nav_menus' => true,
+				'supports'     => array( 'title', 'editor', 'thumbnail', 'excerpt', 'custom-fields' ),
 				'rewrite'      => array( 'slug' => 'scenario' ),
 				'show_in_rest' => true,
 			)
