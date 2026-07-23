@@ -246,6 +246,25 @@ while ( have_posts() ) :
 			</section>
 		<?php endif; ?>
 
+		<?php // SCENARI — soluzioni che aggregano più unità, sotto la galleria. ?>
+		<?php $scenari = palladio_get_scenarios( $building_id ); ?>
+		<?php if ( $scenari ) : ?>
+			<section class="pll-e-section pll-e-wrap" id="palladio-scenari">
+				<div class="pll-e-units-head">
+					<div>
+						<p class="pll-e-kicker" id="palladio-scenari-eyebrow"><?php esc_html_e( 'Gli scenari', 'palladio' ); ?></p>
+						<h2 class="pll-e-h" id="palladio-scenari-titolo"><?php esc_html_e( 'Soluzioni componibili', 'palladio' ); ?></h2>
+					</div>
+					<p class="pll-e-prose pll-e-gallery-note"><?php esc_html_e( 'Più unità, un unico progetto abitativo o di business: i dati restano quelli delle unità, cambia solo il prezzo del pacchetto.', 'palladio' ); ?></p>
+				</div>
+				<div class="pll-e-sisters" id="palladio-scenari-grid">
+					<?php foreach ( $scenari as $sid ) : ?>
+						<?php palladio_render_scenario_card_editorial( $sid ); ?>
+					<?php endforeach; ?>
+				</div>
+			</section>
+		<?php endif; ?>
+
 		<?php // Il form contatti unico è iniettato globalmente in fondo alla pagina. ?>
 		<?php do_action( 'palladio/edificio/after_units', $building_id ); ?>
 

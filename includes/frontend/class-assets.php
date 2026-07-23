@@ -61,7 +61,7 @@ class Palladio_Frontend_Assets {
 		);
 
 		// Direzione visiva editoriale su schede singole e archivio unità.
-		if ( is_singular( array( 'pll_edificio', 'pll_unita', 'pll_scenario', 'pll_storia' ) ) || is_post_type_archive( 'pll_unita' ) ) {
+		if ( is_singular( array( 'pll_edificio', 'pll_unita', 'pll_scenario', 'pll_storia' ) ) || is_post_type_archive( array( 'pll_unita', 'pll_scenario' ) ) ) {
 			/**
 			 * Consente di disattivare lo stile editoriale (es. tema con design proprio).
 			 *

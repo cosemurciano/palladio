@@ -233,6 +233,20 @@ while ( have_posts() ) :
 			<?php endif; ?>
 		<?php endif; ?>
 
+		<?php // SCENARI che includono questa unità. ?>
+		<?php $scenari = palladio_get_scenarios( 0, $unit_id ); ?>
+		<?php if ( $scenari ) : ?>
+			<section class="pll-e-section pll-e-wrap" id="palladio-scenari">
+				<p class="pll-e-kicker" id="palladio-scenari-eyebrow"><?php esc_html_e( 'Gli scenari', 'palladio' ); ?></p>
+				<h2 class="pll-e-h" id="palladio-scenari-titolo"><?php esc_html_e( 'Questa unità fa parte di', 'palladio' ); ?></h2>
+				<div class="pll-e-sisters" id="palladio-scenari-grid">
+					<?php foreach ( $scenari as $sid ) : ?>
+						<?php palladio_render_scenario_card_editorial( $sid ); ?>
+					<?php endforeach; ?>
+				</div>
+			</section>
+		<?php endif; ?>
+
 		<section class="pll-e-dossier" id="dossier">
 			<div class="pll-e-wrap pll-e-section">
 				<p class="pll-e-kicker"><?php esc_html_e( 'Il dossier', 'palladio' ); ?></p>

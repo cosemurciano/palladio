@@ -21,7 +21,7 @@ class Palladio_Leads_Store {
 	/**
 	 * Versione dello schema DB.
 	 */
-	const DB_VERSION = 1;
+	const DB_VERSION = 2;
 
 	/**
 	 * Aggancia il controllo di aggiornamento schema.
@@ -104,6 +104,8 @@ class Palladio_Leads_Store {
 			budget_range VARCHAR(50) NOT NULL DEFAULT '',
 			uso_previsto VARCHAR(50) NOT NULL DEFAULT '',
 			timeline VARCHAR(50) NOT NULL DEFAULT '',
+			motivo VARCHAR(150) NOT NULL DEFAULT '',
+			pagina VARCHAR(200) NOT NULL DEFAULT '',
 			note TEXT NULL,
 			consenso_gdpr TINYINT(1) NOT NULL DEFAULT 0,
 			consenso_ts DATETIME NULL,
@@ -161,6 +163,8 @@ class Palladio_Leads_Store {
 			'budget_range'   => sanitize_text_field( $data['budget_range'] ?? '' ),
 			'uso_previsto'   => sanitize_key( $data['uso_previsto'] ?? '' ),
 			'timeline'       => sanitize_text_field( $data['timeline'] ?? '' ),
+			'motivo'         => sanitize_text_field( $data['motivo'] ?? '' ),
+			'pagina'         => esc_url_raw( $data['pagina'] ?? '' ),
 			'note'           => sanitize_textarea_field( $data['note'] ?? '' ),
 			'consenso_gdpr'  => ! empty( $data['consenso_gdpr'] ) ? 1 : 0,
 			'consenso_ts'    => ! empty( $data['consenso_gdpr'] ) ? $now : null,
@@ -172,7 +176,7 @@ class Palladio_Leads_Store {
 
 		$formats = array(
 			'%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s',
-			'%s', '%d', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%d', '%d',
+			'%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%d', '%d',
 		);
 
 		$ok = $wpdb->insert( self::table(), $row, $formats ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery

@@ -74,6 +74,8 @@ class Palladio_Frontend_Templates {
 			$map = array( 'archive-pll_edificio.php' );
 		} elseif ( is_post_type_archive( 'pll_unita' ) ) {
 			$map = array( 'archive-pll_unita.php' );
+		} elseif ( is_post_type_archive( 'pll_scenario' ) ) {
+			$map = array( 'archive-pll_scenario.php' );
 		}
 
 		if ( empty( $map ) ) {
@@ -112,7 +114,7 @@ class Palladio_Frontend_Templates {
 	public function body_class( $classes ) {
 		if (
 			is_singular( array( 'pll_edificio', 'pll_unita', 'pll_scenario', 'pll_storia' ) )
-			|| is_post_type_archive( array( 'pll_edificio', 'pll_unita' ) )
+			|| is_post_type_archive( array( 'pll_edificio', 'pll_unita', 'pll_scenario' ) )
 		) {
 			$classes[] = 'palladio';
 			if ( palladio_is_poetheme() ) {

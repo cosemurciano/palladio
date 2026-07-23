@@ -474,3 +474,167 @@ function palladio_render_gallery( $shots, $layout = 'masonry', $id = 'palladio-g
 	</div>
 	<?php
 }
+
+/**
+ * Unità che compongono uno scenario (solo unità valide e pubblicate).
+ *
+ * @param int $scenario_id ID scenario.
+ * @return int[] ID unità.
+ */
+function palladio_scenario_units( $scenario_id ) {
+	$ids = json_decode( (string) get_post_meta( $scenario_id, '_pll_scenario_unita', true ), true );
+	$ids = is_array( $ids ) ? array_map( 'absint', $ids ) : array();
+
+	return array_values( array_filter( $ids, static function ( $id ) {
+		return 'pll_unita' === get_post_type( $id ) && 'publish' === get_post_status( $id );
+	} ) );
+}
+
+/**
+ * Dati aggregati di uno scenario: somme delle unità, prezzo totale, risparmio.
+ *
+ * I dati delle unità non cambiano: lo scenario li aggrega e propone un
+ * prezzo pacchetto; il risparmio è la differenza rispetto alla somma.
+ *
+ * @param int $scenario_id ID scenario.
+ * @return array{units:int[],count:int,sum:float,price:float,saving:float,saving_pct:float,mq:float,camere:int,bagni:int}
+ */
+function palladio_scenario_totals( $scenario_id ) {
+	$units  = palladio_scenario_units( $scenario_id );
+	$sum    = 0.0;
+	$mq     = 0.0;
+	$camere = 0;
+	$bagni  = 0;
+
+	foreach ( $units as $unit_id ) {
+		$sum    += (float) get_post_meta( $unit_id, '_pll_prezzo', true );
+		$mq     += (float) get_post_meta( $unit_id, '_pll_mq_commerciali', true );
+		$camere += (int) get_post_meta( $unit_id, '_pll_camere', true );
+		$bagni  += (int) get_post_meta( $unit_id, '_pll_bagni', true );
+	}
+
+	$price  = (float) get_post_meta( $scenario_id, '_pll_scenario_prezzo', true );
+	$saving = ( $price > 0 && $sum > $price ) ? $sum - $price : 0.0;
+
+	return array(
+		'units'      => $units,
+		'count'      => count( $units ),
+		'sum'        => $sum,
+		'price'      => $price > 0 ? $price : $sum,
+		'saving'     => $saving,
+		'saving_pct' => ( $saving > 0 && $sum > 0 ) ? round( $saving / $sum * 100 ) : 0.0,
+		'mq'         => $mq,
+		'camere'     => $camere,
+		'bagni'      => $bagni,
+	);
+}
+
+/**
+ * Scenari pubblicati, opzionalmente filtrati per edificio o unità inclusa.
+ *
+ * @param int $building_id Limita agli scenari con unità di questo edificio.
+ * @param int $unit_id     Limita agli scenari che includono questa unità.
+ * @return int[] ID scenari.
+ */
+function palladio_get_scenarios( $building_id = 0, $unit_id = 0 ) {
+	$scenarios = get_posts( array(
+		'post_type'      => 'pll_scenario',
+		'post_status'    => 'publish',
+		'posts_per_page' => 20,
+		'orderby'        => 'menu_order title',
+		'order'          => 'ASC',
+		'fields'         => 'ids',
+		'no_found_rows'  => true,
+	) );
+
+	if ( ! $building_id && ! $unit_id ) {
+		return $scenarios;
+	}
+
+	return array_values( array_filter( $scenarios, static function ( $sid ) use ( $building_id, $unit_id ) {
+		$units = palladio_scenario_units( $sid );
+		if ( ! $units ) {
+			return false;
+		}
+		if ( $unit_id ) {
+			return in_array( (int) $unit_id, $units, true );
+		}
+		foreach ( $units as $uid ) {
+			if ( (int) wp_get_post_parent_id( $uid ) === (int) $building_id ) {
+				return true;
+			}
+		}
+		return false;
+	} ) );
+}
+
+/**
+ * Card scenario in stile editoriale: come la card unità ma graficamente
+ * distinta (doppia cornice, nastro "Scenario", prezzo con risparmio).
+ *
+ * @param int $scenario_id ID scenario.
+ * @return void
+ */
+function palladio_render_scenario_card_editorial( $scenario_id ) {
+	$scenario_id = (int) $scenario_id;
+	$totals      = palladio_scenario_totals( $scenario_id );
+	$thumb       = get_the_post_thumbnail_url( $scenario_id, 'large' );
+
+	// Senza immagine propria usa quella della prima unità inclusa.
+	if ( ! $thumb && $totals['units'] ) {
+		$thumb = get_the_post_thumbnail_url( $totals['units'][0], 'large' );
+	}
+
+	$stato   = (string) get_post_meta( $scenario_id, '_pll_scenario_stato', true );
+	$excerpt = has_excerpt( $scenario_id ) ? get_the_excerpt( $scenario_id ) : '';
+
+	$eyebrow_parts = array();
+	if ( $totals['count'] ) {
+		/* translators: %s: numero unità. */
+		$eyebrow_parts[] = sprintf( _n( '%s unità', '%s unità', $totals['count'], 'palladio' ), number_format_i18n( $totals['count'] ) );
+	}
+	if ( $totals['mq'] > 0 ) {
+		$eyebrow_parts[] = number_format_i18n( $totals['mq'], 0 ) . ' m²';
+	}
+	if ( $totals['camere'] > 0 ) {
+		/* translators: %s: numero camere. */
+		$eyebrow_parts[] = sprintf( __( '%s camere', 'palladio' ), number_format_i18n( $totals['camere'] ) );
+	}
+	?>
+	<a class="pll-e-sister pll-e-scenario-card" id="palladio-scenario-<?php echo esc_attr( $scenario_id ); ?>"
+		href="<?php echo esc_url( get_permalink( $scenario_id ) ); ?>">
+		<span class="pll-e-sister__media" id="palladio-scenario-<?php echo esc_attr( $scenario_id ); ?>-media">
+			<?php if ( $thumb ) : ?>
+				<img src="<?php echo esc_url( $thumb ); ?>" alt="" loading="lazy">
+			<?php endif; ?>
+			<span class="pll-e-scenario-card__ribbon"><?php esc_html_e( 'Scenario', 'palladio' ); ?></span>
+			<?php if ( 'non_disponibile' === $stato ) : ?>
+				<span class="palladio-badge palladio-badge--non_in_vendita"><?php esc_html_e( 'Non disponibile', 'palladio' ); ?></span>
+			<?php endif; ?>
+		</span>
+		<span class="pll-e-sister__body">
+			<?php if ( $eyebrow_parts ) : ?>
+				<span class="pll-e-sister__eyebrow" id="palladio-scenario-<?php echo esc_attr( $scenario_id ); ?>-eyebrow"><?php echo esc_html( implode( ' · ', $eyebrow_parts ) ); ?></span>
+			<?php endif; ?>
+			<span class="pll-e-sister__title" id="palladio-scenario-<?php echo esc_attr( $scenario_id ); ?>-title"><?php echo esc_html( get_the_title( $scenario_id ) ); ?></span>
+			<?php if ( $excerpt ) : ?>
+				<span class="pll-e-sister__desc" id="palladio-scenario-<?php echo esc_attr( $scenario_id ); ?>-excerpt"><?php echo esc_html( wp_trim_words( $excerpt, 26 ) ); ?></span>
+			<?php endif; ?>
+			<span class="pll-e-sister__price pll-e-scenario-card__price" id="palladio-scenario-<?php echo esc_attr( $scenario_id ); ?>-price">
+				<?php if ( $totals['saving'] > 0 ) : ?>
+					<s class="pll-e-scenario-card__sum"><?php echo esc_html( palladio_format_price( $totals['sum'] ) ); ?></s>
+				<?php endif; ?>
+				<?php echo esc_html( palladio_format_price( $totals['price'] ) ); ?>
+				<?php if ( $totals['saving'] > 0 ) : ?>
+					<span class="pll-e-scenario-card__saving">
+						<?php
+						/* translators: 1: risparmio, 2: percentuale. */
+						printf( esc_html__( 'Risparmi %1$s (−%2$s%%)', 'palladio' ), esc_html( palladio_format_price( $totals['saving'] ) ), esc_html( number_format_i18n( $totals['saving_pct'] ) ) );
+						?>
+					</span>
+				<?php endif; ?>
+			</span>
+		</span>
+	</a>
+	<?php
+}

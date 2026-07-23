@@ -31,6 +31,7 @@ class Palladio_Admin_Fields {
 		add_action( 'add_meta_boxes', array( $this, 'add_metabox' ) );
 		add_action( 'save_post_pll_edificio', array( $this, 'save' ), 10, 2 );
 		add_action( 'save_post_pll_unita', array( $this, 'save' ), 10, 2 );
+		add_action( 'save_post_pll_scenario', array( $this, 'save_scenario' ), 10, 2 );
 	}
 
 	/**
@@ -98,6 +99,152 @@ class Palladio_Admin_Fields {
 				'normal',
 				'high'
 			);
+		}
+
+		add_meta_box(
+			'palladio-scenario',
+			__( 'Palladio — Composizione scenario', 'palladio' ),
+			array( $this, 'render_scenario' ),
+			'pll_scenario',
+			'normal',
+			'high'
+		);
+	}
+
+	/**
+	 * Metabox dello scenario: selezione unità aggregate, prezzo totale, stato.
+	 *
+	 * I dati delle unità non cambiano: lo scenario le aggrega e propone un
+	 * prezzo totale (il risparmio rispetto alla somma è calcolato e mostrato).
+	 *
+	 * @param WP_Post $post Post scenario.
+	 * @return void
+	 */
+	public function render_scenario( $post ) {
+		wp_nonce_field( 'palladio_scenario_save', 'palladio_scenario_nonce' );
+
+		$selected = json_decode( (string) get_post_meta( $post->ID, '_pll_scenario_unita', true ), true );
+		$selected = is_array( $selected ) ? array_map( 'absint', $selected ) : array();
+		$prezzo   = get_post_meta( $post->ID, '_pll_scenario_prezzo', true );
+		$stato    = get_post_meta( $post->ID, '_pll_scenario_stato', true );
+
+		echo '<p class="description">' . esc_html__( 'Seleziona le unità che compongono lo scenario: i loro dati (superfici, camere, bagni) vengono aggregati automaticamente nella scheda pubblica. Imposta poi il prezzo totale del pacchetto: se inferiore alla somma dei prezzi delle unità, il risparmio viene mostrato come vantaggio.', 'palladio' ) . '</p>';
+
+		$buildings = get_posts( array(
+			'post_type'      => 'pll_edificio',
+			'post_status'    => array( 'publish', 'draft', 'pending', 'future', 'private' ),
+			'posts_per_page' => 50,
+			'orderby'        => 'title',
+			'order'          => 'ASC',
+			'no_found_rows'  => true,
+		) );
+		$building_ids = wp_list_pluck( $buildings, 'ID' );
+
+		$somma = 0.0;
+		echo '<div class="palladio-scenario-units" style="max-height:22rem;overflow-y:auto;border:1px solid #dcdcde;border-radius:4px;padding:0.75rem 1rem;background:#fff;">';
+		foreach ( $buildings as $building ) {
+			$units = get_posts( array(
+				'post_type'      => 'pll_unita',
+				'post_parent'    => $building->ID,
+				'post_status'    => array( 'publish', 'draft', 'pending', 'future', 'private' ),
+				'posts_per_page' => 100,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+				'no_found_rows'  => true,
+			) );
+			if ( ! $units ) {
+				continue;
+			}
+			echo '<p style="margin:0.5rem 0 0.25rem;"><strong>' . esc_html( $building->post_title ) . '</strong></p>';
+			foreach ( $units as $unit ) {
+				$uprice  = (float) get_post_meta( $unit->ID, '_pll_prezzo', true );
+				$checked = in_array( $unit->ID, $selected, true );
+				if ( $checked ) {
+					$somma += $uprice;
+				}
+				echo '<label style="display:block;margin:0.15rem 0 0.15rem 1rem;">';
+				echo '<input type="checkbox" name="palladio_scenario_units[]" value="' . esc_attr( $unit->ID ) . '" ' . checked( $checked, true, false ) . '> ';
+				echo esc_html( $unit->post_title );
+				echo $uprice > 0 ? ' <span style="color:#646970;">— ' . esc_html( palladio_format_price( $uprice ) ) . '</span>' : '';
+				echo 'publish' !== $unit->post_status ? ' <em style="color:#996800;">(' . esc_html( $unit->post_status ) . ')</em>' : '';
+				echo '</label>';
+			}
+		}
+		// Unità senza edificio.
+		$orphans = get_posts( array(
+			'post_type'      => 'pll_unita',
+			'post_parent'    => 0,
+			'post_status'    => array( 'publish', 'draft', 'pending', 'future', 'private' ),
+			'posts_per_page' => 100,
+			'orderby'        => 'title',
+			'order'          => 'ASC',
+			'no_found_rows'  => true,
+		) );
+		if ( $orphans ) {
+			echo '<p style="margin:0.5rem 0 0.25rem;"><strong>' . esc_html__( 'Senza edificio', 'palladio' ) . '</strong></p>';
+			foreach ( $orphans as $unit ) {
+				$checked = in_array( $unit->ID, $selected, true );
+				echo '<label style="display:block;margin:0.15rem 0 0.15rem 1rem;">';
+				echo '<input type="checkbox" name="palladio_scenario_units[]" value="' . esc_attr( $unit->ID ) . '" ' . checked( $checked, true, false ) . '> ' . esc_html( $unit->post_title );
+				echo '</label>';
+			}
+		}
+		echo '</div>';
+
+		if ( $somma > 0 ) {
+			echo '<p class="description">' . sprintf(
+				/* translators: %s: somma prezzi. */
+				esc_html__( 'Somma dei prezzi delle unità selezionate: %s', 'palladio' ),
+				esc_html( palladio_format_price( $somma ) )
+			) . '</p>';
+		}
+
+		echo '<div class="palladio-fields-grid" style="margin-top:0.75rem;">';
+		echo '<p class="palladio-field-cell"><label>' . esc_html__( 'Prezzo totale dello scenario (EUR)', 'palladio' ) . '<input type="number" step="any" class="widefat" name="palladio_scenario_prezzo" value="' . esc_attr( (string) $prezzo ) . '"></label><span class="description">' . esc_html__( 'Se inferiore alla somma, il risparmio è mostrato in scheda.', 'palladio' ) . '</span></p>';
+		echo '<p class="palladio-field-cell"><label>' . esc_html__( 'Disponibilità', 'palladio' ) . '<select class="widefat" name="palladio_scenario_stato">';
+		foreach ( array( 'disponibile' => __( 'Disponibile', 'palladio' ), 'non_disponibile' => __( 'Non disponibile', 'palladio' ) ) as $value => $label ) {
+			printf( '<option value="%s"%s>%s</option>', esc_attr( $value ), selected( $stato ? $stato : 'disponibile', $value, false ), esc_html( $label ) );
+		}
+		echo '</select></label></p>';
+		echo '</div>';
+	}
+
+	/**
+	 * Salva la composizione dello scenario.
+	 *
+	 * @param int     $post_id ID post.
+	 * @param WP_Post $post    Post.
+	 * @return void
+	 */
+	public function save_scenario( $post_id, $post ) {
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+		if (
+			! isset( $_POST['palladio_scenario_nonce'] )
+			|| ! wp_verify_nonce( sanitize_key( wp_unslash( $_POST['palladio_scenario_nonce'] ) ), 'palladio_scenario_save' )
+		) {
+			return;
+		}
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+
+		$units = isset( $_POST['palladio_scenario_units'] ) ? array_map( 'absint', (array) wp_unslash( $_POST['palladio_scenario_units'] ) ) : array();
+		$units = array_values( array_filter( $units, static function ( $id ) {
+			return 'pll_unita' === get_post_type( $id );
+		} ) );
+
+		update_post_meta( $post_id, '_pll_scenario_unita', wp_json_encode( $units ) );
+
+		$prezzo = isset( $_POST['palladio_scenario_prezzo'] ) && '' !== $_POST['palladio_scenario_prezzo'] ? (float) wp_unslash( $_POST['palladio_scenario_prezzo'] ) : '';
+		update_post_meta( $post_id, '_pll_scenario_prezzo', $prezzo );
+
+		$stato = isset( $_POST['palladio_scenario_stato'] ) ? sanitize_key( wp_unslash( $_POST['palladio_scenario_stato'] ) ) : 'disponibile';
+		update_post_meta( $post_id, '_pll_scenario_stato', in_array( $stato, array( 'disponibile', 'non_disponibile' ), true ) ? $stato : 'disponibile' );
+
+		if ( ! get_post_meta( $post_id, '_pll_scenario_tipo', true ) ) {
+			update_post_meta( $post_id, '_pll_scenario_tipo', 'bundle' );
 		}
 	}
 

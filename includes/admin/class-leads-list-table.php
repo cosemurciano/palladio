@@ -51,6 +51,9 @@ class Palladio_Leads_List_Table extends WP_List_Table {
 			'nome'       => __( 'Nome', 'palladio' ),
 			'contatto'   => __( 'Contatto', 'palladio' ),
 			'unita'      => __( 'Unità', 'palladio' ),
+			'motivo'     => __( 'Vorrei', 'palladio' ),
+			'note'       => __( 'Messaggio', 'palladio' ),
+			'pagina'     => __( 'Pagina', 'palladio' ),
 			'source'     => __( 'Fonte', 'palladio' ),
 			'stato'      => __( 'Stato', 'palladio' ),
 			'score'      => __( 'Score', 'palladio' ),
@@ -275,6 +278,40 @@ class Palladio_Leads_List_Table extends WP_List_Table {
 	 * @param string $column_name Nome colonna.
 	 * @return string
 	 */
+	public function column_motivo( $item ) {
+		return esc_html( (string) ( $item->motivo ?? '' ) );
+	}
+
+	/**
+	 * Colonna Messaggio: estratto delle note con tooltip completo.
+	 *
+	 * @param object $item Riga.
+	 * @return string
+	 */
+	public function column_note( $item ) {
+		$note = trim( (string) ( $item->note ?? '' ) );
+		if ( '' === $note ) {
+			return '&#8212;';
+		}
+		$excerpt = wp_html_excerpt( $note, 90, '&hellip;' );
+		return '<span title="' . esc_attr( $note ) . '">' . esc_html( $excerpt ) . '</span>';
+	}
+
+	/**
+	 * Colonna Pagina: link alla pagina di provenienza.
+	 *
+	 * @param object $item Riga.
+	 * @return string
+	 */
+	public function column_pagina( $item ) {
+		$url = (string) ( $item->pagina ?? '' );
+		if ( '' === $url ) {
+			return '&#8212;';
+		}
+		$path = wp_parse_url( $url, PHP_URL_PATH );
+		return '<a href="' . esc_url( $url ) . '" target="_blank" rel="noopener">' . esc_html( $path ? $path : $url ) . '</a>';
+	}
+
 	public function column_default( $item, $column_name ) {
 		switch ( $column_name ) {
 			case 'source':

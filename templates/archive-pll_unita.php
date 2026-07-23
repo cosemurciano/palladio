@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 get_header();
 ?>
-<div class="pll-e" id="palladio-units-archive">
+<div class="palladio-editorial" id="palladio-units-archive">
 
 	<section class="pll-e-section pll-e-wrap">
 		<div class="pll-e-units-head" id="palladio-units-archive-head">
