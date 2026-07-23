@@ -51,6 +51,14 @@ class Palladio_Frontend_Assets {
 			$this->asset_version( 'assets/js/palladio.js' ),
 			true
 		);
+		wp_localize_script(
+			'palladio-filters',
+			'PalladioFront',
+			array(
+				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
+				'trackNonce' => wp_create_nonce( 'palladio_track' ),
+			)
+		);
 
 		// Direzione visiva editoriale su schede singole e archivio unità.
 		if ( is_singular( array( 'pll_edificio', 'pll_unita', 'pll_scenario', 'pll_storia' ) ) || is_post_type_archive( 'pll_unita' ) ) {

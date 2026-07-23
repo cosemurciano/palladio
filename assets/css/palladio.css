@@ -771,3 +771,5 @@
 	color: #7a6f57;
 	font-style: italic;
 }
+
+.palladio-contact__channel-icon svg { display: block; }

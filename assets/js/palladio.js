@@ -352,7 +352,40 @@
 		restart();
 	}
 
+	// -------------------------------------------------------------------------
+	// Tracciamento click sui contatti agenzia (mail/telefono/WhatsApp).
+	// sendBeacon non blocca la navigazione (mailto/tel/wa.me proseguono).
+	// -------------------------------------------------------------------------
+	function initContactTracking() {
+		var cfg = window.PalladioFront || {};
+		if ( ! cfg.ajaxUrl || ! cfg.trackNonce ) {
+			return;
+		}
+
+		document.addEventListener( 'click', function ( e ) {
+			var link = e.target.closest ? e.target.closest( '[data-pll-track]' ) : null;
+			if ( ! link ) {
+				return;
+			}
+
+			var data = new FormData();
+			data.append( 'action', 'palladio_track_contact' );
+			data.append( 'nonce', cfg.trackNonce );
+			data.append( 'channel', link.getAttribute( 'data-pll-track' ) || '' );
+			data.append( 'target', link.getAttribute( 'data-pll-target' ) || '' );
+			data.append( 'page', window.location.href );
+
+			if ( navigator.sendBeacon ) {
+				navigator.sendBeacon( cfg.ajaxUrl, data );
+			} else {
+				fetch( cfg.ajaxUrl, { method: 'POST', body: data, keepalive: true, credentials: 'same-origin' } ).catch( function () {} );
+			}
+		} );
+	}
+
 	document.addEventListener( 'DOMContentLoaded', function () {
+		initContactTracking();
+
 		var groups = document.querySelectorAll( '[data-palladio-filters]' );
 		Array.prototype.forEach.call( groups, initGroup );
 

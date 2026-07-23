@@ -241,6 +241,9 @@ class Palladio_Admin_Settings {
 			'notify_emails'   => isset( $_POST['notify_emails'] ) ? sanitize_textarea_field( wp_unslash( $_POST['notify_emails'] ) ) : '',
 			'contact_heading' => isset( $_POST['contact_heading'] ) ? sanitize_text_field( wp_unslash( $_POST['contact_heading'] ) ) : '',
 			'contact_text'    => isset( $_POST['contact_text'] ) ? sanitize_textarea_field( wp_unslash( $_POST['contact_text'] ) ) : '',
+			'agency_emails'   => isset( $_POST['agency_emails'] ) ? sanitize_textarea_field( wp_unslash( $_POST['agency_emails'] ) ) : '',
+			'agency_phone'    => isset( $_POST['agency_phone'] ) ? sanitize_text_field( wp_unslash( $_POST['agency_phone'] ) ) : '',
+			'agency_whatsapp' => isset( $_POST['agency_whatsapp'] ) ? sanitize_text_field( wp_unslash( $_POST['agency_whatsapp'] ) ) : '',
 		);
 
 		update_option( self::OPTION, $config );

@@ -216,6 +216,8 @@ class Palladio_Admin_Regia {
 				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Stato del lead aggiornato.', 'palladio' ); ?></p></div>
 			<?php endif; ?>
 
+			<?php $this->render_contact_clicks_report(); ?>
+
 			<form method="get">
 				<input type="hidden" name="post_type" value="pll_edificio">
 				<input type="hidden" name="page" value="palladio-leads">
@@ -225,6 +227,72 @@ class Palladio_Admin_Regia {
 				$table->display();
 				?>
 			</form>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Report dei click sui contatti agenzia (mail/telefono/WhatsApp).
+	 *
+	 * Mostrato in testa alla Pipeline lead: totali per canale e ultimi click
+	 * con pagina di provenienza.
+	 *
+	 * @return void
+	 */
+	private function render_contact_clicks_report() {
+		if ( ! class_exists( 'Palladio_Leads_Form' ) ) {
+			return;
+		}
+
+		$clicks = Palladio_Leads_Form::contact_clicks();
+		$totals = $clicks['totals'];
+		$recent = array_reverse( array_slice( (array) $clicks['recent'], -10 ) );
+
+		if ( ! $totals && ! $recent ) {
+			return;
+		}
+
+		$labels = array(
+			'email'    => __( 'Email', 'palladio' ),
+			'telefono' => __( 'Telefono', 'palladio' ),
+			'whatsapp' => __( 'WhatsApp', 'palladio' ),
+		);
+		?>
+		<div class="palladio-clicks-report" style="background:#fff;border:1px solid #dcdcde;border-radius:6px;padding:1rem 1.25rem;margin:1rem 0 1.25rem;">
+			<h2 style="margin:0 0 0.5rem;font-size:1rem;"><?php esc_html_e( 'Click sui contatti agenzia', 'palladio' ); ?></h2>
+
+			<p style="display:flex;gap:1.5rem;flex-wrap:wrap;margin:0 0 0.75rem;">
+				<?php foreach ( $labels as $key => $label ) : ?>
+					<span><strong style="font-size:1.3rem;"><?php echo esc_html( number_format_i18n( (int) ( $totals[ $key ] ?? 0 ) ) ); ?></strong>
+					<span style="color:#646970;"> <?php echo esc_html( $label ); ?></span></span>
+				<?php endforeach; ?>
+			</p>
+
+			<?php if ( $recent ) : ?>
+				<details>
+					<summary style="cursor:pointer;color:#2271b1;"><?php esc_html_e( 'Ultimi click (max 10)', 'palladio' ); ?></summary>
+					<table class="widefat striped" style="margin-top:0.5rem;">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'Quando', 'palladio' ); ?></th>
+								<th><?php esc_html_e( 'Canale', 'palladio' ); ?></th>
+								<th><?php esc_html_e( 'Destinatario', 'palladio' ); ?></th>
+								<th><?php esc_html_e( 'Pagina di provenienza', 'palladio' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $recent as $row ) : ?>
+								<tr>
+									<td><?php echo esc_html( wp_date( 'j M Y · H:i', (int) ( $row['time'] ?? 0 ) ) ); ?></td>
+									<td><?php echo esc_html( $labels[ $row['channel'] ?? '' ] ?? (string) ( $row['channel'] ?? '' ) ); ?></td>
+									<td><?php echo esc_html( (string) ( $row['target'] ?? '' ) ); ?></td>
+									<td><?php $p = (string) ( $row['page'] ?? '' ); if ( $p ) : ?><a href="<?php echo esc_url( $p ); ?>" target="_blank" rel="noopener"><?php echo esc_html( wp_parse_url( $p, PHP_URL_PATH ) ? wp_parse_url( $p, PHP_URL_PATH ) : $p ); ?></a><?php endif; ?></td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				</details>
+			<?php endif; ?>
 		</div>
 		<?php
 	}
