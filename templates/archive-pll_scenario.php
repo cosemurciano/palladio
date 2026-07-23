@@ -20,7 +20,7 @@ get_header();
 		<div class="pll-e-units-head" id="palladio-scenari-archive-head">
 			<div>
 				<p class="pll-e-kicker" id="palladio-scenari-archive-eyebrow"><?php esc_html_e( 'Gli scenari', 'palladio' ); ?></p>
-				<h1 class="pll-e-h" id="palladio-scenari-archive-title"><?php esc_html_e( 'Soluzioni componibili', 'palladio' ); ?></h1>
+				<h1 class="pll-e-h" id="palladio-scenari-archive-title"><?php esc_html_e( 'Soluzioni e opportunità', 'palladio' ); ?></h1>
 			</div>
 			<p class="pll-e-prose pll-e-gallery-note"><?php esc_html_e( 'Più unità, un unico progetto abitativo o di business: i dati restano quelli delle unità, cambia solo il prezzo del pacchetto.', 'palladio' ); ?></p>
 		</div>

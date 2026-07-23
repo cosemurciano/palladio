@@ -22,6 +22,8 @@ while ( have_posts() ) :
 	$scenario_id = get_the_ID();
 	$totals      = palladio_scenario_totals( $scenario_id );
 	$stato       = (string) get_post_meta( $scenario_id, '_pll_scenario_stato', true );
+	$ed          = palladio_editorial( $scenario_id );
+	$lead        = $ed['lead'] ? $ed['lead'] : ( has_excerpt() ? get_the_excerpt() : '' );
 
 	$hero = get_the_post_thumbnail_url( $scenario_id, 'full' );
 	if ( ! $hero && $totals['units'] ) {
@@ -50,14 +52,18 @@ while ( have_posts() ) :
 			<?php endif; ?>
 			<div class="pll-e-hero__inner">
 				<p class="pll-e-eyebrow" id="palladio-scenario-eyebrow">
-					<?php esc_html_e( 'Scenario', 'palladio' ); ?>
-					<?php if ( $totals['count'] ) : ?>
-						· <?php /* translators: %s: numero unità. */ printf( esc_html( _n( '%s unità', '%s unità', $totals['count'], 'palladio' ) ), esc_html( number_format_i18n( $totals['count'] ) ) ); ?>
+					<?php if ( $ed['eyebrow'] ) : ?>
+						<?php echo esc_html( $ed['eyebrow'] ); ?>
+					<?php else : ?>
+						<?php esc_html_e( 'Scenario', 'palladio' ); ?>
+						<?php if ( $totals['count'] ) : ?>
+							· <?php /* translators: %s: numero unità. */ printf( esc_html( _n( '%s unità', '%s unità', $totals['count'], 'palladio' ) ), esc_html( number_format_i18n( $totals['count'] ) ) ); ?>
+						<?php endif; ?>
 					<?php endif; ?>
 				</p>
 				<h1 class="pll-e-hero__title" id="palladio-scenario-title"><?php the_title(); ?></h1>
-				<?php if ( has_excerpt() ) : ?>
-					<p class="pll-e-hero__lead" id="palladio-scenario-lead"><?php echo esc_html( get_the_excerpt() ); ?></p>
+				<?php if ( $lead ) : ?>
+					<p class="pll-e-hero__lead" id="palladio-scenario-lead"><?php echo esc_html( $lead ); ?></p>
 				<?php endif; ?>
 			</div>
 		</header>

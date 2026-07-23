@@ -24,7 +24,7 @@ class Palladio_Admin_Content {
 	 *
 	 * @var string[]
 	 */
-	private $post_types = array( 'pll_edificio', 'pll_unita', 'pll_storia' );
+	private $post_types = array( 'pll_edificio', 'pll_unita', 'pll_storia', 'pll_scenario' );
 
 	/**
 	 * Registra hook admin.
@@ -115,6 +115,8 @@ class Palladio_Admin_Content {
 				$this->render_edificio_fields( $d );
 			} elseif ( 'pll_storia' === $post->post_type ) {
 				$this->render_storia_fields( $d );
+			} elseif ( 'pll_scenario' === $post->post_type ) {
+				$this->render_scenario_fields( $d );
 			} else {
 				$this->render_unita_fields( $d );
 			}
@@ -259,6 +261,23 @@ class Palladio_Admin_Content {
 				<input type="text" class="widefat" name="palladio_editorial[gallery_count]" value="<?php echo esc_attr( $d['gallery_count'] ); ?>" placeholder="42"></label></p>
 		</div>
 
+		<?php
+	}
+
+	/**
+	 * Campi della scheda Scenario: testata (come per le unità).
+	 *
+	 * @param array $d Struttura editoriale.
+	 * @return void
+	 */
+	private function render_scenario_fields( $d ) {
+		?>
+		<h4><?php esc_html_e( 'Testata', 'palladio' ); ?></h4>
+		<p><label><?php esc_html_e( 'Occhiello (eyebrow)', 'palladio' ); ?><br>
+			<input type="text" class="widefat" name="palladio_editorial[eyebrow]" value="<?php echo esc_attr( $d['eyebrow'] ); ?>" placeholder="<?php esc_attr_e( 'Scenario · Piano terra completo · Palazzo Sambiasi', 'palladio' ); ?>"></label></p>
+		<p><label><?php esc_html_e( 'Frase di apertura (lead)', 'palladio' ); ?><br>
+			<textarea class="widefat" rows="2" name="palladio_editorial[lead]" placeholder="<?php esc_attr_e( 'Tre appartamenti e il deposito, un unico progetto abitativo.', 'palladio' ); ?>"><?php echo esc_textarea( $d['lead'] ); ?></textarea></label></p>
+		<p class="description"><?php esc_html_e( 'Se vuoti: l’occhiello mostra “Scenario · N unità” e il lead usa il riassunto del post.', 'palladio' ); ?></p>
 		<?php
 	}
 
