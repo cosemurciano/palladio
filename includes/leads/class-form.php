@@ -33,6 +33,75 @@ class Palladio_Leads_Form {
 		// Handler invio (utenti loggati e non).
 		add_action( 'admin_post_nopriv_palladio_submit_lead', array( $this, 'handle' ) );
 		add_action( 'admin_post_palladio_submit_lead', array( $this, 'handle' ) );
+
+		// Tracciamento click sui contatti agenzia (mail/telefono/WhatsApp).
+		add_action( 'wp_ajax_palladio_track_contact', array( $this, 'ajax_track' ) );
+		add_action( 'wp_ajax_nopriv_palladio_track_contact', array( $this, 'ajax_track' ) );
+	}
+
+	/**
+	 * Icona SVG inline per i canali di contatto.
+	 *
+	 * @param string $name email|phone|whatsapp.
+	 * @return string SVG.
+	 */
+	private static function icon( $name ) {
+		$icons = array(
+			'email'    => '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg>',
+			'phone'    => '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h3.2l1.6 4-2 1.6a13.5 13.5 0 0 0 6.1 6.1l1.6-2 4 1.6V18a2.5 2.5 0 0 1-2.7 2.5A17 17 0 0 1 3.5 5.2 2.5 2.5 0 0 1 5 3.5Z"/></svg>',
+			'whatsapp' => '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2.2a9.7 9.7 0 0 0-8.4 14.6L2.2 21.8l5.2-1.4A9.7 9.7 0 1 0 12 2.2Zm0 17.6a7.8 7.8 0 0 1-4-1.1l-.3-.2-3 .8.8-2.9-.2-.3A7.9 7.9 0 1 1 12 19.8Zm4.4-5.9c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.5 6.5 0 0 1-3.2-2.8c-.2-.4 0-.5.1-.7l.5-.6c.2-.2.2-.4.1-.6l-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.9.9-1.2 2.1-.4 3.6a11.6 11.6 0 0 0 4.5 4.4c1.7.9 2.6 1 3.5.8.6-.1 1.4-.6 1.6-1.2.2-.6.2-1.1.1-1.2 0 0-.2-.1-.4-.2Z"/></svg>',
+		);
+		return $icons[ $name ] ?? '';
+	}
+
+	/**
+	 * Handler AJAX: registra un click su un canale di contatto.
+	 *
+	 * Aggrega i totali per canale e conserva gli ultimi 50 click (canale,
+	 * destinatario, pagina, orario) per il report nella Pipeline lead.
+	 *
+	 * @return void
+	 */
+	public function ajax_track() {
+		check_ajax_referer( 'palladio_track', 'nonce' );
+
+		$valid   = array( 'email', 'telefono', 'whatsapp' );
+		$channel = isset( $_POST['channel'] ) ? sanitize_key( wp_unslash( $_POST['channel'] ) ) : '';
+		if ( ! in_array( $channel, $valid, true ) ) {
+			wp_send_json_error( null, 400 );
+		}
+
+		$target = isset( $_POST['target'] ) ? sanitize_text_field( wp_unslash( $_POST['target'] ) ) : '';
+		$page   = isset( $_POST['page'] ) ? esc_url_raw( wp_unslash( $_POST['page'] ) ) : '';
+
+		$store = get_option( 'palladio_contact_clicks', array() );
+		$store = wp_parse_args( is_array( $store ) ? $store : array(), array( 'totals' => array(), 'recent' => array() ) );
+
+		$store['totals'][ $channel ] = (int) ( $store['totals'][ $channel ] ?? 0 ) + 1;
+
+		$store['recent'][] = array(
+			'channel' => $channel,
+			'target'  => substr( $target, 0, 100 ),
+			'page'    => substr( $page, 0, 200 ),
+			'time'    => time(),
+		);
+		if ( count( $store['recent'] ) > 50 ) {
+			$store['recent'] = array_slice( $store['recent'], -50 );
+		}
+
+		update_option( 'palladio_contact_clicks', $store, false );
+
+		wp_send_json_success();
+	}
+
+	/**
+	 * Registro click sui contatti (per il report nella Pipeline lead).
+	 *
+	 * @return array{totals:array<string,int>,recent:array}
+	 */
+	public static function contact_clicks() {
+		$store = get_option( 'palladio_contact_clicks', array() );
+		return wp_parse_args( is_array( $store ) ? $store : array(), array( 'totals' => array(), 'recent' => array() ) );
 	}
 
 	/**
@@ -93,20 +162,26 @@ class Palladio_Leads_Form {
 						<aside class="palladio-contact__aside" id="palladio-contact-agenzia">
 							<h3 class="palladio-contact__aside-title"><?php esc_html_e( 'Parla con noi', 'palladio' ); ?></h3>
 							<?php foreach ( $emails as $i => $email ) : ?>
-								<a class="palladio-contact__channel" id="palladio-contact-mail-<?php echo esc_attr( $i + 1 ); ?>" href="mailto:<?php echo esc_attr( $email ); ?>">
-									<span class="palladio-contact__channel-icon" aria-hidden="true">✉</span>
+								<a class="palladio-contact__channel" id="palladio-contact-mail-<?php echo esc_attr( $i + 1 ); ?>"
+									href="mailto:<?php echo esc_attr( $email ); ?>"
+									data-pll-track="email" data-pll-target="<?php echo esc_attr( $email ); ?>">
+									<span class="palladio-contact__channel-icon" aria-hidden="true"><?php echo self::icon( 'email' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
 									<span class="palladio-contact__channel-body"><b><?php esc_html_e( 'Scrivi una mail', 'palladio' ); ?></b><span><?php echo esc_html( $email ); ?></span></span>
 								</a>
 							<?php endforeach; ?>
 							<?php if ( $phone ) : ?>
-								<a class="palladio-contact__channel" id="palladio-contact-cell" href="tel:<?php echo esc_attr( preg_replace( '/[^0-9+]/', '', $phone ) ); ?>">
-									<span class="palladio-contact__channel-icon" aria-hidden="true">✆</span>
+								<a class="palladio-contact__channel" id="palladio-contact-cell"
+									href="tel:<?php echo esc_attr( preg_replace( '/[^0-9+]/', '', $phone ) ); ?>"
+									data-pll-track="telefono" data-pll-target="<?php echo esc_attr( $phone ); ?>">
+									<span class="palladio-contact__channel-icon" aria-hidden="true"><?php echo self::icon( 'phone' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
 									<span class="palladio-contact__channel-body"><b><?php esc_html_e( 'Chiama', 'palladio' ); ?></b><span><?php echo esc_html( $phone ); ?></span></span>
 								</a>
 							<?php endif; ?>
 							<?php if ( $whatsapp ) : ?>
-								<a class="palladio-contact__channel" id="palladio-contact-whatsapp" href="https://wa.me/<?php echo esc_attr( preg_replace( '/[^0-9]/', '', $whatsapp ) ); ?>" target="_blank" rel="noopener">
-									<span class="palladio-contact__channel-icon" aria-hidden="true">🗨</span>
+								<a class="palladio-contact__channel" id="palladio-contact-whatsapp"
+									href="https://wa.me/<?php echo esc_attr( preg_replace( '/[^0-9]/', '', $whatsapp ) ); ?>" target="_blank" rel="noopener"
+									data-pll-track="whatsapp" data-pll-target="<?php echo esc_attr( $whatsapp ); ?>">
+									<span class="palladio-contact__channel-icon" aria-hidden="true"><?php echo self::icon( 'whatsapp' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
 									<span class="palladio-contact__channel-body"><b><?php esc_html_e( 'WhatsApp', 'palladio' ); ?></b><span><?php echo esc_html( $whatsapp ); ?></span></span>
 								</a>
 							<?php endif; ?>
