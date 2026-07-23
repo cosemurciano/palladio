@@ -82,6 +82,17 @@ class Palladio_Frontend_Assets {
 	 * @return bool
 	 */
 	private function should_load() {
+		// La sezione contatti unica è presente in fondo a TUTTE le pagine:
+		// gli stili base servono ovunque.
+		return true;
+	}
+
+	/**
+	 * Verifica legacy (non più usata: asset globali).
+	 *
+	 * @return bool
+	 */
+	private function should_load_legacy() {
 		if ( is_singular( array( 'pll_edificio', 'pll_unita', 'pll_scenario', 'pll_storia' ) ) ) {
 			return true;
 		}

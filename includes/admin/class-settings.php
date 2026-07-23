@@ -47,7 +47,11 @@ class Palladio_Admin_Settings {
 			'dossier_url'     => '', // Vuoto = àncora al form contatti (#palladio-contact).
 			'notify_emails'   => '',
 			'contact_heading' => __( 'Richiedi una visita o informazioni', 'palladio' ),
-			'contact_text'    => __( 'Lascia i tuoi recapiti: ti ricontattiamo per una visita in loco, il dossier completo o qualsiasi domanda.', 'palladio' ),
+			'contact_text'    => __( 'Lascia i tuoi recapiti: ti ricontattiamo per una visita in loco o per qualsiasi domanda.', 'palladio' ),
+			// Contatti dell'agenzia mostrati accanto al form.
+			'agency_emails'   => '',
+			'agency_phone'    => '',
+			'agency_whatsapp' => '',
 		);
 
 		$config = get_option( self::OPTION, array() );
@@ -79,6 +83,24 @@ class Palladio_Admin_Settings {
 	 */
 	public static function notify_emails() {
 		$raw    = self::get( 'notify_emails' );
+		$parts  = preg_split( '/[\s,;]+/', $raw );
+		$emails = array();
+		foreach ( (array) $parts as $part ) {
+			$email = sanitize_email( trim( (string) $part ) );
+			if ( is_email( $email ) ) {
+				$emails[] = $email;
+			}
+		}
+		return array_values( array_unique( $emails ) );
+	}
+
+	/**
+	 * Email pubbliche dell'agenzia (mostrate accanto al form, con link mailto).
+	 *
+	 * @return string[]
+	 */
+	public static function agency_emails() {
+		$raw    = self::get( 'agency_emails' );
 		$parts  = preg_split( '/[\s,;]+/', $raw );
 		$emails = array();
 		foreach ( (array) $parts as $part ) {
@@ -161,6 +183,28 @@ class Palladio_Admin_Settings {
 						<td>
 							<textarea id="pll-set-emails" name="notify_emails" class="large-text" rows="3" placeholder="agenzia@example.com, regia@example.com"><?php echo esc_textarea( $config['notify_emails'] ); ?></textarea>
 							<p class="description"><?php esc_html_e( 'Una o più email, separate da virgola o a capo. Se vuoto: email di contatto dell’edificio, poi email amministratore. Tutte le richieste restano comunque archiviate in Palladio → Lead.', 'palladio' ); ?></p>
+						</td>
+					</tr>
+				</table>
+
+				<h2><?php esc_html_e( 'Contatti agenzia (mostrati accanto al form)', 'palladio' ); ?></h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="pll-set-aemails"><?php esc_html_e( 'Email (una o più)', 'palladio' ); ?></label></th>
+						<td>
+							<textarea id="pll-set-aemails" name="agency_emails" class="large-text" rows="2" placeholder="agenzia@example.com"><?php echo esc_textarea( $config['agency_emails'] ); ?></textarea>
+							<p class="description"><?php esc_html_e( 'Mostrate come link “scrivi una mail”. Separate da virgola o a capo.', 'palladio' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="pll-set-aphone"><?php esc_html_e( 'Cellulare', 'palladio' ); ?></label></th>
+						<td><input type="text" id="pll-set-aphone" name="agency_phone" class="regular-text" value="<?php echo esc_attr( $config['agency_phone'] ); ?>" placeholder="+39 338 000 0000"></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="pll-set-awa"><?php esc_html_e( 'WhatsApp', 'palladio' ); ?></label></th>
+						<td>
+							<input type="text" id="pll-set-awa" name="agency_whatsapp" class="regular-text" value="<?php echo esc_attr( $config['agency_whatsapp'] ); ?>" placeholder="+39 338 000 0000">
+							<p class="description"><?php esc_html_e( 'Numero con prefisso internazionale: diventa un link wa.me.', 'palladio' ); ?></p>
 						</td>
 					</tr>
 					<tr>

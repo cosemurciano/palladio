@@ -41,6 +41,7 @@ while ( have_posts() ) :
 				<?php if ( $lead ) : ?>
 					<p class="pll-e-hero__lead" id="palladio-storia-lead"><?php echo esc_html( $lead ); ?></p>
 				<?php endif; ?>
+				<p><a class="pll-e-cta" href="#palladio-contact"><?php echo esc_html( $dossier_label ); ?></a></p>
 			</div>
 		</header>
 
@@ -171,7 +172,7 @@ while ( have_posts() ) :
 				</h2>
 				<p class="pll-e-closing__actions">
 					<a class="pll-e-cta" href="<?php echo esc_url( $ed['closing']['primary_url'] ? $ed['closing']['primary_url'] : get_post_type_archive_link( 'pll_unita' ) ); ?>"><?php echo esc_html( $ed['closing']['primary_label'] ? $ed['closing']['primary_label'] : __( 'Vedi le residenze', 'palladio' ) ); ?></a>
-					<a class="pll-e-cta pll-e-cta--ghost" href="<?php echo esc_url( $dossier_url ? $dossier_url : home_url( '/' ) ); ?>"><?php echo esc_html( $dossier_label ); ?></a>
+					<a class="pll-e-cta pll-e-cta--ghost" href="<?php echo esc_url( $dossier_url ? $dossier_url : '#palladio-contact' ); ?>"><?php echo esc_html( $dossier_label ); ?></a>
 				</p>
 			</div>
 		</section>
