@@ -126,6 +126,80 @@
 	}
 
 	// -------------------------------------------------------------------------
+	// Contatori (pagina Territorio): count-up al reveal. Il valore resta nel
+	// markup (es. "1,3 mln", "+11,1%"): si anima solo la parte numerica,
+	// preservando prefisso/suffisso e la virgola decimale. Disattivato con
+	// prefers-reduced-motion o senza IntersectionObserver.
+	// -------------------------------------------------------------------------
+	function initCounters() {
+		var items = document.querySelectorAll( '[data-pll-count]' );
+		if ( ! items.length ) {
+			return;
+		}
+
+		var reduced = window.matchMedia && window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
+		if ( reduced || ! ( 'IntersectionObserver' in window ) ) {
+			return; // Il valore finale è già nel markup.
+		}
+
+		function animate( el ) {
+			var full  = el.getAttribute( 'data-pll-count' ) || el.textContent;
+			var match = full.match( /-?\d[\d.]*(?:,\d+)?/ );
+			if ( ! match ) {
+				return;
+			}
+			var numStr   = match[0];
+			var prefix   = full.slice( 0, match.index );
+			var suffix   = full.slice( match.index + numStr.length );
+			var decimals = ( numStr.split( ',' )[1] || '' ).length;
+			var target   = parseFloat( numStr.replace( /\./g, '' ).replace( ',', '.' ) );
+			if ( isNaN( target ) ) {
+				return;
+			}
+			var start    = null;
+			var duration = 1400;
+
+			function fmt( n ) {
+				var s = n.toFixed( decimals ).replace( '.', ',' );
+				// Reintroduce il punto delle migliaia se presente nell'originale.
+				if ( numStr.indexOf( '.' ) !== -1 ) {
+					var parts = s.split( ',' );
+					parts[0]  = parts[0].replace( /\B(?=(\d{3})+(?!\d))/g, '.' );
+					s         = parts.join( ',' );
+				}
+				return s;
+			}
+
+			function step( ts ) {
+				if ( null === start ) {
+					start = ts;
+				}
+				var p    = Math.min( ( ts - start ) / duration, 1 );
+				var ease = 1 - Math.pow( 1 - p, 3 );
+				el.textContent = prefix + fmt( target * ease ) + suffix;
+				if ( p < 1 ) {
+					window.requestAnimationFrame( step );
+				} else {
+					el.textContent = full;
+				}
+			}
+
+			window.requestAnimationFrame( step );
+		}
+
+		var obs = new IntersectionObserver( function ( entries ) {
+			entries.forEach( function ( entry ) {
+				if ( entry.isIntersecting ) {
+					animate( entry.target );
+					obs.unobserve( entry.target );
+				}
+			} );
+		}, { threshold: 0.4 } );
+
+		Array.prototype.forEach.call( items, function ( el ) { obs.observe( el ); } );
+	}
+
+	// -------------------------------------------------------------------------
 	// Timeline / scroll-telling: media sticky con crossfade, i capitoli
 	// avanzano con lo scroll; gli anni sono cliccabili. Senza JS (o senza
 	// IntersectionObserver) la sezione resta figura + testo impilati.
@@ -402,5 +476,6 @@
 		Array.prototype.forEach.call( ambients, initAmbient );
 
 		initReveal();
+		initCounters();
 	} );
 }() );

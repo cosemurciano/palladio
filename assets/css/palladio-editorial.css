@@ -1417,3 +1417,275 @@ body.pll-lightbox-open { overflow: hidden; }
 	color: var(--pll-e-wine);
 	font-weight: 600;
 }
+
+/* ---------------------------------------------------------------------------
+ * Pagina "Il Territorio" — mappa come tavola d'archivio, città a due colonne,
+ * contatori, schede mercato con icona lineare
+ * ------------------------------------------------------------------------- */
+.pll-e-map {
+	position: relative;
+	margin-top: 2.5rem;
+	padding: 1.1rem;
+	background: var(--pll-e-surface);
+	border: 1px solid var(--pll-e-line);
+}
+
+/* Squadrette oro agli angoli della tavola. */
+.pll-e-map__corner {
+	position: absolute;
+	width: 16px;
+	height: 16px;
+	border: 2px solid var(--pll-e-gold-2);
+}
+
+.pll-e-map__corner--tl { top: -2px; left: -2px; border-right: 0; border-bottom: 0; }
+.pll-e-map__corner--tr { top: -2px; right: -2px; border-left: 0; border-bottom: 0; }
+.pll-e-map__corner--bl { bottom: -2px; left: -2px; border-right: 0; border-top: 0; }
+.pll-e-map__corner--br { bottom: -2px; right: -2px; border-left: 0; border-top: 0; }
+
+.pll-e-map__canvas {
+	position: relative;
+	aspect-ratio: 16 / 9;
+	background: var(--pll-e-paper-2);
+	overflow: hidden;
+}
+
+.pll-e-map__canvas iframe,
+.pll-e-map__canvas img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	border: 0;
+	object-fit: cover;
+	/* Vira mappa/immagine verso il seppia desaturato della direzione Archivio. */
+	filter: sepia(0.35) saturate(0.55) contrast(0.95);
+}
+
+.pll-e-map__pin {
+	position: absolute;
+	left: 50%;
+	bottom: 2rem;
+	transform: translateX(-50%);
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin: 0;
+	padding: 0.45rem 1rem;
+	background: var(--pll-e-wine);
+	color: #f7f2e7;
+	font-size: 0.72rem;
+	font-weight: 600;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	white-space: nowrap;
+	max-width: calc(100% - 3rem);
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.pll-e-map__pin-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--pll-e-gold-2);
+	flex: none;
+}
+
+.pll-e-map__pois {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+	margin: 1.4rem 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.pll-e-map__poi {
+	padding: 0.4rem 0.95rem;
+	border: 1px solid var(--pll-e-line);
+	border-radius: 999px;
+	background: var(--pll-e-surface);
+	color: var(--pll-e-taupe);
+	font-size: 0.8rem;
+	letter-spacing: 0.04em;
+}
+
+/* La città — racconto + prossimità | fotografia. */
+.pll-e-city {
+	display: grid;
+	gap: 2.5rem;
+	margin-top: 2.5rem;
+}
+
+@media (min-width: 900px) {
+	.pll-e-city {
+		grid-template-columns: 1.15fr 0.85fr;
+		gap: 4rem;
+		align-items: start;
+	}
+}
+
+.pll-e-proximity {
+	margin: 2rem 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.pll-e-proximity__row {
+	display: flex;
+	align-items: baseline;
+	gap: 1.25rem;
+	padding: 0.85rem 0;
+	border-bottom: 1px solid var(--pll-e-line);
+}
+
+.pll-e-proximity__row:first-child {
+	border-top: 1px solid var(--pll-e-line);
+}
+
+.pll-e-proximity__value {
+	flex: none;
+	min-width: 4.5rem;
+	font-family: var(--pll-e-display);
+	font-size: 1.5rem;
+	font-weight: 600;
+	color: var(--pll-e-gold);
+}
+
+.pll-e-proximity__label {
+	color: var(--pll-e-taupe);
+	font-size: 0.95rem;
+	line-height: 1.5;
+}
+
+.pll-e-city__paradox {
+	margin: 1.8rem 0 0;
+	font-family: var(--pll-e-display);
+	font-style: italic;
+	font-size: 1.3rem;
+	color: var(--pll-e-wine);
+}
+
+.pll-e-city__media {
+	margin: 0;
+	position: relative;
+}
+
+.pll-e-city__media img {
+	display: block;
+	width: 100%;
+	aspect-ratio: 4 / 5;
+	object-fit: cover;
+	border: 1px solid var(--pll-e-line);
+}
+
+.pll-e-city__media figcaption {
+	margin-top: 0.6rem;
+	font-size: 0.78rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--pll-e-taupe);
+}
+
+/* Contatori — numeri grandi serif con count-up al reveal. */
+.pll-e-stats {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 2rem 2.5rem;
+	margin-top: 2.75rem;
+}
+
+@media (min-width: 900px) {
+	.pll-e-stats {
+		grid-template-columns: repeat(4, 1fr);
+	}
+}
+
+.pll-e-stats__cell {
+	border-top: 2px solid var(--pll-e-gold-2);
+	padding-top: 1.1rem;
+}
+
+.pll-e-stats__value {
+	display: block;
+	font-family: var(--pll-e-display);
+	font-size: clamp(2.2rem, 4vw, 3.2rem);
+	font-weight: 600;
+	line-height: 1;
+	color: var(--pll-e-wine);
+	font-variant-numeric: tabular-nums;
+}
+
+.pll-e-stats__label {
+	display: block;
+	margin-top: 0.65rem;
+	font-size: 0.9rem;
+	line-height: 1.5;
+	color: var(--pll-e-taupe);
+}
+
+.pll-e-stats__source {
+	margin-top: 2.25rem;
+	font-size: 0.75rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--pll-e-taupe);
+}
+
+/* Mercati — schede stile glossario con icona lineare oro. */
+.pll-e-markets {
+	display: grid;
+	gap: 1.5rem;
+	margin-top: 2.5rem;
+}
+
+@media (min-width: 700px) {
+	.pll-e-markets {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media (min-width: 1100px) {
+	.pll-e-markets {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
+
+.pll-e-markets__card {
+	background: var(--pll-e-surface);
+	border: 1px solid var(--pll-e-line);
+	padding: 2rem 1.75rem;
+}
+
+.pll-e-markets__icon {
+	display: inline-flex;
+	color: var(--pll-e-gold);
+}
+
+.pll-e-markets__icon svg {
+	width: 2.75rem;
+	height: 2.75rem;
+}
+
+.pll-e-markets__title {
+	margin: 1.1rem 0 0.6rem;
+	font-family: var(--pll-e-display);
+	font-size: 1.35rem;
+	font-weight: 600;
+	color: var(--pll-e-ink);
+}
+
+.pll-e-markets__text {
+	margin: 0;
+	font-size: 0.92rem;
+	line-height: 1.65;
+	color: var(--pll-e-taupe);
+}
+
+/* Chiusura — testo di raccordo sotto il titolo. */
+.pll-e-closing__text {
+	max-width: 40rem;
+	margin: -0.75rem auto 2rem;
+	line-height: 1.7;
+	color: var(--pll-e-taupe);
+}

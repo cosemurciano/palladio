@@ -96,7 +96,28 @@ function palladio_editorial( $post_id ) {
 		'glossary_eyebrow' => '',
 		'glossary_heading' => '',
 		'glossary_text'    => '',
-		'closing'          => array( 'kicker' => '', 'heading' => '', 'emphasis' => '', 'primary_label' => '', 'primary_url' => '' ),
+		'closing'          => array( 'kicker' => '', 'heading' => '', 'emphasis' => '', 'text' => '', 'primary_label' => '', 'primary_url' => '' ),
+		// Campi della pagina "Il Territorio" (pll_territorio).
+		'map_eyebrow'   => '',
+		'map_heading'   => '',
+		'map_embed'     => '', // URL embed Google Maps (iframe); in alternativa map_image.
+		'map_image'     => 0,  // Mappa statica (fallback o preferita).
+		'map_label'     => '', // Es. "PALAZZO SAMBIASI · Via Marco Basseo 31".
+		'map_pois'      => array(), // [ {label} ] — luoghi vicini (chip).
+		'city_eyebrow'  => '',
+		'city_heading'  => '',
+		'city_text'     => '',
+		'proximity'     => array(), // [ {value,label} ] — es. "50 m" / "Piazza del Duomo".
+		'city_paradox'  => '',      // Frase in corsivo bordeaux.
+		'city_image'    => 0,
+		'city_caption'  => '',
+		'stats_eyebrow' => '',
+		'stats_heading' => '',
+		'stats'         => array(), // [ {value,label} ] — counter con count-up.
+		'stats_source'  => '',
+		'markets_eyebrow' => '',
+		'markets_heading' => '',
+		'markets'         => array(), // [ {icon,title,text} ] — schede mercato con icona.
 	);
 
 	$data              = wp_parse_args( $data, $defaults );
@@ -110,7 +131,7 @@ function palladio_editorial( $post_id ) {
 		$data['gallery_layout'] = 'masonry';
 	}
 
-	foreach ( array( 'chapters', 'narrative', 'tech', 'gallery', 'manifesto', 'timeline', 'ambient_images', 'heraldry', 'glossary' ) as $rep ) {
+	foreach ( array( 'chapters', 'narrative', 'tech', 'gallery', 'manifesto', 'timeline', 'ambient_images', 'heraldry', 'glossary', 'map_pois', 'proximity', 'stats', 'markets' ) as $rep ) {
 		if ( ! is_array( $data[ $rep ] ) ) {
 			$data[ $rep ] = array();
 		}
@@ -637,4 +658,68 @@ function palladio_render_scenario_card_editorial( $scenario_id ) {
 		</span>
 	</a>
 	<?php
+}
+
+/**
+ * Set di icone lineari (SVG, tratto currentColor) per le schede mercato
+ * della pagina Territorio. Selezionabili dall'editor.
+ *
+ * @return array<string,array{label:string,svg:string}>
+ */
+function palladio_territory_icons() {
+	$stroke = 'fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"';
+
+	return array(
+		'building'  => array(
+			'label' => __( 'Dimora / Residenziale', 'palladio' ),
+			'svg'   => '<svg viewBox="0 0 24 24" ' . $stroke . '><path d="M4 21V5.5L12 3l8 2.5V21"/><path d="M2 21h20"/><path d="M9 21v-4h6v4"/><path d="M8 9h.01M12 9h.01M16 9h.01M8 13h.01M12 13h.01M16 13h.01"/></svg>',
+		),
+		'globe'     => array(
+			'label' => __( 'Mondo / Turismo internazionale', 'palladio' ),
+			'svg'   => '<svg viewBox="0 0 24 24" ' . $stroke . '><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14.5 14.5 0 0 1 0 18a14.5 14.5 0 0 1 0-18"/></svg>',
+		),
+		'bed'       => array(
+			'label' => __( 'Ospitalità / Hôtellerie', 'palladio' ),
+			'svg'   => '<svg viewBox="0 0 24 24" ' . $stroke . '><path d="M3 7v11"/><path d="M3 14h18v4"/><path d="M21 14v-3a3 3 0 0 0-3-3h-8v6"/><circle cx="6.5" cy="10.5" r="1.5"/></svg>',
+		),
+		'laptop'    => array(
+			'label' => __( 'Lavoro da remoto', 'palladio' ),
+			'svg'   => '<svg viewBox="0 0 24 24" ' . $stroke . '><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></svg>',
+		),
+		'culture'   => array(
+			'label' => __( 'Cultura / Museo', 'palladio' ),
+			'svg'   => '<svg viewBox="0 0 24 24" ' . $stroke . '><path d="M4 10h16"/><path d="M12 3 3 8h18Z"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8"/><path d="M3 21h18"/></svg>',
+		),
+		'chart'     => array(
+			'label' => __( 'Crescita / Mercato', 'palladio' ),
+			'svg'   => '<svg viewBox="0 0 24 24" ' . $stroke . '><path d="M4 20V4"/><path d="M4 20h16"/><path d="m7 14 4-4 3 3 6-6"/><path d="M16 7h4v4"/></svg>',
+		),
+		'sun'       => array(
+			'label' => __( 'Sole / Clima', 'palladio' ),
+			'svg'   => '<svg viewBox="0 0 24 24" ' . $stroke . '><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>',
+		),
+		'waves'     => array(
+			'label' => __( 'Mare / Costa', 'palladio' ),
+			'svg'   => '<svg viewBox="0 0 24 24" ' . $stroke . '><path d="M2 8c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2 2.5-2 5-2"/><path d="M2 13c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2 2.5-2 5-2"/><path d="M2 18c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2 2.5-2 5-2"/></svg>',
+		),
+		'plane'     => array(
+			'label' => __( 'Aereo / Collegamenti', 'palladio' ),
+			'svg'   => '<svg viewBox="0 0 24 24" ' . $stroke . '><path d="M10.5 13.5 3 11l1.5-1.5L11 10l4.5-4.5a1.8 1.8 0 0 1 2.5 2.5L13.5 12l.5 6.5L12.5 20l-2-6.5Z"/><path d="m6 18 2-2"/></svg>',
+		),
+		'key'       => array(
+			'label' => __( 'Chiave / Investimento', 'palladio' ),
+			'svg'   => '<svg viewBox="0 0 24 24" ' . $stroke . '><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 8.7-8.7"/><path d="m15 8 3 3"/><path d="m18 5 2 2"/></svg>',
+		),
+	);
+}
+
+/**
+ * SVG di un'icona del set territorio ('' se sconosciuta).
+ *
+ * @param string $name Slug icona.
+ * @return string
+ */
+function palladio_territory_icon_svg( $name ) {
+	$icons = palladio_territory_icons();
+	return isset( $icons[ $name ] ) ? $icons[ $name ]['svg'] : '';
 }

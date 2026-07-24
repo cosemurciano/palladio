@@ -24,7 +24,7 @@ class Palladio_Admin_Content {
 	 *
 	 * @var string[]
 	 */
-	private $post_types = array( 'pll_edificio', 'pll_unita', 'pll_storia', 'pll_scenario' );
+	private $post_types = array( 'pll_edificio', 'pll_unita', 'pll_storia', 'pll_scenario', 'pll_territorio' );
 
 	/**
 	 * Registra hook admin.
@@ -117,6 +117,8 @@ class Palladio_Admin_Content {
 				$this->render_storia_fields( $d );
 			} elseif ( 'pll_scenario' === $post->post_type ) {
 				$this->render_scenario_fields( $d );
+			} elseif ( 'pll_territorio' === $post->post_type ) {
+				$this->render_territorio_fields( $d );
 			} else {
 				$this->render_unita_fields( $d );
 			}
@@ -278,6 +280,131 @@ class Palladio_Admin_Content {
 		<p><label><?php esc_html_e( 'Frase di apertura (lead)', 'palladio' ); ?><br>
 			<textarea class="widefat" rows="2" name="palladio_editorial[lead]" placeholder="<?php esc_attr_e( 'Tre appartamenti e il deposito, un unico progetto abitativo.', 'palladio' ); ?>"><?php echo esc_textarea( $d['lead'] ); ?></textarea></label></p>
 		<p class="description"><?php esc_html_e( 'Se vuoti: l’occhiello mostra “Scenario · N unità” e il lead usa il riassunto del post.', 'palladio' ); ?></p>
+		<?php
+	}
+
+	/**
+	 * Campi della pagina "Il Territorio" (Lecce e Salento).
+	 *
+	 * @param array $d Struttura editoriale.
+	 * @return void
+	 */
+	private function render_territorio_fields( $d ) {
+		$icons = function_exists( 'palladio_territory_icons' ) ? palladio_territory_icons() : array();
+		$icon_options = array();
+		foreach ( $icons as $slug => $icon ) {
+			$icon_options[ $slug ] = $icon['label'];
+		}
+		?>
+		<h4><?php esc_html_e( 'Testata', 'palladio' ); ?></h4>
+		<p class="description"><?php esc_html_e( 'L\'immagine in evidenza è lo sfondo del hero; il titolo del post è il titolo grande (es. "Lecce e il Salento").', 'palladio' ); ?></p>
+		<p><label><?php esc_html_e( 'Occhiello (eyebrow)', 'palladio' ); ?><br>
+			<input type="text" class="widefat" name="palladio_editorial[eyebrow]" value="<?php echo esc_attr( $d['eyebrow'] ); ?>" placeholder="<?php esc_attr_e( 'Palazzo Sambiasi · Il Territorio', 'palladio' ); ?>"></label></p>
+		<p><label><?php esc_html_e( 'Frase di apertura (lead)', 'palladio' ); ?><br>
+			<textarea class="widefat" rows="2" name="palladio_editorial[lead]" placeholder="<?php esc_attr_e( 'La capitale del barocco, il mare a venti minuti…', 'palladio' ); ?>"><?php echo esc_textarea( $d['lead'] ); ?></textarea></label></p>
+
+		<h4><?php esc_html_e( 'La posizione — mappa', 'palladio' ); ?></h4>
+		<div class="palladio-fields-grid">
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Occhiello sezione', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[map_eyebrow]" value="<?php echo esc_attr( $d['map_eyebrow'] ); ?>" placeholder="<?php esc_attr_e( 'La posizione', 'palladio' ); ?>"></label></p>
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Titolo sezione', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[map_heading]" value="<?php echo esc_attr( $d['map_heading'] ); ?>" placeholder="<?php esc_attr_e( 'Nel cuore del centro storico', 'palladio' ); ?>"></label></p>
+		</div>
+		<p><label><?php esc_html_e( 'URL embed Google Maps (opzionale)', 'palladio' ); ?><br>
+			<input type="url" class="widefat" name="palladio_editorial[map_embed]" value="<?php echo esc_attr( $d['map_embed'] ); ?>" placeholder="https://www.google.com/maps/embed?pb=…"></label>
+			<span class="description"><?php esc_html_e( 'Da Google Maps → Condividi → Incorpora una mappa: incolla l\'URL dell\'iframe (solo l\'attributo src). Se vuoto viene usata l\'immagine statica.', 'palladio' ); ?></span></p>
+		<p><strong><?php esc_html_e( 'Mappa statica (alternativa o fallback)', 'palladio' ); ?></strong></p>
+		<?php $this->media_field( 'palladio_editorial[map_image]', (int) $d['map_image'] ); ?>
+		<p><label><?php esc_html_e( 'Etichetta indirizzo (pin)', 'palladio' ); ?><br>
+			<input type="text" class="widefat" name="palladio_editorial[map_label]" value="<?php echo esc_attr( $d['map_label'] ); ?>" placeholder="<?php esc_attr_e( 'PALAZZO SAMBIASI · Via Marco Basseo 31', 'palladio' ); ?>"></label></p>
+		<p><strong><?php esc_html_e( 'Luoghi vicini (chip sotto la mappa)', 'palladio' ); ?></strong></p>
+		<?php
+		$this->repeater( 'map_pois', $d['map_pois'], array(
+			'label' => array( 'type' => 'text', 'label' => __( 'Luogo (es. Duomo)', 'palladio' ) ),
+		) );
+		?>
+
+		<h4><?php esc_html_e( 'La città — due colonne', 'palladio' ); ?></h4>
+		<div class="palladio-fields-grid">
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Occhiello sezione', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[city_eyebrow]" value="<?php echo esc_attr( $d['city_eyebrow'] ); ?>" placeholder="<?php esc_attr_e( 'La città', 'palladio' ); ?>"></label></p>
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Titolo sezione', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[city_heading]" value="<?php echo esc_attr( $d['city_heading'] ); ?>" placeholder="<?php esc_attr_e( 'Lecce, la Firenze del Sud', 'palladio' ); ?>"></label></p>
+		</div>
+		<p><label><?php esc_html_e( 'Testo introduttivo', 'palladio' ); ?><br>
+			<textarea class="widefat" rows="3" name="palladio_editorial[city_text]"><?php echo esc_textarea( $d['city_text'] ); ?></textarea></label></p>
+		<p><strong><?php esc_html_e( 'Lista di prossimità (numero serif oro + descrizione)', 'palladio' ); ?></strong></p>
+		<?php
+		$this->repeater( 'proximity', $d['proximity'], array(
+			'value' => array( 'type' => 'text', 'label' => __( 'Distanza (es. 50 m, 3 min)', 'palladio' ), 'width' => '9rem' ),
+			'label' => array( 'type' => 'text', 'label' => __( 'Descrizione', 'palladio' ) ),
+		) );
+		?>
+		<p><label><?php esc_html_e( 'Frase-paradosso (corsivo bordeaux)', 'palladio' ); ?><br>
+			<input type="text" class="widefat" name="palladio_editorial[city_paradox]" value="<?php echo esc_attr( $d['city_paradox'] ); ?>" placeholder="<?php esc_attr_e( 'Il paradosso di Lecce: tutto vicino, niente addosso.', 'palladio' ); ?>"></label></p>
+		<p><strong><?php esc_html_e( 'Fotografia della sezione', 'palladio' ); ?></strong></p>
+		<?php $this->media_field( 'palladio_editorial[city_image]', (int) $d['city_image'] ); ?>
+		<p><label><?php esc_html_e( 'Didascalia fotografia', 'palladio' ); ?><br>
+			<input type="text" class="widefat" name="palladio_editorial[city_caption]" value="<?php echo esc_attr( $d['city_caption'] ); ?>"></label></p>
+
+		<h4><?php esc_html_e( 'Un territorio in crescita — contatori', 'palladio' ); ?></h4>
+		<p class="description"><?php esc_html_e( 'I valori numerici si animano allo scroll (count-up), disattivato con prefers-reduced-motion.', 'palladio' ); ?></p>
+		<div class="palladio-fields-grid">
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Occhiello sezione', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[stats_eyebrow]" value="<?php echo esc_attr( $d['stats_eyebrow'] ); ?>" placeholder="<?php esc_attr_e( 'Un territorio in crescita', 'palladio' ); ?>"></label></p>
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Titolo sezione', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[stats_heading]" value="<?php echo esc_attr( $d['stats_heading'] ); ?>" placeholder="<?php esc_attr_e( 'Il Salento, destinazione in piena espansione', 'palladio' ); ?>"></label></p>
+		</div>
+		<?php
+		$this->repeater( 'stats', $d['stats'], array(
+			'value' => array( 'type' => 'text', 'label' => __( 'Valore (es. 1,3 mln · +11,1%)', 'palladio' ), 'width' => '10rem' ),
+			'label' => array( 'type' => 'text', 'label' => __( 'Descrizione', 'palladio' ) ),
+		) );
+		?>
+		<p><label><?php esc_html_e( 'Fonte dei dati', 'palladio' ); ?><br>
+			<input type="text" class="widefat" name="palladio_editorial[stats_source]" value="<?php echo esc_attr( $d['stats_source'] ); ?>" placeholder="<?php esc_attr_e( 'Fonte: Osservatorio turistico regionale', 'palladio' ); ?>"></label></p>
+
+		<h4><?php esc_html_e( 'Un territorio, molti mercati — schede con icona', 'palladio' ); ?></h4>
+		<div class="palladio-fields-grid">
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Occhiello sezione', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[markets_eyebrow]" value="<?php echo esc_attr( $d['markets_eyebrow'] ); ?>" placeholder="<?php esc_attr_e( 'Un territorio, molti mercati', 'palladio' ); ?>"></label></p>
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Titolo sezione', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[markets_heading]" value="<?php echo esc_attr( $d['markets_heading'] ); ?>" placeholder="<?php esc_attr_e( 'Cinque ragioni per investire qui', 'palladio' ); ?>"></label></p>
+		</div>
+		<?php
+		$this->repeater( 'markets', $d['markets'], array(
+			'icon'  => array( 'type' => 'select', 'label' => __( 'Icona', 'palladio' ), 'options' => $icon_options, 'width' => '14rem' ),
+			'title' => array( 'type' => 'text', 'label' => __( 'Titolo (es. Residenziale di pregio)', 'palladio' ) ),
+			'text'  => array( 'type' => 'textarea', 'label' => __( 'Testo', 'palladio' ) ),
+		) );
+		?>
+
+		<h4><?php esc_html_e( 'Galleria', 'palladio' ); ?></h4>
+		<p class="description"><?php esc_html_e( 'Mostrata dopo "Un territorio, molti mercati".', 'palladio' ); ?></p>
+		<?php $this->gallery_layout_field( $d['gallery_layout'] ); ?>
+		<?php
+		$this->repeater( 'gallery', $d['gallery'], array(
+			'image'   => array( 'type' => 'media', 'label' => __( 'Immagine', 'palladio' ) ),
+			'caption' => array( 'type' => 'text', 'label' => __( 'Didascalia', 'palladio' ) ),
+		), true );
+		?>
+
+		<h4><?php esc_html_e( 'Chiusura — investire o vivere', 'palladio' ); ?></h4>
+		<div class="palladio-fields-grid">
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Occhiello', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[closing][kicker]" value="<?php echo esc_attr( $d['closing']['kicker'] ); ?>" placeholder="<?php esc_attr_e( 'Investire o vivere, qui', 'palladio' ); ?>"></label></p>
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Titolo (riga 1)', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[closing][heading]" value="<?php echo esc_attr( $d['closing']['heading'] ); ?>" placeholder="<?php esc_attr_e( 'Un valore che cresce,', 'palladio' ); ?>"></label></p>
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Titolo — enfasi (riga 2, corsivo)', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[closing][emphasis]" value="<?php echo esc_attr( $d['closing']['emphasis'] ); ?>" placeholder="<?php esc_attr_e( 'una vita che rallenta.', 'palladio' ); ?>"></label></p>
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Pulsante — testo', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[closing][primary_label]" value="<?php echo esc_attr( $d['closing']['primary_label'] ); ?>" placeholder="<?php esc_attr_e( 'Vedi le residenze', 'palladio' ); ?>"></label></p>
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Pulsante — URL', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[closing][primary_url]" value="<?php echo esc_attr( $d['closing']['primary_url'] ); ?>" placeholder="/unita/"></label></p>
+		</div>
+		<p><label><?php esc_html_e( 'Testo di chiusura', 'palladio' ); ?><br>
+			<textarea class="widefat" rows="2" name="palladio_editorial[closing][text]" placeholder="<?php esc_attr_e( 'Per chi investe, un mercato in espansione con offerta limitata…', 'palladio' ); ?>"><?php echo esc_textarea( $d['closing']['text'] ); ?></textarea></label></p>
+		<p class="description"><?php esc_html_e( 'Il secondo pulsante è la CTA "Richiedi una visita" configurata in Palladio → Impostazioni.', 'palladio' ); ?></p>
 		<?php
 	}
 
@@ -569,9 +696,31 @@ class Palladio_Admin_Content {
 				'kicker'        => sanitize_text_field( $raw['closing']['kicker'] ?? '' ),
 				'heading'       => sanitize_text_field( $raw['closing']['heading'] ?? '' ),
 				'emphasis'      => sanitize_text_field( $raw['closing']['emphasis'] ?? '' ),
+				'text'          => sanitize_textarea_field( $raw['closing']['text'] ?? '' ),
 				'primary_label' => sanitize_text_field( $raw['closing']['primary_label'] ?? '' ),
 				'primary_url'   => sanitize_text_field( $raw['closing']['primary_url'] ?? '' ),
 			),
+			// Campi della pagina "Il Territorio".
+			'map_eyebrow'     => sanitize_text_field( $raw['map_eyebrow'] ?? '' ),
+			'map_heading'     => sanitize_text_field( $raw['map_heading'] ?? '' ),
+			'map_embed'       => esc_url_raw( $raw['map_embed'] ?? '' ),
+			'map_image'       => absint( $raw['map_image'] ?? 0 ),
+			'map_label'       => sanitize_text_field( $raw['map_label'] ?? '' ),
+			'map_pois'        => $this->clean_rows( $raw['map_pois'] ?? array(), array( 'label' => 'text' ) ),
+			'city_eyebrow'    => sanitize_text_field( $raw['city_eyebrow'] ?? '' ),
+			'city_heading'    => sanitize_text_field( $raw['city_heading'] ?? '' ),
+			'city_text'       => sanitize_textarea_field( $raw['city_text'] ?? '' ),
+			'proximity'       => $this->clean_rows( $raw['proximity'] ?? array(), array( 'value' => 'text', 'label' => 'text' ) ),
+			'city_paradox'    => sanitize_text_field( $raw['city_paradox'] ?? '' ),
+			'city_image'      => absint( $raw['city_image'] ?? 0 ),
+			'city_caption'    => sanitize_text_field( $raw['city_caption'] ?? '' ),
+			'stats_eyebrow'   => sanitize_text_field( $raw['stats_eyebrow'] ?? '' ),
+			'stats_heading'   => sanitize_text_field( $raw['stats_heading'] ?? '' ),
+			'stats'           => $this->clean_rows( $raw['stats'] ?? array(), array( 'value' => 'text', 'label' => 'text' ) ),
+			'stats_source'    => sanitize_text_field( $raw['stats_source'] ?? '' ),
+			'markets_eyebrow' => sanitize_text_field( $raw['markets_eyebrow'] ?? '' ),
+			'markets_heading' => sanitize_text_field( $raw['markets_heading'] ?? '' ),
+			'markets'         => $this->clean_rows( $raw['markets'] ?? array(), array( 'icon' => 'key', 'title' => 'text', 'text' => 'text' ) ),
 			'gallery_url'     => esc_url_raw( $raw['gallery_url'] ?? '' ),
 			'gallery_count'   => sanitize_text_field( $raw['gallery_count'] ?? '' ),
 			'units_eyebrow'   => sanitize_text_field( $raw['units_eyebrow'] ?? '' ),
