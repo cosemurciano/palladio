@@ -211,11 +211,33 @@ class Palladio_I18n_Languages {
 	}
 
 	/**
-	 * URL della versione in una lingua per il post corrente.
+	 * Homepage nella lingua indicata (sempre valida: mai link morti).
+	 *
+	 * @param string $lang Lingua.
+	 * @return string
+	 */
+	public static function language_home_url( $lang ) {
+		// Se un edificio è la homepage, punta alla sua versione in lingua.
+		$home_building = (int) get_option( 'palladio_home_building', 0 );
+		if ( $home_building && class_exists( 'Palladio_I18n_Translator' ) ) {
+			if ( $lang === Palladio_I18n_Translator::get_lang( $home_building ) ) {
+				return (string) home_url( '/' );
+			}
+			$sibling = Palladio_I18n_Translator::sibling_in( $home_building, $lang, array( 'publish' ) );
+			if ( $sibling ) {
+				return (string) get_permalink( $sibling );
+			}
+		}
+
+		return $lang === self::source() ? home_url( '/' ) : add_query_arg( 'lang', $lang, home_url( '/' ) );
+	}
+
+	/**
+	 * URL del post nella lingua indicata ('' se non esiste).
 	 *
 	 * @param string $lang    Lingua.
-	 * @param int    $post_id ID post (0 = queried).
-	 * @return string URL o '' se la versione non esiste.
+	 * @param int    $post_id ID post (default: corrente).
+	 * @return string
 	 */
 	public static function post_url( $lang, $post_id = 0 ) {
 		$post_id = $post_id ? $post_id : get_queried_object_id();
@@ -294,11 +316,12 @@ class Palladio_I18n_Languages {
 				continue;
 			}
 
-			// Mostra una lingua solo se esiste la pagina tradotta corrispondente:
-			// le lingue attive ma senza versione (o non attive) non vanno mostrate.
+			// Preferisce la pagina tradotta corrispondente; senza traduzione,
+			// il link porta alla home della lingua (mai un link morto): così
+			// lo switcher è presente su tutte le pagine, non solo in home.
 			$url = self::post_url( $lang );
 			if ( '' === $url ) {
-				continue;
+				$url = self::language_home_url( $lang );
 			}
 
 			$items[]  = sprintf( '<a class="palladio-lang" href="%1$s" title="%3$s">%2$s</a>', esc_url( $url ), esc_html( $label ), esc_attr( $title ) );
