@@ -121,6 +121,26 @@ class Palladio_Core_CPT {
 			)
 		);
 
+		// --- Territorio: pagina "Lecce e Salento" (contesto e mercati). ----
+		register_post_type(
+			'pll_territorio',
+			array(
+				'labels'       => array(
+					'name'          => __( 'Territorio', 'palladio' ),
+					'singular_name' => __( 'Pagina Territorio', 'palladio' ),
+					'add_new_item'  => __( 'Aggiungi pagina Territorio', 'palladio' ),
+					'edit_item'     => __( 'Modifica pagina Territorio', 'palladio' ),
+				),
+				'public'       => true,
+				'has_archive'  => false,
+				'show_in_menu' => 'edit.php?post_type=pll_edificio',
+				'show_in_nav_menus' => true,
+				'supports'     => array( 'title', 'editor', 'thumbnail', 'excerpt', 'custom-fields' ),
+				'rewrite'      => array( 'slug' => 'territorio' ),
+				'show_in_rest' => true,
+			)
+		);
+
 		// --- Scenario: bundle/split di unità (feature distintiva). ---------
 		register_post_type(
 			'pll_scenario',

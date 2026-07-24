@@ -26,7 +26,7 @@ class Palladio_Agent_KB {
 	 *
 	 * @var string[]
 	 */
-	private $post_types = array( 'pll_edificio', 'pll_unita', 'pll_scenario', 'pll_storia' );
+	private $post_types = array( 'pll_edificio', 'pll_unita', 'pll_scenario', 'pll_storia', 'pll_territorio' );
 
 	/**
 	 * Registra hook di indicizzazione.

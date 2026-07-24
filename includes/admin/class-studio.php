@@ -49,7 +49,7 @@ class Palladio_Admin_Studio {
 	 *
 	 * @var string[]
 	 */
-	private $write_tools = array( 'create_edificio', 'create_unit', 'create_scenario', 'create_storia', 'update_entity', 'set_status', 'delete_entity', 'set_home_building' );
+	private $write_tools = array( 'create_edificio', 'create_unit', 'create_scenario', 'create_storia', 'create_territorio', 'update_entity', 'set_status', 'delete_entity', 'set_home_building' );
 
 	/**
 	 * Registra menu, asset e AJAX.
@@ -478,7 +478,7 @@ Regole:
 - Per i fatti (prezzi, misure, stanze, vincoli, descrizioni) usa search_project_documents (File Search sui documenti del progetto). NON inventare dati. Interroga lo Storage con PARSIMONIA: poche ricerche mirate, non una raffica di varianti. Se un tool ti risponde con "empty" o dice che non ci sono documenti/risultati, NON riprovare la ricerca in questo turno: procedi con i dati già disponibili (get_structure, get_entity, list_media) o chiedi le informazioni all’utente.
 - Per le immagini usa SOLO gli id restituiti da list_media (non inventare id): a parità di pertinenza PREFERISCI le foto più recenti (campo "date", ordinate dalla più recente) e usa anche il NOME DEL FILE (campo "filename"), oltre a titolo/alt/didascalia, per capire il soggetto.
 - Scrivi i contenuti con update_entity: title, excerpt, content, meta, campi editoriali, tassonomie (tipologia, piano, stato) e — per le unità — building_id per spostarle sotto un altro edificio. Gli aggiornamenti sono parziali: invii solo i campi che vuoi cambiare. Lo SCHEMA COMPLETO dei campi disponibili è riportato in fondo: conoscilo e usalo per compilare OGNI campo pertinente, non solo i principali.
-- Puoi creare nuovi edifici (create_edificio), unità (create_unit, collegate a un edificio) o scenari (create_scenario) se richiesto.
+- Puoi creare nuovi edifici (create_edificio), unità (create_unit, collegate a un edificio), scenari (create_scenario), pagine Storia (create_storia) o pagine Territorio (create_territorio) se richiesto.
 - Puoi pubblicare o riportare in bozza con set_status, e cestinare con delete_entity. ELIMINA (cestina) un elemento SOLO su richiesta esplicita dell’utente in questo turno, mai di tua iniziativa; il cestino è recuperabile. Prima di pubblicare verifica che i campi essenziali siano compilati.
 - Puoi impostare un edificio come homepage del sito con set_home_building (id dell’edificio; 0 per rimuovere).
 - Usa audit_content per la visione d’insieme: elenca per ogni edificio/unità/scenario i campi ancora vuoti, così puoi proporre un piano di completamento mirato.
@@ -536,6 +536,7 @@ Regole:
 		$lines[] = 'EDITORIAL solo unità: chapters[] {time,label} (capitoli walkthrough); floorplan {image,caption,notes} (planimetria); position {heading,text} (posizione nell’edificio).';
 		$lines[] = 'EDITORIAL solo edificio: manifesto[] {text,emphasis} (frasi del manifesto, emphasis = parola da evidenziare); timeline[] {kicker,year,heading,body,image} (storia dell’edificio); ambient_images[] {image,caption} (fascia ambient dopo le unità: più immagini vanno in loop); gallery_url; gallery_count; units_eyebrow; units_heading; units_filters (bool: mostra filtri unità).';
 		$lines[] = 'PAGINA STORIA (pll_storia — pagina narrativa “tavola d’archivio”, aggiornabile con update_entity): eyebrow; lead; manifesto[]; timeline[] {kicker=era, year (grande, es. ’500), year_sub (es. XVI SEC.), heading, body, image, caption}; heraldry[] {initial, image, name, blazon, note} + heraldry_eyebrow/heraldry_heading; glossary[] {image, caption, term, sub, definition} + glossary_eyebrow/glossary_heading/glossary_text; closing {kicker, heading, emphasis, primary_label, primary_url}. Il titolo del post è il claim del hero, l’immagine in evidenza lo sfondo.';
+		$lines[] = 'PAGINA TERRITORIO (pll_territorio — pagina “Lecce e Salento”, contesto e mercati, aggiornabile con update_entity): eyebrow; lead; map_eyebrow/map_heading; map_embed (URL embed Google Maps) o map_image (id media, mappa statica); map_label (es. "PALAZZO SAMBIASI · Via Marco Basseo 31"); map_pois[] {label} (chip dei luoghi vicini); city_eyebrow/city_heading; city_text; proximity[] {value,label} (es. "50 m" / "Piazza del Duomo"); city_paradox (frase in corsivo); city_image + city_caption; stats_eyebrow/stats_heading; stats[] {value,label} (contatori con count-up, es. "1,3 mln" / "+11,1%"); stats_source; markets_eyebrow/markets_heading; markets[] {icon,title,text} (icone: building, globe, bed, laptop, culture, chart, sun, waves, plane, key); gallery[] + gallery_layout; closing {kicker, heading, emphasis, text, primary_label, primary_url}. Il titolo del post è il claim del hero, l’immagine in evidenza lo sfondo.';
 		$lines[] = 'TASSONOMIE (update_entity.taxonomies): tipologia (es. appartamento, locale commerciale, deposito); piano (es. Piano terra, Piano nobile); stato (slug tipici: disponibile, riservata, in_trattativa, venduta, non_in_vendita — verifica con list_terms). Per le unità: building_id sposta l’unità sotto un altro edificio.';
 
 		return implode( "\n", $lines );
@@ -588,6 +589,7 @@ Regole:
 			$fn( 'create_unit', 'Crea una nuova unità (bozza) collegata a un edificio.', array( 'building_id' => array( 'type' => 'integer' ), 'title' => array( 'type' => 'string' ) ), array( 'building_id', 'title' ) ),
 			$fn( 'create_scenario', 'Crea un nuovo scenario (bozza).', array( 'title' => array( 'type' => 'string' ) ), array( 'title' ) ),
 			$fn( 'create_storia', 'Crea una nuova pagina Storia (bozza, tavola d’archivio).', array( 'title' => array( 'type' => 'string' ) ), array( 'title' ) ),
+				$fn( 'create_territorio', 'Crea una nuova pagina Territorio (bozza: contesto, mappa, mercati).', array( 'title' => array( 'type' => 'string' ) ), array( 'title' ) ),
 			$fn( 'set_status', 'Cambia lo stato di pubblicazione di un elemento: "publish" (pubblica), "draft" (bozza) o "pending" (in revisione).', array( 'id' => array( 'type' => 'integer' ), 'status' => array( 'type' => 'string', 'enum' => array( 'publish', 'draft', 'pending' ) ) ), array( 'id', 'status' ) ),
 			$fn( 'delete_entity', 'Sposta un elemento nel cestino (recuperabile). Usalo SOLO su richiesta esplicita dell’utente.', array( 'id' => array( 'type' => 'integer' ) ), array( 'id' ) ),
 			$fn( 'set_home_building', 'Imposta un edificio come homepage del sito (la sua landing è servita alla radice). Passa building_id=0 per rimuovere l’impostazione.', array( 'building_id' => array( 'type' => 'integer' ) ), array( 'building_id' ) ),
@@ -634,6 +636,8 @@ Regole:
 				return $this->tool_create( 'pll_scenario', $args );
 			case 'create_storia':
 				return $this->tool_create( 'pll_storia', $args );
+			case 'create_territorio':
+				return $this->tool_create( 'pll_territorio', $args );
 			case 'set_status':
 				return $this->tool_set_status( absint( $args['id'] ?? 0 ), (string) ( $args['status'] ?? '' ) );
 			case 'delete_entity':
@@ -754,7 +758,7 @@ Regole:
 	 */
 	private function tool_get_entity( $id ) {
 		$post = $id ? get_post( $id ) : null;
-		if ( ! $post || ! in_array( $post->post_type, array( 'pll_edificio', 'pll_unita', 'pll_scenario', 'pll_storia' ), true ) ) {
+		if ( ! $post || ! in_array( $post->post_type, array( 'pll_edificio', 'pll_unita', 'pll_scenario', 'pll_storia', 'pll_territorio' ), true ) ) {
 			return array( 'error' => 'not_found' );
 		}
 
@@ -868,7 +872,7 @@ Regole:
 			return array( 'error' => 'permission_denied' );
 		}
 		$post = get_post( $id );
-		if ( ! $post || ! in_array( $post->post_type, array( 'pll_edificio', 'pll_unita', 'pll_scenario', 'pll_storia' ), true ) ) {
+		if ( ! $post || ! in_array( $post->post_type, array( 'pll_edificio', 'pll_unita', 'pll_scenario', 'pll_storia', 'pll_territorio' ), true ) ) {
 			return array( 'error' => 'not_found' );
 		}
 
@@ -1000,7 +1004,7 @@ Regole:
 			return array( 'error' => 'invalid_status' );
 		}
 		$post = $id ? get_post( $id ) : null;
-		if ( ! $post || ! in_array( $post->post_type, array( 'pll_edificio', 'pll_unita', 'pll_scenario', 'pll_storia' ), true ) ) {
+		if ( ! $post || ! in_array( $post->post_type, array( 'pll_edificio', 'pll_unita', 'pll_scenario', 'pll_storia', 'pll_territorio' ), true ) ) {
 			return array( 'error' => 'not_found' );
 		}
 		if ( ! current_user_can( 'edit_post', $id ) ) {
@@ -1034,7 +1038,7 @@ Regole:
 	 */
 	private function tool_delete( $id ) {
 		$post = $id ? get_post( $id ) : null;
-		if ( ! $post || ! in_array( $post->post_type, array( 'pll_edificio', 'pll_unita', 'pll_scenario', 'pll_storia' ), true ) ) {
+		if ( ! $post || ! in_array( $post->post_type, array( 'pll_edificio', 'pll_unita', 'pll_scenario', 'pll_storia', 'pll_territorio' ), true ) ) {
 			return array( 'error' => 'not_found' );
 		}
 		if ( ! current_user_can( 'delete_post', $id ) ) {

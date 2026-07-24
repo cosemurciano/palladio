@@ -598,11 +598,62 @@ class Palladio_AI_Composer {
 				$editorial[ $sfield ] = sanitize_text_field( (string) $ed[ $sfield ] );
 			}
 		}
+		// Campi della pagina "Il Territorio".
+		foreach ( array( 'map_eyebrow', 'map_heading', 'map_label', 'city_eyebrow', 'city_heading', 'city_paradox', 'city_caption', 'stats_eyebrow', 'stats_heading', 'stats_source', 'markets_eyebrow', 'markets_heading' ) as $sfield ) {
+			if ( isset( $ed[ $sfield ] ) ) {
+				$editorial[ $sfield ] = sanitize_text_field( (string) $ed[ $sfield ] );
+			}
+		}
+		if ( isset( $ed['city_text'] ) ) {
+			$editorial['city_text'] = sanitize_textarea_field( (string) $ed['city_text'] );
+		}
+		if ( isset( $ed['map_embed'] ) ) {
+			$editorial['map_embed'] = esc_url_raw( (string) $ed['map_embed'] );
+		}
+		foreach ( array( 'map_image', 'city_image' ) as $ifield ) {
+			if ( isset( $ed[ $ifield ] ) ) {
+				$editorial[ $ifield ] = $vid( $ed[ $ifield ] );
+			}
+		}
+		if ( isset( $ed['map_pois'] ) ) {
+			$editorial['map_pois'] = array();
+			foreach ( (array) $ed['map_pois'] as $p ) {
+				if ( is_array( $p ) && '' !== trim( (string) ( $p['label'] ?? '' ) ) ) {
+					$editorial['map_pois'][] = array( 'label' => sanitize_text_field( $p['label'] ) );
+				}
+			}
+		}
+		foreach ( array( 'proximity', 'stats' ) as $vlfield ) {
+			if ( isset( $ed[ $vlfield ] ) ) {
+				$editorial[ $vlfield ] = array();
+				foreach ( (array) $ed[ $vlfield ] as $row ) {
+					if ( is_array( $row ) ) {
+						$editorial[ $vlfield ][] = array(
+							'value' => sanitize_text_field( $row['value'] ?? '' ),
+							'label' => sanitize_text_field( $row['label'] ?? '' ),
+						);
+					}
+				}
+			}
+		}
+		if ( isset( $ed['markets'] ) ) {
+			$editorial['markets'] = array();
+			foreach ( (array) $ed['markets'] as $m ) {
+				if ( is_array( $m ) ) {
+					$editorial['markets'][] = array(
+						'icon'  => sanitize_key( $m['icon'] ?? '' ),
+						'title' => sanitize_text_field( $m['title'] ?? '' ),
+						'text'  => sanitize_textarea_field( $m['text'] ?? '' ),
+					);
+				}
+			}
+		}
 		if ( isset( $ed['closing'] ) && is_array( $ed['closing'] ) ) {
 			$editorial['closing'] = array(
 				'kicker'        => sanitize_text_field( $ed['closing']['kicker'] ?? '' ),
 				'heading'       => sanitize_text_field( $ed['closing']['heading'] ?? '' ),
 				'emphasis'      => sanitize_text_field( $ed['closing']['emphasis'] ?? '' ),
+				'text'          => sanitize_textarea_field( $ed['closing']['text'] ?? '' ),
 				'primary_label' => sanitize_text_field( $ed['closing']['primary_label'] ?? '' ),
 				'primary_url'   => sanitize_text_field( $ed['closing']['primary_url'] ?? '' ),
 			);
