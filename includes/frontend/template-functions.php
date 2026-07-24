@@ -497,6 +497,50 @@ function palladio_render_gallery( $shots, $layout = 'masonry', $id = 'palladio-g
 }
 
 /**
+ * Sezione Planimetria a due colonne: testo a sinistra, tavola a destra
+ * (più contenuta) con zoom in lightbox. Condivisa da unità e scenari.
+ *
+ * @param array  $floorplan Struttura {image,caption,notes}.
+ * @param string $id        ID CSS della sezione.
+ * @return void
+ */
+function palladio_render_floorplan( $floorplan, $id = 'palladio-floorplan' ) {
+	$floorplan = is_array( $floorplan ) ? $floorplan : array();
+	$img       = palladio_image_url( $floorplan['image'] ?? 0, 'large' );
+	$full      = palladio_image_url( $floorplan['image'] ?? 0, 'full' );
+	$notes     = (string) ( $floorplan['notes'] ?? '' );
+	$caption   = (string) ( $floorplan['caption'] ?? '' );
+
+	if ( ! $img && '' === $notes ) {
+		return;
+	}
+	?>
+	<section class="pll-e-section pll-e-wrap" id="<?php echo esc_attr( $id ); ?>" data-pll-lightbox-group>
+		<p class="pll-e-kicker" id="<?php echo esc_attr( $id ); ?>-eyebrow"><?php esc_html_e( 'Planimetria', 'palladio' ); ?></p>
+		<h2 class="pll-e-h" id="<?php echo esc_attr( $id ); ?>-titolo"><?php echo esc_html( $caption ? $caption : __( 'La pianta, quotata', 'palladio' ) ); ?></h2>
+		<div class="pll-e-floorplan">
+			<div class="pll-e-floorplan__text" id="<?php echo esc_attr( $id ); ?>-note">
+				<?php if ( '' !== $notes ) : ?>
+					<div class="pll-e-prose"><?php echo wp_kses_post( wpautop( $notes ) ); ?></div>
+				<?php endif; ?>
+			</div>
+			<?php if ( $img ) : ?>
+				<figure class="pll-e-floorplan__media" id="<?php echo esc_attr( $id ); ?>-tavola">
+					<a class="pll-e-gallery__zoom" href="<?php echo esc_url( $full ? $full : $img ); ?>"
+						data-pll-lightbox="<?php echo esc_url( $full ? $full : $img ); ?>"
+						data-pll-caption="<?php echo esc_attr( $caption ); ?>"
+						aria-label="<?php esc_attr_e( 'Ingrandisci la planimetria', 'palladio' ); ?>">
+						<img src="<?php echo esc_url( $img ); ?>" alt="<?php echo esc_attr( $caption ? $caption : __( 'Planimetria', 'palladio' ) ); ?>" loading="lazy">
+					</a>
+					<?php if ( '' !== $caption ) : ?><figcaption><?php echo esc_html( $caption ); ?></figcaption><?php endif; ?>
+				</figure>
+			<?php endif; ?>
+		</div>
+	</section>
+	<?php
+}
+
+/**
  * Unità che compongono uno scenario (solo unità valide e pubblicate).
  *
  * @param int $scenario_id ID scenario.

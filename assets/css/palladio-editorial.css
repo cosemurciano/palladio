@@ -1689,3 +1689,49 @@ body.pll-lightbox-open { overflow: hidden; }
 	line-height: 1.7;
 	color: var(--pll-e-taupe);
 }
+
+/* ---------------------------------------------------------------------------
+ * Planimetria — due colonne: testo a sinistra, tavola contenuta a destra
+ * con zoom in lightbox (unità e scenari)
+ * ------------------------------------------------------------------------- */
+.pll-e-floorplan {
+	display: grid;
+	gap: 2rem;
+	margin-top: 2rem;
+}
+
+@media (min-width: 900px) {
+	.pll-e-floorplan {
+		grid-template-columns: 1.1fr 0.9fr;
+		gap: 4rem;
+		align-items: start;
+	}
+}
+
+.pll-e-floorplan__media {
+	margin: 0;
+	max-width: 30rem;
+	background: var(--pll-e-surface);
+	border: 1px solid var(--pll-e-line);
+	padding: 1rem;
+}
+
+@media (min-width: 900px) {
+	.pll-e-floorplan__media {
+		justify-self: end;
+	}
+}
+
+.pll-e-floorplan__media img {
+	display: block;
+	width: 100%;
+	height: auto;
+}
+
+.pll-e-floorplan__media figcaption {
+	margin-top: 0.75rem;
+	font-size: 0.78rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--pll-e-taupe);
+}
