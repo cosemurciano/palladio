@@ -1697,7 +1697,6 @@ body.pll-lightbox-open { overflow: hidden; }
 .pll-e-floorplan {
 	display: grid;
 	gap: 2rem;
-	margin-top: 2rem;
 }
 
 @media (min-width: 900px) {

@@ -516,10 +516,10 @@ function palladio_render_floorplan( $floorplan, $id = 'palladio-floorplan' ) {
 	}
 	?>
 	<section class="pll-e-section pll-e-wrap" id="<?php echo esc_attr( $id ); ?>" data-pll-lightbox-group>
-		<p class="pll-e-kicker" id="<?php echo esc_attr( $id ); ?>-eyebrow"><?php esc_html_e( 'Planimetria', 'palladio' ); ?></p>
-		<h2 class="pll-e-h" id="<?php echo esc_attr( $id ); ?>-titolo"><?php echo esc_html( $caption ? $caption : __( 'La pianta, quotata', 'palladio' ) ); ?></h2>
 		<div class="pll-e-floorplan">
 			<div class="pll-e-floorplan__text" id="<?php echo esc_attr( $id ); ?>-note">
+				<p class="pll-e-kicker" id="<?php echo esc_attr( $id ); ?>-eyebrow"><?php esc_html_e( 'Planimetria', 'palladio' ); ?></p>
+				<h2 class="pll-e-h" id="<?php echo esc_attr( $id ); ?>-titolo"><?php echo esc_html( $caption ? $caption : __( 'La pianta, quotata', 'palladio' ) ); ?></h2>
 				<?php if ( '' !== $notes ) : ?>
 					<div class="pll-e-prose"><?php echo wp_kses_post( wpautop( $notes ) ); ?></div>
 				<?php endif; ?>
