@@ -246,7 +246,7 @@ class Palladio_Admin_Content {
 			<p class="palladio-field-cell"><label><?php esc_html_e( 'Titolo', 'palladio' ); ?>
 				<input type="text" class="widefat" name="palladio_editorial[units_heading]" value="<?php echo esc_attr( $d['units_heading'] ); ?>" placeholder="<?php esc_attr_e( 'Scegli le tue stanze', 'palladio' ); ?>"></label></p>
 		</div>
-		<p><label><input type="checkbox" name="palladio_editorial[units_filters]" value="1" <?php checked( $d['units_filters'], true ); ?>> <?php esc_html_e( 'Mostra i filtri (Tutte / Piano / Prezzo / Con spazio esterno)', 'palladio' ); ?></label></p>
+		<p><label><input type="checkbox" name="palladio_editorial[units_filters]" value="1" <?php checked( $d['units_filters'], true ); ?>> <?php esc_html_e( 'Mostra i filtri (Tutte / Piano / Prezzo)', 'palladio' ); ?></label></p>
 
 		<h4><?php esc_html_e( 'Galleria', 'palladio' ); ?></h4>
 		<?php $this->gallery_layout_field( $d['gallery_layout'] ); ?>
@@ -280,6 +280,13 @@ class Palladio_Admin_Content {
 		<p><label><?php esc_html_e( 'Frase di apertura (lead)', 'palladio' ); ?><br>
 			<textarea class="widefat" rows="2" name="palladio_editorial[lead]" placeholder="<?php esc_attr_e( 'Tre appartamenti e il deposito, un unico progetto abitativo.', 'palladio' ); ?>"><?php echo esc_textarea( $d['lead'] ); ?></textarea></label></p>
 		<p class="description"><?php esc_html_e( 'Se vuoti: l’occhiello mostra “Scenario · N unità” e il lead usa il riassunto del post.', 'palladio' ); ?></p>
+
+		<h4><?php esc_html_e( 'Planimetria', 'palladio' ); ?></h4>
+		<?php $this->media_field( 'palladio_editorial[floorplan][image]', (int) $d['floorplan']['image'] ); ?>
+		<p><label><?php esc_html_e( 'Didascalia planimetria', 'palladio' ); ?><br>
+			<input type="text" class="widefat" name="palladio_editorial[floorplan][caption]" value="<?php echo esc_attr( $d['floorplan']['caption'] ); ?>"></label></p>
+		<p><label><?php esc_html_e( 'Note / misure', 'palladio' ); ?><br>
+			<textarea class="widefat" rows="2" name="palladio_editorial[floorplan][notes]"><?php echo esc_textarea( $d['floorplan']['notes'] ); ?></textarea></label></p>
 		<?php
 	}
 

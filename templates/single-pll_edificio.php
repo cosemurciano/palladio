@@ -166,7 +166,6 @@ while ( have_posts() ) :
 							<button type="button" class="pll-e-chip is-active" data-filter="all"><?php esc_html_e( 'Tutte', 'palladio' ); ?></button>
 							<button type="button" class="pll-e-chip" data-filter="piano"><?php esc_html_e( 'Piano', 'palladio' ); ?> ↓</button>
 							<button type="button" class="pll-e-chip" data-filter="prezzo"><?php esc_html_e( 'Prezzo', 'palladio' ); ?> ↓</button>
-							<button type="button" class="pll-e-chip" data-filter="esterno"><?php esc_html_e( 'Con spazio esterno', 'palladio' ); ?></button>
 						</div>
 					<?php endif; ?>
 				</div>

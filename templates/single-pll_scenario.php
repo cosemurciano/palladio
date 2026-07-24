@@ -132,6 +132,9 @@ while ( have_posts() ) :
 			</section>
 		<?php endif; ?>
 
+		<?php // Planimetria dello scenario: testo | tavola con zoom. ?>
+		<?php palladio_render_floorplan( $ed['floorplan'], 'palladio-scenario-floorplan' ); ?>
+
 		<?php // Le unità che compongono lo scenario. ?>
 		<?php if ( $totals['units'] ) : ?>
 			<section class="pll-e-section pll-e-wrap" id="palladio-scenario-unita">

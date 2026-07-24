@@ -77,10 +77,6 @@
 
 			if ( 'all' === filter ) {
 				reorder( original );
-			} else if ( 'esterno' === filter ) {
-				cards.forEach( function ( c ) {
-					c.hidden = '1' !== c.getAttribute( 'data-esterno' );
-				} );
 			} else if ( 'prezzo' === filter ) {
 				var byPrice = original.slice().sort( function ( a, b ) {
 					var pa = parseFloat( a.getAttribute( 'data-prezzo' ) ) || 0;
