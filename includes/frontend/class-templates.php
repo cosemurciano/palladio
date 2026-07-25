@@ -39,10 +39,10 @@ class Palladio_Frontend_Templates {
 	public function template_include( $template ) {
 		$map = array();
 
-		// Edificio come homepage del sito: mostra la sua landing alla radice,
-		// distinta dalle schede delle singole unità.
-		$home_id = (int) get_option( 'palladio_home_building', 0 );
-		if ( $home_id && is_front_page() && 'pll_edificio' === get_post_type( $home_id ) && 'publish' === get_post_status( $home_id ) ) {
+		// Edificio come homepage del sito (Impostazioni → Lettura): mostra la
+		// sua landing alla radice, distinta dalle schede delle singole unità.
+		$home_id = function_exists( 'palladio_home_building_id' ) ? palladio_home_building_id() : 0;
+		if ( $home_id && is_front_page() ) {
 			global $wp_query;
 			$wp_query = new WP_Query( // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 				array(

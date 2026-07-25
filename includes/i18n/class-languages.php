@@ -218,7 +218,7 @@ class Palladio_I18n_Languages {
 	 */
 	public static function language_home_url( $lang ) {
 		// Se un edificio è la homepage, punta alla sua versione in lingua.
-		$home_building = (int) get_option( 'palladio_home_building', 0 );
+		$home_building = function_exists( 'palladio_home_building_id' ) ? palladio_home_building_id() : 0;
 		if ( $home_building && class_exists( 'Palladio_I18n_Translator' ) ) {
 			if ( $lang === Palladio_I18n_Translator::get_lang( $home_building ) ) {
 				return (string) home_url( '/' );

@@ -63,9 +63,7 @@ class Palladio_Frontend_Schema {
 	 * @return int
 	 */
 	private function home_building_id() {
-		$id = (int) get_option( 'palladio_home_building', 0 );
-
-		return ( $id && 'pll_edificio' === get_post_type( $id ) && 'publish' === get_post_status( $id ) ) ? $id : 0;
+		return function_exists( 'palladio_home_building_id' ) ? palladio_home_building_id() : 0;
 	}
 
 	/**

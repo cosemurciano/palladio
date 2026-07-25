@@ -258,8 +258,12 @@ class Palladio_Admin_Fields {
 		wp_nonce_field( 'palladio_fields_save', 'palladio_fields_nonce' );
 
 		if ( 'pll_edificio' === $post->post_type ) {
-			$is_home = ( (int) get_option( 'palladio_home_building', 0 ) === $post->ID );
-			echo '<p class="palladio-home-flag"><label><input type="checkbox" name="palladio_is_home" value="1" ' . checked( $is_home, true, false ) . '> <strong>' . esc_html__( 'Usa questo edificio come homepage del sito', 'palladio' ) . '</strong></label><br><span class="description">' . esc_html__( 'La landing dell’edificio verrà mostrata alla radice del sito, distinta dalle schede delle singole unità.', 'palladio' ) . '</span></p><hr>';
+			$is_home = function_exists( 'palladio_home_building_id' ) && palladio_home_building_id() === (int) $post->ID;
+			if ( $is_home ) {
+				echo '<p class="palladio-home-flag"><strong>' . esc_html__( 'Questo edificio è la homepage del sito.', 'palladio' ) . '</strong><br><span class="description">' . esc_html__( 'La scelta si gestisce in Impostazioni → Lettura → “La homepage mostra”.', 'palladio' ) . '</span></p><hr>';
+			} else {
+				echo '<p class="palladio-home-flag description">' . esc_html__( 'Per usare questo edificio come homepage: Impostazioni → Lettura → “La homepage mostra: una pagina statica” e selezionalo dall’elenco.', 'palladio' ) . '</p><hr>';
+			}
 		}
 
 		if ( 'pll_unita' === $post->post_type ) {
@@ -387,14 +391,7 @@ class Palladio_Admin_Fields {
 			}
 		}
 
-		// Flag homepage (solo edificio).
-		if ( 'pll_edificio' === $post->post_type ) {
-			$current = (int) get_option( 'palladio_home_building', 0 );
-			if ( ! empty( $_POST['palladio_is_home'] ) ) {
-				update_option( 'palladio_home_building', (int) $post_id );
-			} elseif ( $current === (int) $post_id ) {
-				delete_option( 'palladio_home_building' );
-			}
-		}
+		// La homepage si imposta nello standard WordPress (Impostazioni →
+		// Lettura): nessun flag proprietario da salvare qui.
 	}
 }
