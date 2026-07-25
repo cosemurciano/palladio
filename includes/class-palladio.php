@@ -95,6 +95,7 @@ final class Palladio {
 				'core_scenario'       => 'Palladio_Core_Scenario',
 				'frontend_templates'  => 'Palladio_Frontend_Templates',
 				'frontend_assets'     => 'Palladio_Frontend_Assets',
+				'frontend_schema'     => 'Palladio_Frontend_Schema',
 				'frontend_shortcodes' => 'Palladio_Frontend_Shortcodes',
 				'admin_fields'        => 'Palladio_Admin_Fields',
 				'admin_content'       => 'Palladio_Admin_Content',
