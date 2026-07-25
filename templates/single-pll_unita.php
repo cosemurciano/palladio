@@ -73,15 +73,16 @@ while ( have_posts() ) :
 	$eyebrow = $ed['eyebrow'] ? $ed['eyebrow'] : trim( ( $building_id ? get_the_title( $building_id ) : '' ) . ( $piano ? ' · ' . $piano : '' ), ' ·' );
 	$lead    = $ed['lead'] ? $ed['lead'] : ( has_excerpt() ? get_the_excerpt() : '' );
 	?>
-	<div class="palladio-editorial palladio-unita-editorial" itemscope itemtype="https://schema.org/Product">
+	<?php // I dati strutturati (RealEstateListing + Offer) sono emessi in JSON-LD da Palladio_Frontend_Schema. ?>
+	<div class="palladio-editorial palladio-unita-editorial">
 
 		<header class="pll-e-hero">
 			<?php if ( $hero ) : ?>
-				<img class="pll-e-hero__img" src="<?php echo esc_url( $hero ); ?>" alt="" itemprop="image">
+				<img class="pll-e-hero__img" src="<?php echo esc_url( $hero ); ?>" alt="">
 			<?php endif; ?>
 			<div class="pll-e-hero__inner">
 				<p class="pll-e-eyebrow"><?php echo esc_html( $eyebrow ); ?></p>
-				<h1 class="pll-e-hero__title" itemprop="name"><?php the_title(); ?></h1>
+				<h1 class="pll-e-hero__title"><?php the_title(); ?></h1>
 				<?php if ( $lead ) : ?>
 					<p class="pll-e-hero__lead"><?php echo esc_html( $lead ); ?></p>
 				<?php endif; ?>
@@ -94,10 +95,7 @@ while ( have_posts() ) :
 		<div class="pll-e-sticky">
 			<div class="pll-e-sticky__inner">
 				<div class="pll-e-sticky__facts">
-					<span class="pll-e-sticky__price" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
-						<span itemprop="price" content="<?php echo esc_attr( is_numeric( $price ) ? (float) $price : '' ); ?>"><?php echo esc_html( palladio_format_price( $price ) ); ?></span>
-						<meta itemprop="priceCurrency" content="EUR">
-					</span>
+					<span class="pll-e-sticky__price"><?php echo esc_html( palladio_format_price( $price ) ); ?></span>
 					<?php foreach ( $facts as $fact ) : ?>
 						<span class="pll-e-fact"><b><?php echo esc_html( $fact[0] ); ?></b><span><?php echo esc_html( $fact[1] ); ?></span></span>
 					<?php endforeach; ?>
@@ -108,7 +106,7 @@ while ( have_posts() ) :
 
 		<?php if ( get_the_content() ) : ?>
 			<section class="pll-e-section pll-e-wrap">
-				<div class="pll-e-prose" itemprop="description"><?php the_content(); ?></div>
+				<div class="pll-e-prose"><?php the_content(); ?></div>
 			</section>
 		<?php endif; ?>
 
