@@ -20,7 +20,7 @@ get_header();
 		<div class="pll-e-units-head" id="palladio-units-archive-head">
 			<div>
 				<p class="pll-e-kicker" id="palladio-units-archive-eyebrow"><?php esc_html_e( 'Le residenze', 'palladio' ); ?></p>
-				<h1 class="pll-e-h" id="palladio-units-archive-title"><?php post_type_archive_title(); ?></h1>
+				<h1 class="pll-e-h" id="palladio-units-archive-title"><?php esc_html_e( 'Unità immobiliari in vendita', 'palladio' ); ?></h1>
 			</div>
 		</div>
 
