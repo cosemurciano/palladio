@@ -593,7 +593,7 @@ Regole:
 				$fn( 'create_territorio', 'Crea una nuova pagina Territorio (bozza: contesto, mappa, mercati).', array( 'title' => array( 'type' => 'string' ) ), array( 'title' ) ),
 			$fn( 'set_status', 'Cambia lo stato di pubblicazione di un elemento: "publish" (pubblica), "draft" (bozza) o "pending" (in revisione).', array( 'id' => array( 'type' => 'integer' ), 'status' => array( 'type' => 'string', 'enum' => array( 'publish', 'draft', 'pending' ) ) ), array( 'id', 'status' ) ),
 			$fn( 'delete_entity', 'Sposta un elemento nel cestino (recuperabile). Usalo SOLO su richiesta esplicita dell’utente.', array( 'id' => array( 'type' => 'integer' ) ), array( 'id' ) ),
-			$fn( 'set_home_building', 'Imposta un edificio come homepage del sito (la sua landing è servita alla radice). Passa building_id=0 per rimuovere l’impostazione.', array( 'building_id' => array( 'type' => 'integer' ) ), array( 'building_id' ) ),
+			$fn( 'set_home_building', 'Imposta un edificio come homepage del sito usando lo standard WordPress (Impostazioni → Lettura: show_on_front/page_on_front). Passa building_id=0 per tornare alla homepage standard.', array( 'building_id' => array( 'type' => 'integer' ) ), array( 'building_id' ) ),
 			$fn( 'list_terms', 'Elenca i termini esistenti di una tassonomia: "tipologia", "piano" o "stato".', array( 'taxonomy' => array( 'type' => 'string', 'enum' => array( 'tipologia', 'piano', 'stato' ) ) ), array( 'taxonomy' ) ),
 			$fn( 'audit_content', 'Visione d’insieme: per ogni edificio, unità e scenario elenca i campi importanti ancora vuoti (meta, editoriale, immagini, tassonomie). Utile per proporre un piano di completamento.', array() ),
 			$fn( 'save_memory', 'Salva la memoria di progetto persistente (decisioni, naming, piani concordati con l’utente). Il testo SOSTITUISCE la memoria precedente: includi tutto ciò che va ricordato, in forma sintetica.', array( 'notes' => array( 'type' => 'string' ) ), array( 'notes' ) ),
@@ -720,7 +720,7 @@ Regole:
 				'status'     => $e->post_status,
 				'indirizzo'  => (string) get_post_meta( $e->ID, '_pll_indirizzo', true ),
 				'mq_totali'  => (float) get_post_meta( $e->ID, '_pll_mq_totali', true ),
-				'is_home'    => ( (int) get_option( 'palladio_home_building', 0 ) === $e->ID ),
+				'is_home'    => ( palladio_home_building_id() === (int) $e->ID ),
 				'units'      => $u,
 			);
 		}
@@ -791,7 +791,7 @@ Regole:
 		);
 
 		if ( 'pll_edificio' === $post->post_type ) {
-			$out['is_home'] = ( (int) get_option( 'palladio_home_building', 0 ) === $id );
+			$out['is_home'] = ( palladio_home_building_id() === (int) $id );
 		}
 
 		return $out;
@@ -1055,8 +1055,9 @@ Regole:
 					'message' => 'L’edificio ha unità collegate: cestina o sposta prima le unità, poi l’edificio.',
 				);
 			}
-			if ( (int) get_option( 'palladio_home_building', 0 ) === $id ) {
-				delete_option( 'palladio_home_building' );
+			if ( palladio_home_building_id() === (int) $id ) {
+				update_option( 'show_on_front', 'posts' );
+				update_option( 'page_on_front', 0 );
 			}
 		}
 
@@ -1075,7 +1076,12 @@ Regole:
 	 * @return array
 	 */
 	private function tool_set_home( $building_id ) {
+		// Standard WordPress: Impostazioni → Lettura (show_on_front/page_on_front).
 		if ( 0 === $building_id ) {
+			if ( palladio_home_building_id() ) {
+				update_option( 'show_on_front', 'posts' );
+				update_option( 'page_on_front', 0 );
+			}
 			delete_option( 'palladio_home_building' );
 			return array( 'updated' => true, 'home_building' => 0 );
 		}
@@ -1083,7 +1089,9 @@ Regole:
 			return array( 'error' => 'invalid_building' );
 		}
 
-		update_option( 'palladio_home_building', $building_id );
+		update_option( 'show_on_front', 'page' );
+		update_option( 'page_on_front', $building_id );
+		delete_option( 'palladio_home_building' );
 
 		$note = ( 'publish' !== get_post_status( $building_id ) )
 			? 'Attenzione: l’edificio non è pubblicato — la homepage resterà quella standard finché non lo pubblichi.'

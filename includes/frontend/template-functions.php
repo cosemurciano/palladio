@@ -41,10 +41,37 @@ function palladio_header_owns_title() {
 }
 
 /**
- * Legge un meta del plugin (prefisso _pll_).
+ * Edificio che fa da homepage del sito (0 se non impostato).
  *
- * @param int    $post_id ID del post.
- * @param string $key     Chiave meta senza prefisso (es. 'prezzo').
+ * La scelta avviene nello standard WordPress: Impostazioni → Lettura →
+ * "La homepage mostra: una pagina statica", dove gli edifici pubblicati
+ * compaiono nell'elenco insieme alle pagine.
+ *
+ * @return int ID edificio o 0.
+ */
+function palladio_home_building_id() {
+	// Standard WordPress: Impostazioni → Lettura, "Una pagina statica".
+	if ( 'page' === get_option( 'show_on_front' ) ) {
+		$front = (int) get_option( 'page_on_front', 0 );
+		if ( $front && 'pll_edificio' === get_post_type( $front ) && 'publish' === get_post_status( $front ) ) {
+			return $front;
+		}
+	}
+
+	// Retrocompatibilità: vecchia option del plugin (migrata al primo init utile).
+	$legacy = (int) get_option( 'palladio_home_building', 0 );
+	if ( $legacy && 'pll_edificio' === get_post_type( $legacy ) && 'publish' === get_post_status( $legacy ) ) {
+		return $legacy;
+	}
+
+	return 0;
+}
+
+/**
+ * Meta principale del post (prefisso _pll_).
+ *
+ * @param int    $post_id ID post.
+ * @param string $key     Chiave senza prefisso.
  * @return mixed
  */
 function palladio_meta( $post_id, $key ) {

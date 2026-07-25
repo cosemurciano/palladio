@@ -133,8 +133,8 @@ class Palladio_Leads_Form {
 		if ( ! $building_id && $unit_id ) {
 			$building_id = (int) wp_get_post_parent_id( $unit_id );
 		}
-		if ( ! $building_id && is_front_page() ) {
-			$building_id = (int) get_option( 'palladio_home_building', 0 );
+		if ( ! $building_id && is_front_page() && function_exists( 'palladio_home_building_id' ) ) {
+			$building_id = palladio_home_building_id();
 		}
 
 		$heading = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'contact_heading' ) : __( 'Richiedi una visita o informazioni', 'palladio' );
