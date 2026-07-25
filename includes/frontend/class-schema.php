@@ -324,18 +324,89 @@ class Palladio_Frontend_Schema {
 		);
 
 		if ( ! $brief ) {
+			// Immagini: in evidenza + prime foto della galleria editoriale.
+			$images = array();
+			$hero   = get_the_post_thumbnail_url( $unit_id, 'full' );
+			if ( $hero ) {
+				$images[] = $hero;
+			}
+			$ed = palladio_editorial( $unit_id );
+			foreach ( array_slice( $ed['gallery'], 0, 4 ) as $shot ) {
+				$gi = palladio_image_url( $shot['image'] ?? 0, 'full' );
+				if ( $gi ) {
+					$images[] = $gi;
+				}
+			}
+
+			// Indirizzo, geo e anno di costruzione ereditati dall'edificio, così
+			// il nodo unità resta comprensibile anche estratto dal grafo.
+			$address    = $building_id ? (string) palladio_meta( $building_id, 'indirizzo' ) : '';
+			$lat        = $building_id ? palladio_meta( $building_id, 'geo_lat' ) : '';
+			$lng        = $building_id ? palladio_meta( $building_id, 'geo_lng' ) : '';
+			$year_built = $building_id ? absint( palladio_meta( $building_id, 'anno_costruzione' ) ) : 0;
+
 			$node += array(
 				'description'            => $this->description( $unit_id ),
-				'image'                  => get_the_post_thumbnail_url( $unit_id, 'full' ) ?: null,
+				'image'                  => array_values( array_unique( $images ) ),
 				'numberOfRooms'          => ( '' !== (string) palladio_meta( $unit_id, 'vani' ) ) ? (float) palladio_meta( $unit_id, 'vani' ) : null,
 				'numberOfBedrooms'       => absint( palladio_meta( $unit_id, 'camere' ) ) ?: null,
 				'numberOfBathroomsTotal' => absint( palladio_meta( $unit_id, 'bagni' ) ) ?: null,
 				'floorLevel'             => $piano,
+				'permittedUsage'         => (string) palladio_meta( $unit_id, 'destinazione_uso' ),
+				'yearBuilt'              => $year_built ?: null,
+				'tourBookingPage'        => (string) palladio_meta( $unit_id, 'virtual_tour_url' ),
+				'address'                => $address ? array(
+					'@type'          => 'PostalAddress',
+					'streetAddress'  => $address,
+					'addressCountry' => 'IT',
+				) : null,
+				'geo'                    => ( '' !== (string) $lat && '' !== (string) $lng ) ? array(
+					'@type'     => 'GeoCoordinates',
+					'latitude'  => (float) $lat,
+					'longitude' => (float) $lng,
+				) : null,
 				'containedInPlace'       => $building_id ? array( '@id' => trailingslashit( get_permalink( $building_id ) ) . '#edificio' ) : null,
+				'additionalProperty'     => $this->unit_properties( $unit_id ),
 			);
 		}
 
 		return $this->clean( $node );
+	}
+
+	/**
+	 * Scheda tecnica dell'unità come PropertyValue (per Google e crawler AI).
+	 *
+	 * @param int $unit_id ID unità.
+	 * @return array
+	 */
+	private function unit_properties( $unit_id ) {
+		$map = array(
+			'codice'             => array( __( 'Codice', 'palladio' ), '' ),
+			'mq_coperti'         => array( __( 'Superficie coperta', 'palladio' ), 'MTK' ),
+			'terrazza_mq'        => array( __( 'Terrazza', 'palladio' ), 'MTK' ),
+			'giardino_mq'        => array( __( 'Giardino', 'palladio' ), 'MTK' ),
+			'esposizione'        => array( __( 'Esposizione', 'palladio' ), '' ),
+			'classe_energetica'  => array( __( 'Classe energetica', 'palladio' ), '' ),
+			'millesimi'          => array( __( 'Millesimi', 'palladio' ), '' ),
+			'spese_condominiali' => array( __( 'Spese condominiali (EUR)', 'palladio' ), '' ),
+			'stato_consegna'     => array( __( 'Stato di consegna', 'palladio' ), '' ),
+		);
+
+		$props = array();
+		foreach ( $map as $key => $conf ) {
+			$value = palladio_meta( $unit_id, $key );
+			if ( '' === (string) $value ) {
+				continue;
+			}
+			$props[] = $this->clean( array(
+				'@type'    => 'PropertyValue',
+				'name'     => $conf[0],
+				'value'    => is_numeric( $value ) ? (float) $value : (string) $value,
+				'unitCode' => $conf[1],
+			) );
+		}
+
+		return $props;
 	}
 
 	/**
@@ -435,10 +506,24 @@ class Palladio_Frontend_Schema {
 			}
 		}
 
+		// Il vantaggio dell'aggregazione, leggibile anche dai crawler AI.
+		$offer_desc = '';
+		if ( $totals['saving'] > 0 ) {
+			$offer_desc = sprintf(
+				/* translators: 1: n unità, 2: risparmio, 3: percentuale, 4: somma prezzi. */
+				__( 'Offerta aggregata di %1$d unità: risparmio di %2$s (−%3$s%%) rispetto alla somma dei singoli prezzi (%4$s).', 'palladio' ),
+				(int) $totals['count'],
+				palladio_format_price( $totals['saving'] ),
+				number_format_i18n( $totals['saving_pct'] ),
+				palladio_format_price( $totals['sum'] )
+			);
+		}
+
 		$offer = $this->clean( array(
 			'@type'         => 'Offer',
 			'url'           => get_permalink( $scenario_id ),
 			'name'          => get_the_title( $scenario_id ),
+			'description'   => $offer_desc,
 			'price'         => $totals['price'] > 0 ? (float) $totals['price'] : null,
 			'priceCurrency' => 'EUR',
 			'availability'  => $this->availability( $stato ),
@@ -448,8 +533,15 @@ class Palladio_Frontend_Schema {
 			'seller'        => array( '@id' => home_url( '/#palladio-agenzia' ) ),
 		) );
 
+		// Immagine del listing: in evidenza dello scenario o della prima unità
+		// (stesso fallback del template).
+		$image = get_the_post_thumbnail_url( $scenario_id, 'full' );
+		if ( ! $image && $totals['units'] ) {
+			$image = get_the_post_thumbnail_url( $totals['units'][0], 'full' );
+		}
+
 		$graph   = array();
-		$graph[] = $this->listing_node( $scenario_id );
+		$graph[] = $this->listing_node( $scenario_id, $image ? array( 'image' => $image ) : array() );
 		$graph[] = $offer;
 		foreach ( $units as $u ) {
 			$graph[] = $u;
