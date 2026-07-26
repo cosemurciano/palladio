@@ -569,6 +569,7 @@ class Palladio_AI_Composer {
 			$editorial['video'] = array(
 				'url'     => esc_url_raw( (string) ( $ed['video']['url'] ?? '' ) ),
 				'file'    => $vid( $ed['video']['file'] ?? 0 ),
+				'src'     => esc_url_raw( (string) ( $ed['video']['src'] ?? '' ) ),
 				'poster'  => $vid( $ed['video']['poster'] ?? 0 ),
 				'heading' => sanitize_text_field( $ed['video']['heading'] ?? '' ),
 				'caption' => sanitize_text_field( $ed['video']['caption'] ?? '' ),

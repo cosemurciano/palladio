@@ -105,8 +105,9 @@ function palladio_editorial( $post_id ) {
 		'position'        => array( 'heading' => '', 'text' => '' ), // unità
 		// Layout automatico della galleria: masonry|grid|mosaic|filmstrip|offset.
 		'gallery_layout'  => 'masonry',
-		// Video (YouTube/Vimeo o file caricato), mostrato prima della galleria.
-		'video'           => array( 'url' => '', 'file' => 0, 'poster' => 0, 'heading' => '', 'caption' => '' ),
+		// Video (YouTube/Vimeo, file caricato o URL assoluto sul server),
+		// mostrato prima della galleria.
+		'video'           => array( 'url' => '', 'file' => 0, 'src' => '', 'poster' => 0, 'heading' => '', 'caption' => '' ),
 		// Campi specifici della landing Edificio.
 		'ambient'         => array( 'image' => 0, 'caption' => '' ), // legacy singola immagine
 		'ambient_images'  => array(), // [ {image,caption} ] — loop multi-immagine
@@ -565,6 +566,13 @@ function palladio_render_video( $video, $id = 'palladio-video', $fallback_url = 
 	$video = is_array( $video ) ? $video : array();
 	$url   = ! empty( $video['url'] ) ? (string) $video['url'] : (string) $fallback_url;
 	$file  = ! empty( $video['file'] ) ? wp_get_attachment_url( (int) $video['file'] ) : '';
+
+	// URL di provenienza diretto: posizione assoluta del file sul server
+	// (es. https://tuosito.it/media/video.mp4 oppure /media/video.mp4).
+	if ( ! $file && ! empty( $video['src'] ) ) {
+		$file = (string) $video['src'];
+	}
+
 	$embed = $file ? '' : palladio_video_embed_url( $url );
 
 	// URL diretto a un file video (non YouTube/Vimeo): player nativo.
