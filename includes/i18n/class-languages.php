@@ -445,6 +445,10 @@ class Palladio_I18n_Languages {
 			)
 		);
 
+		// Le regole /{lang}/... dipendono dalle lingue attive: forza la
+		// rigenerazione delle rewrite al prossimo init.
+		delete_option( 'palladio_rewrite_version' );
+
 		wp_safe_redirect(
 			add_query_arg(
 				array(

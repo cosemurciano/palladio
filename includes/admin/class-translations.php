@@ -38,6 +38,8 @@ class Palladio_Admin_Translations {
 
 		add_action( 'add_meta_boxes', array( $this, 'add_metabox' ) );
 		add_action( 'admin_post_palladio_create_translation', array( $this, 'create_translation' ) );
+		add_action( 'admin_post_palladio_ai_translate', array( $this, 'ai_translate' ) );
+		add_action( 'admin_notices', array( $this, 'notices' ) );
 		add_action( 'save_post', array( $this, 'on_save' ), 30, 2 );
 	}
 
@@ -106,6 +108,80 @@ class Palladio_Admin_Translations {
 		echo '</ul>';
 
 		echo '<p class="description">' . esc_html__( 'Ogni lingua è una pagina dedicata. Prezzi, stato e misure restano sincronizzati; testi e immagini sono per lingua.', 'palladio' ) . '</p>';
+
+		// Su una versione in lingua: traduzione AI dall'originale.
+		if ( $own_lang !== $source && ! empty( $siblings[ $source ] ) ) {
+			$label = $catalog[ $own_lang ] ?? strtoupper( $own_lang );
+			echo '<hr><p style="margin:.5rem 0;">';
+			printf(
+				'<a class="button button-primary" style="width:100%%;text-align:center;" href="%s" onclick="this.textContent=%s;this.style.pointerEvents=%s;">%s</a>',
+				esc_url(
+					wp_nonce_url(
+						add_query_arg(
+							array(
+								'action' => 'palladio_ai_translate',
+								'post'   => (int) $post->ID,
+							),
+							admin_url( 'admin-post.php' )
+						),
+						'palladio_ai_translate_' . (int) $post->ID
+					)
+				),
+				"'" . esc_js( __( 'Traduzione in corso…', 'palladio' ) ) . "'",
+				"'none'",
+				/* translators: %s: lingua di destinazione. */
+				esc_html( sprintf( __( 'Traduci i contenuti in %s (AI)', 'palladio' ), $label ) )
+			);
+			echo '</p><p class="description">' . esc_html__( 'Traduce titolo, testi e campi editoriali dall’originale con qualità editoriale (non letterale), senza toccare prezzi, misure, numeri, indirizzi e immagini. Sovrascrive i testi di questa versione.', 'palladio' ) . '</p>';
+		}
+	}
+
+	/**
+	 * Notice esito traduzione AI.
+	 *
+	 * @return void
+	 */
+	public function notices() {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		if ( empty( $_GET['palladio_i18n'] ) ) {
+			return;
+		}
+		$status = sanitize_key( wp_unslash( $_GET['palladio_i18n'] ) );
+		// phpcs:enable
+
+		if ( 'translated' === $status ) {
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Traduzione AI completata: rileggi i testi prima di pubblicare.', 'palladio' ) . '</p></div>';
+		} elseif ( 'error' === $status ) {
+			$msg = get_transient( 'palladio_i18n_error_' . get_current_user_id() );
+			delete_transient( 'palladio_i18n_error_' . get_current_user_id() );
+			echo '<div class="notice notice-error is-dismissible"><p>' . esc_html( $msg ? $msg : __( 'Traduzione non riuscita.', 'palladio' ) ) . '</p></div>';
+		}
+	}
+
+	/**
+	 * Handler: traduce i contenuti del post corrente dall'originale (AI).
+	 *
+	 * @return void
+	 */
+	public function ai_translate() {
+		$post_id = isset( $_GET['post'] ) ? absint( wp_unslash( $_GET['post'] ) ) : 0;
+		check_admin_referer( 'palladio_ai_translate_' . $post_id );
+
+		if ( ! $post_id || ! current_user_can( 'edit_post', $post_id ) ) {
+			wp_die( esc_html__( 'Permesso negato.', 'palladio' ) );
+		}
+
+		$result = Palladio_I18n_Machine::translate_post( $post_id );
+
+		if ( is_wp_error( $result ) ) {
+			set_transient( 'palladio_i18n_error_' . get_current_user_id(), $result->get_error_message(), 120 );
+			$status = 'error';
+		} else {
+			$status = 'translated';
+		}
+
+		wp_safe_redirect( add_query_arg( 'palladio_i18n', $status, get_edit_post_link( $post_id, 'redirect' ) ) );
+		exit;
 	}
 
 	/**

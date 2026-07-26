@@ -28,10 +28,12 @@ class Palladio_I18n_Translator {
 	 * @return string[]
 	 */
 	public static function shared_meta_keys() {
+		// Solo dati non linguistici: i campi testuali (esposizione, stato di
+		// consegna, destinazione d'uso...) restano per-lingua e traducibili.
 		$keys = array(
 			'_pll_prezzo', '_pll_prezzo_trattabile', '_pll_millesimi', '_pll_spese_condominiali',
-			'_pll_classe_energetica', '_pll_stato_consegna', '_pll_mq_commerciali', '_pll_mq_coperti',
-			'_pll_vani', '_pll_camere', '_pll_bagni', '_pll_esposizione', '_pll_terrazza_mq', '_pll_giardino_mq',
+			'_pll_classe_energetica', '_pll_mq_commerciali', '_pll_mq_coperti',
+			'_pll_vani', '_pll_camere', '_pll_bagni', '_pll_terrazza_mq', '_pll_giardino_mq',
 			'_pll_virtual_tour_url', '_pll_video_url', '_pll_geo_lat', '_pll_geo_lng',
 			'_pll_anno_costruzione', '_pll_mq_totali', '_pll_num_piani', '_pll_num_unita_totali', '_pll_num_unita_vendita',
 			'_thumbnail_id',
