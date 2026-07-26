@@ -173,6 +173,9 @@ while ( have_posts() ) :
 			</section>
 		<?php endif; ?>
 
+		<?php // Video (campo editoriale, con fallback sul meta "URL video"). ?>
+		<?php palladio_render_video( $ed['video'], 'palladio-unit-video', (string) palladio_meta( $unit_id, 'video_url' ) ); ?>
+
 		<?php // Galleria. ?>
 		<?php if ( $ed['gallery'] ) : ?>
 			<section class="pll-e-section pll-e-wrap">

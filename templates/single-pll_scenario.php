@@ -103,6 +103,9 @@ while ( have_posts() ) :
 			</section>
 		<?php endif; ?>
 
+		<?php // Video dello scenario. ?>
+		<?php palladio_render_video( $ed['video'], 'palladio-scenario-video' ); ?>
+
 		<?php // Dati aggregati delle unità selezionate. ?>
 		<?php if ( $totals['count'] ) : ?>
 			<section class="pll-e-tech">

@@ -178,6 +178,8 @@ class Palladio_Admin_Content {
 		<p><label><?php esc_html_e( 'Note / misure', 'palladio' ); ?><br>
 			<textarea class="widefat" rows="2" name="palladio_editorial[floorplan][notes]"><?php echo esc_textarea( $d['floorplan']['notes'] ); ?></textarea></label></p>
 
+		<?php $this->video_fields( $d ); ?>
+
 		<h4><?php esc_html_e( 'Galleria', 'palladio' ); ?></h4>
 		<?php $this->gallery_layout_field( $d['gallery_layout'] ); ?>
 		<?php
@@ -248,6 +250,8 @@ class Palladio_Admin_Content {
 		</div>
 		<p><label><input type="checkbox" name="palladio_editorial[units_filters]" value="1" <?php checked( $d['units_filters'], true ); ?>> <?php esc_html_e( 'Mostra i filtri (Tutte / Piano / Prezzo)', 'palladio' ); ?></label></p>
 
+		<?php $this->video_fields( $d ); ?>
+
 		<h4><?php esc_html_e( 'Galleria', 'palladio' ); ?></h4>
 		<?php $this->gallery_layout_field( $d['gallery_layout'] ); ?>
 		<?php
@@ -280,6 +284,8 @@ class Palladio_Admin_Content {
 		<p><label><?php esc_html_e( 'Frase di apertura (lead)', 'palladio' ); ?><br>
 			<textarea class="widefat" rows="2" name="palladio_editorial[lead]" placeholder="<?php esc_attr_e( 'Tre appartamenti e il deposito, un unico progetto abitativo.', 'palladio' ); ?>"><?php echo esc_textarea( $d['lead'] ); ?></textarea></label></p>
 		<p class="description"><?php esc_html_e( 'Se vuoti: l’occhiello mostra “Scenario · N unità” e il lead usa il riassunto del post.', 'palladio' ); ?></p>
+
+		<?php $this->video_fields( $d ); ?>
 
 		<h4><?php esc_html_e( 'Planimetria', 'palladio' ); ?></h4>
 		<?php $this->media_field( 'palladio_editorial[floorplan][image]', (int) $d['floorplan']['image'] ); ?>
@@ -621,18 +627,51 @@ class Palladio_Admin_Content {
 	}
 
 	/**
-	 * Campo immagine (media picker): hidden id + anteprima + pulsanti.
+	 * Campi della sezione Video (URL YouTube/Vimeo o file caricato).
 	 *
-	 * @param string $name Nome campo.
-	 * @param int    $id   Attachment id.
+	 * @param array $d Struttura editoriale.
 	 * @return void
 	 */
-	private function media_field( $name, $id ) {
-		$url = $id ? wp_get_attachment_image_url( $id, 'thumbnail' ) : '';
-		echo '<span class="pll-media" data-pll-media>';
+	private function video_fields( $d ) {
+		$v = is_array( $d['video'] ?? null ) ? $d['video'] : array( 'url' => '', 'file' => 0, 'poster' => 0, 'heading' => '', 'caption' => '' );
+		?>
+		<h4><?php esc_html_e( 'Video (prima della galleria)', 'palladio' ); ?></h4>
+		<div class="palladio-fields-grid">
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'URL YouTube o Vimeo', 'palladio' ); ?>
+				<input type="url" class="widefat" name="palladio_editorial[video][url]" value="<?php echo esc_attr( $v['url'] ); ?>" placeholder="https://www.youtube.com/watch?v=…"></label></p>
+			<p class="palladio-field-cell"><label><?php esc_html_e( 'Titolo della sezione', 'palladio' ); ?>
+				<input type="text" class="widefat" name="palladio_editorial[video][heading]" value="<?php echo esc_attr( $v['heading'] ); ?>" placeholder="<?php esc_attr_e( 'Il racconto in movimento', 'palladio' ); ?>"></label></p>
+		</div>
+		<p><strong><?php esc_html_e( 'Oppure file caricato (mp4/webm)', 'palladio' ); ?></strong> — <?php esc_html_e( 'ha la precedenza sull’URL.', 'palladio' ); ?><br>
+			<?php $this->media_field( 'palladio_editorial[video][file]', (int) $v['file'], 'video' ); ?></p>
+		<p><strong><?php esc_html_e( 'Poster (solo per file caricato)', 'palladio' ); ?></strong><br>
+			<?php $this->media_field( 'palladio_editorial[video][poster]', (int) $v['poster'] ); ?></p>
+		<p><label><?php esc_html_e( 'Didascalia', 'palladio' ); ?><br>
+			<input type="text" class="widefat" name="palladio_editorial[video][caption]" value="<?php echo esc_attr( $v['caption'] ); ?>"></label></p>
+		<?php
+	}
+
+	/**
+	 * Campo selezione media singolo (immagine o video).
+	 *
+	 * @param string $name Nome input.
+	 * @param int    $id   ID allegato.
+	 * @param string $type Tipo libreria: image|video.
+	 * @return void
+	 */
+	private function media_field( $name, $id, $type = 'image' ) {
+		if ( 'video' === $type ) {
+			$preview = $id ? '<code>' . esc_html( wp_basename( (string) get_attached_file( $id ) ) ) . '</code>' : '';
+			$label   = __( 'Video', 'palladio' );
+		} else {
+			$url     = $id ? wp_get_attachment_image_url( $id, 'thumbnail' ) : '';
+			$preview = $url ? '<img src="' . esc_url( $url ) . '" alt="">' : '';
+			$label   = __( 'Immagine', 'palladio' );
+		}
+		echo '<span class="pll-media" data-pll-media data-pll-media-type="' . esc_attr( $type ) . '">';
 		printf( '<input type="hidden" class="pll-media__id" name="%s" value="%s">', esc_attr( $name ), esc_attr( (int) $id ) );
-		printf( '<span class="pll-media__preview">%s</span>', $url ? '<img src="' . esc_url( $url ) . '" alt="">' : '' );
-		echo '<button type="button" class="button pll-media__choose">' . esc_html__( 'Immagine', 'palladio' ) . '</button>';
+		printf( '<span class="pll-media__preview">%s</span>', $preview ); // phpcs:ignore WordPress.Security.EscapeOutput -- costruito sopra.
+		echo '<button type="button" class="button pll-media__choose">' . esc_html( $label ) . '</button>';
 		echo '<button type="button" class="button-link pll-media__clear">' . esc_html__( 'Rimuovi', 'palladio' ) . '</button>';
 		echo '</span>';
 	}
@@ -678,6 +717,13 @@ class Palladio_Admin_Content {
 				'image'   => absint( $raw['floorplan']['image'] ?? 0 ),
 				'caption' => sanitize_text_field( $raw['floorplan']['caption'] ?? '' ),
 				'notes'   => sanitize_textarea_field( $raw['floorplan']['notes'] ?? '' ),
+			),
+			'video'           => array(
+				'url'     => esc_url_raw( $raw['video']['url'] ?? '' ),
+				'file'    => absint( $raw['video']['file'] ?? 0 ),
+				'poster'  => absint( $raw['video']['poster'] ?? 0 ),
+				'heading' => sanitize_text_field( $raw['video']['heading'] ?? '' ),
+				'caption' => sanitize_text_field( $raw['video']['caption'] ?? '' ),
 			),
 			'position'        => array(
 				'heading' => sanitize_text_field( $raw['position']['heading'] ?? '' ),

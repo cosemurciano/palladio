@@ -564,6 +564,16 @@ class Palladio_AI_Composer {
 				}
 			}
 		}
+		// Sezione video (edificio, unità, scenari).
+		if ( isset( $ed['video'] ) && is_array( $ed['video'] ) ) {
+			$editorial['video'] = array(
+				'url'     => esc_url_raw( (string) ( $ed['video']['url'] ?? '' ) ),
+				'file'    => $vid( $ed['video']['file'] ?? 0 ),
+				'poster'  => $vid( $ed['video']['poster'] ?? 0 ),
+				'heading' => sanitize_text_field( $ed['video']['heading'] ?? '' ),
+				'caption' => sanitize_text_field( $ed['video']['caption'] ?? '' ),
+			);
+		}
 		// Campi della pagina "La Storia".
 		if ( isset( $ed['heraldry'] ) ) {
 			$editorial['heraldry'] = array();
