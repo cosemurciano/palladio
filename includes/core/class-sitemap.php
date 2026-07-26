@@ -34,10 +34,29 @@ class Palladio_Core_Sitemap {
 	 * @return void
 	 */
 	public function register() {
+		// Un plugin SEO dedicato (All in One SEO, Yoast, Rank Math, SEOPress)
+		// gestisce già la propria sitemap su /sitemap.xml: in quel caso questo
+		// modulo si fa da parte per evitare conflitti di rewrite.
+		if ( ! apply_filters( 'palladio/sitemap/enabled', ! self::seo_sitemap_active() ) ) {
+			return;
+		}
+
 		add_action( 'init', array( $this, 'add_rewrite_rule' ), 20 );
 		add_filter( 'query_vars', array( $this, 'query_vars' ) );
 		add_action( 'template_redirect', array( $this, 'maybe_render' ), 0 );
 		add_filter( 'robots_txt', array( $this, 'robots_txt' ), 10, 1 );
+	}
+
+	/**
+	 * Un plugin SEO con sitemap propria è attivo?
+	 *
+	 * @return bool
+	 */
+	private static function seo_sitemap_active() {
+		return defined( 'AIOSEO_VERSION' ) || function_exists( 'aioseo' )
+			|| defined( 'WPSEO_VERSION' ) || function_exists( 'wpseo_init' )
+			|| defined( 'RANK_MATH_VERSION' ) || function_exists( 'rank_math' )
+			|| defined( 'SEOPRESS_VERSION' ) || function_exists( 'seopress_get_service' );
 	}
 
 	/**

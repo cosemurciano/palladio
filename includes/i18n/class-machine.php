@@ -72,7 +72,12 @@ class Palladio_I18n_Machine {
 		}
 
 		$source_lang = Palladio_I18n_Languages::source();
-		$target_lang = Palladio_I18n_Translator::get_lang( $post_id );
+		// Meta grezzo, senza fallback sulle lingue attive: una versione in una
+		// lingua momentaneamente disattivata resta comunque traducibile.
+		$target_lang = sanitize_key( (string) get_post_meta( $post_id, Palladio_I18n_Translator::LANG_META, true ) );
+		if ( '' === $target_lang ) {
+			return new WP_Error( 'palladio_i18n_no_lang', __( 'Questa pagina non ha una lingua assegnata: salvala una volta e riprova.', 'palladio' ) );
+		}
 		if ( $target_lang === $source_lang ) {
 			return new WP_Error( 'palladio_i18n_is_source', __( 'Questa è la pagina originale: la traduzione si lancia dalle versioni in lingua.', 'palladio' ) );
 		}
@@ -101,6 +106,7 @@ class Palladio_I18n_Machine {
 			'content'   => (string) get_post_field( 'post_content', $src_id ),
 			'meta'      => $meta,
 			'editorial' => $editorial,
+			'seo'       => self::aioseo_read( $src_id ),
 		);
 
 		$instructions = sprintf(
@@ -109,7 +115,8 @@ class Palladio_I18n_Machine {
 			'VINCOLI ASSOLUTI: non alterare significato e concetti; non modificare numeri, prezzi, misure, percentuali, date, indirizzi, coordinate, nomi propri, toponimi e riferimenti normativi; ' .
 			'i termini architettonici italiani intraducibili (es. "palazzo", "piano nobile", "volta a stella") restano in italiano, eventualmente con naturalezza nel contesto. ' .
 			'STRUTTURA: restituisci SOLO il JSON con la STESSA identica struttura (stesse chiavi, stessi tipi, stessi elementi negli array); traduci esclusivamente i valori stringa testuali; ' .
-			'NON toccare: id numerici, URL, embed, chiavi "layout", "gallery_layout", "icon", "src", valori vuoti. Il campo "content" può contenere HTML: conserva i tag e traduci solo il testo.',
+			'NON toccare: id numerici, URL, embed, chiavi "layout", "gallery_layout", "icon", "src", valori vuoti. Il campo "content" può contenere HTML: conserva i tag e traduci solo il testo. ' .
+			'Il blocco "seo" contiene meta title e description per i motori di ricerca: traducili rispettando le buone pratiche SEO della lingua di destinazione (title ≤ 60 caratteri, description ≤ 155) e conserva INALTERATI gli smart tag come #post_title, #separator_sa, #site_title.',
 			$catalog[ $target_lang ] ?? $target_lang,
 			$catalog[ $source_lang ] ?? $source_lang
 		);
@@ -173,7 +180,65 @@ class Palladio_I18n_Machine {
 			update_post_meta( $post_id, '_pll_editorial', $merged );
 		}
 
+		// Meta title/description di All in One SEO tradotti sulla versione.
+		if ( isset( $translated['seo'] ) && is_array( $translated['seo'] ) ) {
+			self::aioseo_write( $post_id, $translated['seo'] );
+		}
+
 		return true;
+	}
+
+	/**
+	 * Legge meta title/description da All in One SEO (vuoto se assente).
+	 *
+	 * @param int $post_id ID post.
+	 * @return array{title?:string,description?:string}
+	 */
+	private static function aioseo_read( $post_id ) {
+		if ( ! function_exists( 'aioseo' ) || ! class_exists( '\AIOSEO\Plugin\Common\Models\Post' ) ) {
+			return array();
+		}
+
+		try {
+			$aio = \AIOSEO\Plugin\Common\Models\Post::getPost( $post_id );
+			$out = array();
+			if ( ! empty( $aio->title ) ) {
+				$out['title'] = (string) $aio->title;
+			}
+			if ( ! empty( $aio->description ) ) {
+				$out['description'] = (string) $aio->description;
+			}
+			return $out;
+		} catch ( \Throwable $e ) {
+			return array();
+		}
+	}
+
+	/**
+	 * Scrive meta title/description tradotti su All in One SEO.
+	 *
+	 * @param int   $post_id ID post.
+	 * @param array $seo     {title,description} tradotti.
+	 * @return void
+	 */
+	private static function aioseo_write( $post_id, $seo ) {
+		if ( ! function_exists( 'aioseo' ) || ! class_exists( '\AIOSEO\Plugin\Common\Models\Post' ) ) {
+			return;
+		}
+
+		try {
+			$aio          = \AIOSEO\Plugin\Common\Models\Post::getPost( $post_id );
+			$aio->post_id = (int) $post_id;
+			if ( isset( $seo['title'] ) && is_string( $seo['title'] ) && '' !== trim( $seo['title'] ) ) {
+				$aio->title = sanitize_text_field( $seo['title'] );
+			}
+			if ( isset( $seo['description'] ) && is_string( $seo['description'] ) && '' !== trim( $seo['description'] ) ) {
+				$aio->description = sanitize_text_field( $seo['description'] );
+			}
+			$aio->save();
+		} catch ( \Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement
+			// AIOSEO assente o API cambiata: i meta SEO restano invariati.
+		}
 	}
 
 	/**

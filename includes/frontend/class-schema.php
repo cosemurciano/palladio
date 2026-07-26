@@ -75,7 +75,8 @@ class Palladio_Frontend_Schema {
 	private function seo_plugin_active() {
 		return defined( 'WPSEO_VERSION' ) || function_exists( 'wpseo_init' )
 			|| defined( 'RANK_MATH_VERSION' ) || function_exists( 'rank_math' )
-			|| defined( 'SEOPRESS_VERSION' ) || function_exists( 'seopress_get_service' );
+			|| defined( 'SEOPRESS_VERSION' ) || function_exists( 'seopress_get_service' )
+			|| defined( 'AIOSEO_VERSION' ) || function_exists( 'aioseo' );
 	}
 
 	/**

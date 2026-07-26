@@ -41,6 +41,139 @@ class Palladio_Admin_Translations {
 		add_action( 'admin_post_palladio_ai_translate', array( $this, 'ai_translate' ) );
 		add_action( 'admin_notices', array( $this, 'notices' ) );
 		add_action( 'save_post', array( $this, 'on_save' ), 30, 2 );
+
+		// Colonna "Lingua" (bandiera + codice) e filtro per lingua negli elenchi.
+		foreach ( $this->post_types as $pt ) {
+			add_filter( 'manage_' . $pt . '_posts_columns', array( $this, 'lang_column' ) );
+			add_action( 'manage_' . $pt . '_posts_custom_column', array( $this, 'lang_column_value' ), 10, 2 );
+		}
+		add_action( 'restrict_manage_posts', array( $this, 'lang_filter_dropdown' ) );
+		add_action( 'pre_get_posts', array( $this, 'apply_lang_filter' ) );
+	}
+
+	/**
+	 * Bandiera per lingua.
+	 *
+	 * @param string $lang Codice lingua.
+	 * @return string
+	 */
+	public static function flag( $lang ) {
+		$flags = array(
+			'it' => '🇮🇹',
+			'en' => '🇬🇧',
+			'de' => '🇩🇪',
+			'fr' => '🇫🇷',
+		);
+		return isset( $flags[ $lang ] ) ? $flags[ $lang ] : '🌐';
+	}
+
+	/**
+	 * Aggiunge la colonna Lingua dopo il titolo.
+	 *
+	 * @param array $columns Colonne correnti.
+	 * @return array
+	 */
+	public function lang_column( $columns ) {
+		$out = array();
+		foreach ( $columns as $key => $label ) {
+			$out[ $key ] = $label;
+			if ( 'title' === $key ) {
+				$out['palladio_lang'] = __( 'Lingua', 'palladio' );
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Valore della colonna Lingua: bandiera + codice.
+	 *
+	 * @param string $column  Colonna.
+	 * @param int    $post_id ID post.
+	 * @return void
+	 */
+	public function lang_column_value( $column, $post_id ) {
+		if ( 'palladio_lang' !== $column ) {
+			return;
+		}
+
+		$lang    = Palladio_I18n_Translator::get_lang( $post_id );
+		$catalog = Palladio_I18n_Languages::catalog();
+		$is_src  = ( $lang === Palladio_I18n_Languages::source() );
+
+		printf(
+			'<span title="%1$s">%2$s %3$s</span>%4$s',
+			esc_attr( $catalog[ $lang ] ?? $lang ),
+			self::flag( $lang ), // phpcs:ignore WordPress.Security.EscapeOutput -- emoji statica.
+			esc_html( strtoupper( $lang ) ),
+			$is_src ? ' <span class="description">(' . esc_html__( 'orig.', 'palladio' ) . ')</span>' : ''
+		);
+	}
+
+	/**
+	 * Dropdown "Tutte le lingue" negli elenchi dei CPT del plugin.
+	 *
+	 * @param string $post_type CPT dell'elenco corrente.
+	 * @return void
+	 */
+	public function lang_filter_dropdown( $post_type ) {
+		if ( ! in_array( $post_type, $this->post_types, true ) ) {
+			return;
+		}
+
+		$catalog = Palladio_I18n_Languages::catalog();
+		$current = isset( $_GET['palladio_lang'] ) ? sanitize_key( wp_unslash( $_GET['palladio_lang'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+		echo '<select name="palladio_lang">';
+		echo '<option value="">' . esc_html__( 'Tutte le lingue', 'palladio' ) . '</option>';
+		foreach ( Palladio_I18n_Languages::active() as $lang ) {
+			printf(
+				'<option value="%1$s" %2$s>%3$s %4$s</option>',
+				esc_attr( $lang ),
+				selected( $current, $lang, false ),
+				self::flag( $lang ), // phpcs:ignore WordPress.Security.EscapeOutput -- emoji statica.
+				esc_html( $catalog[ $lang ] ?? strtoupper( $lang ) )
+			);
+		}
+		echo '</select>';
+	}
+
+	/**
+	 * Applica il filtro lingua all'elenco admin.
+	 *
+	 * @param WP_Query $query Query.
+	 * @return void
+	 */
+	public function apply_lang_filter( $query ) {
+		if ( ! is_admin() || ! $query->is_main_query() ) {
+			return;
+		}
+		if ( ! in_array( (string) $query->get( 'post_type' ), $this->post_types, true ) ) {
+			return;
+		}
+
+		$lang = isset( $_GET['palladio_lang'] ) ? sanitize_key( wp_unslash( $_GET['palladio_lang'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( '' === $lang ) {
+			return;
+		}
+
+		if ( $lang === Palladio_I18n_Languages::source() ) {
+			// La sorgente include i post senza lingua impostata.
+			$meta_query = array(
+				'relation' => 'OR',
+				array( 'key' => Palladio_I18n_Translator::LANG_META, 'value' => $lang ),
+				array( 'key' => Palladio_I18n_Translator::LANG_META, 'compare' => 'NOT EXISTS' ),
+			);
+		} else {
+			$meta_query = array(
+				array( 'key' => Palladio_I18n_Translator::LANG_META, 'value' => $lang ),
+			);
+		}
+
+		$existing = $query->get( 'meta_query' );
+		if ( ! empty( $existing ) ) {
+			$meta_query = array( 'relation' => 'AND', $existing, $meta_query );
+		}
+		$query->set( 'meta_query', $meta_query );
 	}
 
 	/**
@@ -222,7 +355,10 @@ class Palladio_Admin_Translations {
 
 		$new_id = Palladio_I18n_Translator::clone_post( $source, $lang );
 		if ( is_wp_error( $new_id ) ) {
-			wp_die( esc_html( $new_id->get_error_message() ) );
+			// Niente wp_die: torna all'editor con il messaggio reale.
+			set_transient( 'palladio_i18n_error_' . get_current_user_id(), $new_id->get_error_message(), 120 );
+			wp_safe_redirect( add_query_arg( 'palladio_i18n', 'error', get_edit_post_link( $source, 'redirect' ) ) );
+			exit;
 		}
 
 		wp_safe_redirect( get_edit_post_link( $new_id, 'redirect' ) );
