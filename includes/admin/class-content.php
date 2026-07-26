@@ -644,6 +644,9 @@ class Palladio_Admin_Content {
 		</div>
 		<p><strong><?php esc_html_e( 'Oppure file caricato (mp4/webm)', 'palladio' ); ?></strong> — <?php esc_html_e( 'ha la precedenza sull’URL.', 'palladio' ); ?><br>
 			<?php $this->media_field( 'palladio_editorial[video][file]', (int) $v['file'], 'video' ); ?></p>
+		<p><label><strong><?php esc_html_e( 'Oppure URL di provenienza del file (posizione assoluta sul server)', 'palladio' ); ?></strong><br>
+			<input type="text" class="widefat" name="palladio_editorial[video][src]" value="<?php echo esc_attr( $v['src'] ?? '' ); ?>" placeholder="<?php echo esc_attr( home_url( '/media/video.mp4' ) ); ?>"></label>
+			<span class="description"><?php esc_html_e( 'Percorso diretto al file video sul server (assoluto o relativo alla radice, es. /media/video.mp4). Usato se non è selezionato un file dalla libreria; ha la precedenza su YouTube/Vimeo.', 'palladio' ); ?></span></p>
 		<p><strong><?php esc_html_e( 'Poster (solo per file caricato)', 'palladio' ); ?></strong><br>
 			<?php $this->media_field( 'palladio_editorial[video][poster]', (int) $v['poster'] ); ?></p>
 		<p><label><?php esc_html_e( 'Didascalia', 'palladio' ); ?><br>
@@ -721,6 +724,7 @@ class Palladio_Admin_Content {
 			'video'           => array(
 				'url'     => esc_url_raw( $raw['video']['url'] ?? '' ),
 				'file'    => absint( $raw['video']['file'] ?? 0 ),
+				'src'     => esc_url_raw( $raw['video']['src'] ?? '' ),
 				'poster'  => absint( $raw['video']['poster'] ?? 0 ),
 				'heading' => sanitize_text_field( $raw['video']['heading'] ?? '' ),
 				'caption' => sanitize_text_field( $raw['video']['caption'] ?? '' ),
