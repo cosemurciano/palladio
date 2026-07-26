@@ -94,6 +94,7 @@ final class Palladio {
 				'core_meta'           => 'Palladio_Core_Meta',
 				'core_scenario'       => 'Palladio_Core_Scenario',
 				'core_home'           => 'Palladio_Core_Home',
+				'core_redirects'      => 'Palladio_Core_Redirects',
 				'frontend_templates'  => 'Palladio_Frontend_Templates',
 				'frontend_assets'     => 'Palladio_Frontend_Assets',
 				'frontend_schema'     => 'Palladio_Frontend_Schema',
