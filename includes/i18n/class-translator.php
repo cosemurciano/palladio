@@ -170,8 +170,15 @@ class Palladio_I18n_Translator {
 		if ( ! $src ) {
 			return new WP_Error( 'palladio_i18n_no_source', __( 'Post sorgente non trovato.', 'palladio' ) );
 		}
-		if ( ! Palladio_I18n_Languages::is_active( $lang ) || $lang === self::get_lang( $source_id ) ) {
-			return new WP_Error( 'palladio_i18n_bad_lang', __( 'Lingua non valida.', 'palladio' ) );
+		if ( ! Palladio_I18n_Languages::is_active( $lang ) ) {
+			return new WP_Error(
+				'palladio_i18n_bad_lang',
+				/* translators: %s: codice lingua. */
+				sprintf( __( 'La lingua “%s” non è tra le lingue attive: attivala in Palladio → Lingue e riprova.', 'palladio' ), $lang ? $lang : '—' )
+			);
+		}
+		if ( $lang === self::get_lang( $source_id ) ) {
+			return new WP_Error( 'palladio_i18n_same_lang', __( 'Questa pagina è già nella lingua richiesta.', 'palladio' ) );
 		}
 
 		// Evita duplicati: se esiste già, restituiscilo.
@@ -200,6 +207,10 @@ class Palladio_I18n_Translator {
 				'post_excerpt' => $src->post_excerpt,
 				'post_parent'  => $parent,
 				'menu_order'   => $src->menu_order,
+				// Slug provvisorio con suffisso lingua (es. palazzo-sambiasi-en)
+				// invece del "-2" automatico; la traduzione AI lo rigenera poi
+				// dal titolo tradotto finché la pagina è in bozza.
+				'post_name'    => $src->post_name ? $src->post_name . '-' . $lang : '',
 			),
 			true
 		);
@@ -230,7 +241,39 @@ class Palladio_I18n_Translator {
 			}
 		}
 
+		// Copia meta title/description di All in One SEO sul clone (verranno
+		// poi tradotti dalla traduzione AI).
+		self::copy_aioseo( $source_id, $new_id );
+
 		return (int) $new_id;
+	}
+
+	/**
+	 * Copia titolo e descrizione SEO (All in One SEO) da un post all'altro.
+	 *
+	 * @param int $from_id Post sorgente.
+	 * @param int $to_id   Post destinazione.
+	 * @return void
+	 */
+	public static function copy_aioseo( $from_id, $to_id ) {
+		if ( ! function_exists( 'aioseo' ) || ! class_exists( '\AIOSEO\Plugin\Common\Models\Post' ) ) {
+			return;
+		}
+
+		try {
+			$from = \AIOSEO\Plugin\Common\Models\Post::getPost( $from_id );
+			if ( ! $from || ( empty( $from->title ) && empty( $from->description ) ) ) {
+				return;
+			}
+
+			$to              = \AIOSEO\Plugin\Common\Models\Post::getPost( $to_id );
+			$to->post_id     = (int) $to_id;
+			$to->title       = (string) $from->title;
+			$to->description = (string) $from->description;
+			$to->save();
+		} catch ( \Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement
+			// AIOSEO assente o API cambiata: il clone resta senza meta SEO.
+		}
 	}
 
 	/**
