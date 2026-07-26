@@ -121,9 +121,11 @@ class Palladio_I18n_Machine {
 			$catalog[ $source_lang ] ?? $source_lang
 		);
 
+		// L'input deve contenere la parola "JSON" (requisito OpenAI per
+		// text.format=json_object), non solo le istruzioni.
 		$result = Palladio_AI_Openai::responses(
 			$instructions,
-			wp_json_encode( $payload, JSON_UNESCAPED_UNICODE ),
+			"Traduci il seguente JSON e restituisci SOLO il JSON tradotto:\n" . wp_json_encode( $payload, JSON_UNESCAPED_UNICODE ),
 			array(
 				'json'       => true,
 				'max_tokens' => 16000,

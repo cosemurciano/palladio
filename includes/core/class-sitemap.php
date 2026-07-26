@@ -34,10 +34,7 @@ class Palladio_Core_Sitemap {
 	 * @return void
 	 */
 	public function register() {
-		// Un plugin SEO dedicato (All in One SEO, Yoast, Rank Math, SEOPress)
-		// gestisce già la propria sitemap su /sitemap.xml: in quel caso questo
-		// modulo si fa da parte per evitare conflitti di rewrite.
-		if ( ! apply_filters( 'palladio/sitemap/enabled', ! self::seo_sitemap_active() ) ) {
+		if ( ! apply_filters( 'palladio/sitemap/enabled', true ) ) {
 			return;
 		}
 
@@ -48,24 +45,13 @@ class Palladio_Core_Sitemap {
 	}
 
 	/**
-	 * Un plugin SEO con sitemap propria è attivo?
-	 *
-	 * @return bool
-	 */
-	private static function seo_sitemap_active() {
-		return defined( 'AIOSEO_VERSION' ) || function_exists( 'aioseo' )
-			|| defined( 'WPSEO_VERSION' ) || function_exists( 'wpseo_init' )
-			|| defined( 'RANK_MATH_VERSION' ) || function_exists( 'rank_math' )
-			|| defined( 'SEOPRESS_VERSION' ) || function_exists( 'seopress_get_service' );
-	}
-
-	/**
-	 * Rewrite: /sitemap.xml.
+	 * Rewrite: /palladio-sitemap.xml (nome dedicato: convive con la sitemap
+	 * del plugin SEO su /sitemap.xml).
 	 *
 	 * @return void
 	 */
 	public function add_rewrite_rule() {
-		add_rewrite_rule( '^sitemap\.xml$', 'index.php?palladio_sitemap=1', 'top' );
+		add_rewrite_rule( '^palladio-sitemap\.xml$', 'index.php?palladio_sitemap=1', 'top' );
 	}
 
 	/**
@@ -86,7 +72,7 @@ class Palladio_Core_Sitemap {
 	 * @return string
 	 */
 	public function robots_txt( $output ) {
-		return rtrim( (string) $output ) . "\n\nSitemap: " . home_url( '/sitemap.xml' ) . "\n";
+		return rtrim( (string) $output ) . "\n\nSitemap: " . home_url( '/palladio-sitemap.xml' ) . "\n";
 	}
 
 	/**

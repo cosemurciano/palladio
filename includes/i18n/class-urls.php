@@ -64,7 +64,7 @@ class Palladio_I18n_Urls {
 		add_action( 'init', array( $this, 'add_rewrite_rules' ), 20 );
 		add_filter( 'query_vars', array( $this, 'query_vars' ) );
 		add_filter( 'request', array( $this, 'resolve_lang_home' ) );
-		add_filter( 'post_type_link', array( $this, 'localize_permalink' ), 10, 2 );
+		add_filter( 'post_type_link', array( $this, 'localize_permalink' ), 10, 3 );
 		add_filter( 'post_type_archive_link', array( $this, 'localize_archive_link' ), 10, 2 );
 	}
 
@@ -153,15 +153,20 @@ class Palladio_I18n_Urls {
 	/**
 	 * Permalink localizzato per i post tradotti: /{lang}/{base}/{slug}/.
 	 *
+	 * Con $leavename true (editor: campo "Permalink" modificabile) il token
+	 * %post_type% viene preservato, così WordPress può mostrare e modificare
+	 * lo slug anche sulle pagine tradotte.
+	 *
 	 * @param string  $permalink Permalink corrente.
 	 * @param WP_Post $post      Post.
+	 * @param bool    $leavename Mantieni il segnaposto del nome.
 	 * @return string
 	 */
-	public function localize_permalink( $permalink, $post ) {
+	public function localize_permalink( $permalink, $post, $leavename = false ) {
 		if ( ! $post instanceof WP_Post || ! array_key_exists( $post->post_type, self::bases() ) ) {
 			return $permalink;
 		}
-		if ( 'publish' !== $post->post_status || '' === $post->post_name ) {
+		if ( 'publish' !== $post->post_status || ( '' === $post->post_name && ! $leavename ) ) {
 			return $permalink;
 		}
 		if ( ! class_exists( 'Palladio_I18n_Translator' ) ) {
@@ -173,7 +178,9 @@ class Palladio_I18n_Urls {
 			return $permalink;
 		}
 
-		return home_url( user_trailingslashit( '/' . $lang . '/' . self::base_for( $post->post_type, $lang ) . '/' . $post->post_name ) );
+		$slug = $leavename ? '%' . $post->post_type . '%' : $post->post_name;
+
+		return home_url( user_trailingslashit( '/' . $lang . '/' . self::base_for( $post->post_type, $lang ) . '/' . $slug ) );
 	}
 
 	/**
