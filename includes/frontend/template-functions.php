@@ -105,6 +105,8 @@ function palladio_editorial( $post_id ) {
 		'position'        => array( 'heading' => '', 'text' => '' ), // unità
 		// Layout automatico della galleria: masonry|grid|mosaic|filmstrip|offset.
 		'gallery_layout'  => 'masonry',
+		// Video (YouTube/Vimeo o file caricato), mostrato prima della galleria.
+		'video'           => array( 'url' => '', 'file' => 0, 'poster' => 0, 'heading' => '', 'caption' => '' ),
 		// Campi specifici della landing Edificio.
 		'ambient'         => array( 'image' => 0, 'caption' => '' ), // legacy singola immagine
 		'ambient_images'  => array(), // [ {image,caption} ] — loop multi-immagine
@@ -152,6 +154,7 @@ function palladio_editorial( $post_id ) {
 	$data['position']  = wp_parse_args( is_array( $data['position'] ) ? $data['position'] : array(), $defaults['position'] );
 	$data['ambient']   = wp_parse_args( is_array( $data['ambient'] ) ? $data['ambient'] : array(), $defaults['ambient'] );
 	$data['closing']   = wp_parse_args( is_array( $data['closing'] ) ? $data['closing'] : array(), $defaults['closing'] );
+	$data['video']     = wp_parse_args( is_array( $data['video'] ) ? $data['video'] : array(), $defaults['video'] );
 	$data['units_filters'] = ! empty( $data['units_filters'] );
 
 	if ( ! in_array( $data['gallery_layout'], array( 'masonry', 'grid', 'mosaic', 'filmstrip', 'offset' ), true ) ) {
@@ -520,6 +523,85 @@ function palladio_render_gallery( $shots, $layout = 'masonry', $id = 'palladio-g
 			</figure>
 		<?php endforeach; ?>
 	</div>
+	<?php
+}
+
+/**
+ * Trasforma un URL YouTube/Vimeo nell'URL embed (privacy-friendly).
+ *
+ * @param string $url URL del video.
+ * @return string URL embed, o stringa vuota se non riconosciuto.
+ */
+function palladio_video_embed_url( $url ) {
+	$url = trim( (string) $url );
+	if ( '' === $url ) {
+		return '';
+	}
+
+	// YouTube: watch?v=, youtu.be/, shorts/, embed/, live/.
+	if ( preg_match( '#(?:youtube(?:-nocookie)?\.com/(?:watch\?[^\#]*v=|embed/|shorts/|live/)|youtu\.be/)([A-Za-z0-9_-]{6,})#i', $url, $m ) ) {
+		return 'https://www.youtube-nocookie.com/embed/' . $m[1] . '?rel=0';
+	}
+
+	// Vimeo: vimeo.com/123456 oppure player.vimeo.com/video/123456.
+	if ( preg_match( '#vimeo\.com/(?:video/)?(\d+)#i', $url, $m ) ) {
+		return 'https://player.vimeo.com/video/' . $m[1] . '?dnt=1';
+	}
+
+	return '';
+}
+
+/**
+ * Sezione Video: cornice con squadrette oro in linea con la direzione
+ * editoriale. Accetta un URL YouTube/Vimeo oppure un file caricato in Media.
+ * Condivisa da edificio, unità e scenari.
+ *
+ * @param array  $video        Struttura {url,file,poster,heading,caption}.
+ * @param string $id           ID CSS della sezione.
+ * @param string $fallback_url URL usato se il campo url è vuoto (es. meta unità).
+ * @return void
+ */
+function palladio_render_video( $video, $id = 'palladio-video', $fallback_url = '' ) {
+	$video = is_array( $video ) ? $video : array();
+	$url   = ! empty( $video['url'] ) ? (string) $video['url'] : (string) $fallback_url;
+	$file  = ! empty( $video['file'] ) ? wp_get_attachment_url( (int) $video['file'] ) : '';
+	$embed = $file ? '' : palladio_video_embed_url( $url );
+
+	// URL diretto a un file video (non YouTube/Vimeo): player nativo.
+	if ( ! $file && ! $embed && preg_match( '/\.(mp4|webm|ogv|mov)(\?|$)/i', $url ) ) {
+		$file = $url;
+	}
+
+	if ( ! $file && ! $embed ) {
+		return;
+	}
+
+	$poster  = ! empty( $video['poster'] ) ? palladio_image_url( (int) $video['poster'], 'full' ) : '';
+	$heading = (string) ( $video['heading'] ?? '' );
+	$caption = (string) ( $video['caption'] ?? '' );
+	?>
+	<section class="pll-e-section pll-e-wrap" id="<?php echo esc_attr( $id ); ?>">
+		<p class="pll-e-kicker" id="<?php echo esc_attr( $id ); ?>-eyebrow"><?php esc_html_e( 'Video', 'palladio' ); ?></p>
+		<h2 class="pll-e-h" id="<?php echo esc_attr( $id ); ?>-titolo"><?php echo esc_html( $heading ? $heading : __( 'Il racconto in movimento', 'palladio' ) ); ?></h2>
+		<figure class="pll-e-video pll-reveal" id="<?php echo esc_attr( $id ); ?>-frame">
+			<span class="pll-e-map__corner pll-e-map__corner--tl" aria-hidden="true"></span>
+			<span class="pll-e-map__corner pll-e-map__corner--tr" aria-hidden="true"></span>
+			<span class="pll-e-map__corner pll-e-map__corner--bl" aria-hidden="true"></span>
+			<span class="pll-e-map__corner pll-e-map__corner--br" aria-hidden="true"></span>
+			<div class="pll-e-video__canvas">
+				<?php if ( $file ) : ?>
+					<video controls playsinline preload="metadata"
+						<?php echo $poster ? 'poster="' . esc_url( $poster ) . '"' : ''; ?>
+						src="<?php echo esc_url( $file ); ?>"></video>
+				<?php else : ?>
+					<iframe src="<?php echo esc_url( $embed ); ?>" loading="lazy" allowfullscreen
+						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+						title="<?php echo esc_attr( $heading ? $heading : __( 'Video', 'palladio' ) ); ?>"></iframe>
+				<?php endif; ?>
+			</div>
+			<?php if ( '' !== $caption ) : ?><figcaption id="<?php echo esc_attr( $id ); ?>-didascalia"><?php echo esc_html( $caption ); ?></figcaption><?php endif; ?>
+		</figure>
+	</section>
 	<?php
 }
 

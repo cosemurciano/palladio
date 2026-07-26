@@ -192,18 +192,24 @@
 		if ( ! box || ! window.wp || ! window.wp.media ) {
 			return;
 		}
+		// data-pll-media-type="video" apre la libreria filtrata sui video.
+		var type = box.getAttribute( 'data-pll-media-type' ) || 'image';
 		frame = window.wp.media( {
 			title: cfg.choose || 'Image',
 			button: { text: cfg.use || 'Use' },
-			library: { type: 'image' },
+			library: { type: type },
 			multiple: false,
 		} );
 
 		frame.on( 'select', function () {
 			var att = frame.state().get( 'selection' ).first().toJSON();
 			box.querySelector( '.pll-media__id' ).value = att.id;
-			var url = ( att.sizes && att.sizes.thumbnail ) ? att.sizes.thumbnail.url : att.url;
-			box.querySelector( '.pll-media__preview' ).innerHTML = '<img src="' + url + '" alt="">';
+			if ( 'video' === type ) {
+				box.querySelector( '.pll-media__preview' ).innerHTML = '<code>' + ( att.filename || att.url ) + '</code>';
+			} else {
+				var url = ( att.sizes && att.sizes.thumbnail ) ? att.sizes.thumbnail.url : att.url;
+				box.querySelector( '.pll-media__preview' ).innerHTML = '<img src="' + url + '" alt="">';
+			}
 		} );
 
 		frame.open();

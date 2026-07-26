@@ -223,6 +223,9 @@ while ( have_posts() ) :
 			</section>
 		<?php endif; ?>
 
+		<?php // VIDEO (YouTube/Vimeo o file), prima della galleria. ?>
+		<?php palladio_render_video( $ed['video'], 'palladio-video' ); ?>
+
 		<?php // GALLERIA asimmetrica. ?>
 		<?php if ( $ed['gallery'] ) : ?>
 			<section class="pll-e-section pll-e-wrap">
