@@ -61,6 +61,19 @@ class Palladio_I18n_Languages {
 	}
 
 	/**
+	 * Codici lingua supportati SENZA gettext.
+	 *
+	 * Usato nei percorsi caldi (config, filtri): catalog() passa da __() e
+	 * quindi dal filtro gettext dei testi statici — chiamarlo da lì
+	 * causerebbe ricorsione infinita.
+	 *
+	 * @return string[]
+	 */
+	public static function catalog_keys() {
+		return array( 'it', 'en', 'de', 'fr' );
+	}
+
+	/**
 	 * Configurazione corrente (sorgente + lingue attive).
 	 *
 	 * @return array{source:string,active:string[]}
@@ -74,14 +87,16 @@ class Palladio_I18n_Languages {
 		$config = get_option( 'palladio_languages', array() );
 		$config = wp_parse_args( is_array( $config ) ? $config : array(), $defaults );
 
-		$catalog          = self::catalog();
-		$config['source'] = array_key_exists( $config['source'], $catalog ) ? $config['source'] : 'it';
+		// Validazione sui soli codici (senza gettext: config() è chiamata
+		// anche dentro il filtro gettext dei testi statici).
+		$keys             = self::catalog_keys();
+		$config['source'] = in_array( $config['source'], $keys, true ) ? $config['source'] : 'it';
 
 		$config['active'] = array_values(
 			array_filter(
 				(array) $config['active'],
-				static function ( $lang ) use ( $catalog ) {
-					return array_key_exists( $lang, $catalog );
+				static function ( $lang ) use ( $keys ) {
+					return in_array( $lang, $keys, true );
 				}
 			)
 		);
@@ -140,6 +155,13 @@ class Palladio_I18n_Languages {
 		if ( is_admin() ) {
 			$current = $source;
 			return $current;
+		}
+
+		// Prima che la query principale sia risolta la lingua non è
+		// determinabile: rispondi con la sorgente SENZA memorizzarla
+		// (altrimenti una chiamata precoce congelerebbe il valore sbagliato).
+		if ( ! did_action( 'wp' ) || empty( $GLOBALS['wp_query'] ) ) {
+			return $source;
 		}
 
 		if ( is_singular( array( 'pll_edificio', 'pll_unita', 'pll_scenario', 'pll_storia', 'pll_territorio' ) ) ) {
