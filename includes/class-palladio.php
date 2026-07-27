@@ -107,6 +107,8 @@ final class Palladio {
 				'admin_regia'         => 'Palladio_Admin_Regia',
 				'i18n_languages'      => 'Palladio_I18n_Languages',
 				'i18n_urls'           => 'Palladio_I18n_Urls',
+				'i18n_menus'          => 'Palladio_I18n_Menus',
+				'i18n_strings'        => 'Palladio_I18n_Strings',
 				'admin_translations'  => 'Palladio_Admin_Translations',
 				'ai_settings'         => 'Palladio_AI_Settings',
 				'admin_ai'            => 'Palladio_Admin_AI',
