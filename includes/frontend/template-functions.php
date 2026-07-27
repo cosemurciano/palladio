@@ -619,7 +619,14 @@ function palladio_render_video( $video, $id = 'palladio-video', $fallback_url = 
 		);
 		if ( $partner_note ) :
 			?>
-			<p class="pll-e-video__partner" id="<?php echo esc_attr( $id ); ?>-partner"><?php echo esc_html( $partner_note ); ?></p>
+			<aside class="pll-e-video__partner pll-reveal" id="<?php echo esc_attr( $id ); ?>-partner">
+				<span class="pll-e-map__corner pll-e-map__corner--tl" aria-hidden="true"></span>
+				<span class="pll-e-map__corner pll-e-map__corner--tr" aria-hidden="true"></span>
+				<span class="pll-e-map__corner pll-e-map__corner--bl" aria-hidden="true"></span>
+				<span class="pll-e-map__corner pll-e-map__corner--br" aria-hidden="true"></span>
+				<span class="pll-e-video__partner-icon" aria-hidden="true"><?php echo function_exists( 'palladio_territory_icon_svg' ) ? palladio_territory_icon_svg( 'key' ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput -- SVG interno di libreria. ?></span>
+				<p id="<?php echo esc_attr( $id ); ?>-partner-testo"><?php echo esc_html( $partner_note ); ?></p>
+			</aside>
 		<?php endif; ?>
 	</section>
 	<?php
