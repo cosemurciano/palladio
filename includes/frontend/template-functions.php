@@ -719,7 +719,7 @@ function palladio_scenario_totals( $scenario_id ) {
  * @return int[] ID scenari.
  */
 function palladio_get_scenarios( $building_id = 0, $unit_id = 0 ) {
-	$scenarios = get_posts( array(
+	$args = array(
 		'post_type'      => 'pll_scenario',
 		'post_status'    => 'publish',
 		'posts_per_page' => 20,
@@ -727,7 +727,14 @@ function palladio_get_scenarios( $building_id = 0, $unit_id = 0 ) {
 		'order'          => 'ASC',
 		'fields'         => 'ids',
 		'no_found_rows'  => true,
-	) );
+	);
+
+	// Solo gli scenari della lingua della pagina corrente.
+	if ( class_exists( 'Palladio_I18n_Languages' ) ) {
+		$args['meta_query'] = Palladio_I18n_Languages::lang_meta_query( Palladio_I18n_Languages::current() ); // phpcs:ignore WordPress.DB.SlowDBQuery
+	}
+
+	$scenarios = get_posts( $args );
 
 	if ( ! $building_id && ! $unit_id ) {
 		return $scenarios;
