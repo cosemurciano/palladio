@@ -106,8 +106,8 @@ function palladio_editorial( $post_id ) {
 		// Layout automatico della galleria: masonry|grid|mosaic|filmstrip|offset.
 		'gallery_layout'  => 'masonry',
 		// Video (YouTube/Vimeo, file caricato o URL assoluto sul server),
-		// mostrato prima della galleria.
-		'video'           => array( 'url' => '', 'file' => 0, 'src' => '', 'poster' => 0, 'heading' => '', 'caption' => '' ),
+		// mostrato prima della galleria; partner = nota sotto il video.
+		'video'           => array( 'url' => '', 'file' => 0, 'src' => '', 'poster' => 0, 'heading' => '', 'caption' => '', 'partner' => '' ),
 		// Campi specifici della landing Edificio.
 		'ambient'         => array( 'image' => 0, 'caption' => '' ), // legacy singola immagine
 		'ambient_images'  => array(), // [ {image,caption} ] — loop multi-immagine
@@ -610,11 +610,13 @@ function palladio_render_video( $video, $id = 'palladio-video', $fallback_url = 
 			<?php if ( '' !== $caption ) : ?><figcaption id="<?php echo esc_attr( $id ); ?>-didascalia"><?php echo esc_html( $caption ); ?></figcaption><?php endif; ?>
 		</figure>
 		<?php
-		// Nota di valore sui servizi post-acquisto del partner (tradotta per
-		// lingua dai Testi statici; personalizzabile o rimovibile via filtro).
+		// Nota partner sotto il video: editabile pagina per pagina dal campo
+		// "Testo partner" della sezione Video; se vuoto, usa il testo di
+		// default (tradotto per lingua). Rimovibile via filtro.
+		$default_note = __( 'Acquistando le nostre unità immobiliari potete usufruire dei servizi dei nostri partner Mediterranea Asset: gestione completa della proprietà (utenze, imposte, manutenzioni e ispezioni periodiche), coordinamento della ristrutturazione con professionisti selezionati e gestione delle locazioni. Un supporto costante e trasparente, con un unico referente dedicato, che trasforma un investimento complesso in un’esperienza semplice e vi permette di vivere Lecce e il Salento senza pensieri.', 'palladio' );
 		$partner_note = apply_filters(
 			'palladio/video/partner_note',
-			__( 'Acquistare un palazzo storico nel Salento è solo l’inizio. Acquistando una delle nostre unità potete usufruire, se necessario, dei servizi dei partner di Mediterranea Asset: gestione completa della proprietà (utenze, imposte, manutenzioni e ispezioni periodiche), coordinamento della ristrutturazione con professionisti selezionati e gestione delle locazioni. Un supporto costante e trasparente, con un unico referente dedicato, che trasforma un investimento complesso in un’esperienza semplice e vi permette di vivere il Salento senza pensieri.', 'palladio' ),
+			! empty( $video['partner'] ) ? (string) $video['partner'] : $default_note,
 			$id
 		);
 		if ( $partner_note ) :
@@ -625,7 +627,7 @@ function palladio_render_video( $video, $id = 'palladio-video', $fallback_url = 
 				<span class="pll-e-map__corner pll-e-map__corner--bl" aria-hidden="true"></span>
 				<span class="pll-e-map__corner pll-e-map__corner--br" aria-hidden="true"></span>
 				<span class="pll-e-video__partner-icon" aria-hidden="true"><?php echo function_exists( 'palladio_territory_icon_svg' ) ? palladio_territory_icon_svg( 'key' ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput -- SVG interno di libreria. ?></span>
-				<p id="<?php echo esc_attr( $id ); ?>-partner-testo"><?php echo esc_html( $partner_note ); ?></p>
+				<p id="<?php echo esc_attr( $id ); ?>-partner-testo"><?php echo nl2br( esc_html( $partner_note ) ); // phpcs:ignore WordPress.Security.EscapeOutput ?></p>
 			</aside>
 		<?php endif; ?>
 	</section>

@@ -573,6 +573,7 @@ class Palladio_AI_Composer {
 				'poster'  => $vid( $ed['video']['poster'] ?? 0 ),
 				'heading' => sanitize_text_field( $ed['video']['heading'] ?? '' ),
 				'caption' => sanitize_text_field( $ed['video']['caption'] ?? '' ),
+				'partner' => sanitize_textarea_field( $ed['video']['partner'] ?? '' ),
 			);
 		}
 		// Campi della pagina "La Storia".

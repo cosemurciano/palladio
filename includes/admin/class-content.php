@@ -651,6 +651,9 @@ class Palladio_Admin_Content {
 			<?php $this->media_field( 'palladio_editorial[video][poster]', (int) $v['poster'] ); ?></p>
 		<p><label><?php esc_html_e( 'Didascalia', 'palladio' ); ?><br>
 			<input type="text" class="widefat" name="palladio_editorial[video][caption]" value="<?php echo esc_attr( $v['caption'] ); ?>"></label></p>
+		<p><label><?php esc_html_e( 'Testo partner (riquadro sotto il video)', 'palladio' ); ?><br>
+			<textarea class="widefat" rows="4" name="palladio_editorial[video][partner]" placeholder="<?php esc_attr_e( 'Acquistando le nostre unità immobiliari potete usufruire dei servizi dei nostri partner Mediterranea Asset…', 'palladio' ); ?>"><?php echo esc_textarea( $v['partner'] ?? '' ); ?></textarea></label>
+			<span class="description"><?php esc_html_e( 'Editabile pagina per pagina (e per lingua nelle versioni tradotte). Vuoto = testo di default sui servizi del partner, già tradotto nelle lingue attive.', 'palladio' ); ?></span></p>
 		<?php
 	}
 
@@ -728,6 +731,7 @@ class Palladio_Admin_Content {
 				'poster'  => absint( $raw['video']['poster'] ?? 0 ),
 				'heading' => sanitize_text_field( $raw['video']['heading'] ?? '' ),
 				'caption' => sanitize_text_field( $raw['video']['caption'] ?? '' ),
+				'partner' => sanitize_textarea_field( $raw['video']['partner'] ?? '' ),
 			),
 			'position'        => array(
 				'heading' => sanitize_text_field( $raw['position']['heading'] ?? '' ),
