@@ -400,6 +400,13 @@ class Palladio_I18n_Languages {
 
 				<?php submit_button( __( 'Salva lingue', 'palladio' ) ); ?>
 			</form>
+
+			<?php
+			/**
+			 * Sezioni aggiuntive della pagina Lingue (es. menu per lingua).
+			 */
+			do_action( 'palladio/languages/after_settings' );
+			?>
 		</div>
 		<?php
 	}

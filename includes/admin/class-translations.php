@@ -42,13 +42,13 @@ class Palladio_Admin_Translations {
 		add_action( 'admin_notices', array( $this, 'notices' ) );
 		add_action( 'save_post', array( $this, 'on_save' ), 30, 2 );
 
-		// Colonna "Lingua" (bandiera + codice) e filtro per lingua negli elenchi.
+		// Colonna "Lingue": le versioni compaiono sulla riga dell'originale;
+		// l'elenco mostra solo le pagine in lingua sorgente.
 		foreach ( $this->post_types as $pt ) {
 			add_filter( 'manage_' . $pt . '_posts_columns', array( $this, 'lang_column' ) );
 			add_action( 'manage_' . $pt . '_posts_custom_column', array( $this, 'lang_column_value' ), 10, 2 );
 		}
-		add_action( 'restrict_manage_posts', array( $this, 'lang_filter_dropdown' ) );
-		add_action( 'pre_get_posts', array( $this, 'apply_lang_filter' ) );
+		add_action( 'pre_get_posts', array( $this, 'restrict_list_to_source' ) );
 	}
 
 	/**
@@ -78,14 +78,16 @@ class Palladio_Admin_Translations {
 		foreach ( $columns as $key => $label ) {
 			$out[ $key ] = $label;
 			if ( 'title' === $key ) {
-				$out['palladio_lang'] = __( 'Lingua', 'palladio' );
+				$out['palladio_lang'] = __( 'Lingue', 'palladio' );
 			}
 		}
 		return $out;
 	}
 
 	/**
-	 * Valore della colonna Lingua: bandiera + codice.
+	 * Valore della colonna Lingue: sulla riga dell'originale, una voce per
+	 * ogni lingua — bandiera con link Modifica alla versione esistente
+	 * (con stato se in bozza) o "+" per crearla.
 	 *
 	 * @param string $column  Colonna.
 	 * @param int    $post_id ID post.
@@ -96,78 +98,81 @@ class Palladio_Admin_Translations {
 			return;
 		}
 
-		$lang    = Palladio_I18n_Translator::get_lang( $post_id );
-		$catalog = Palladio_I18n_Languages::catalog();
-		$is_src  = ( $lang === Palladio_I18n_Languages::source() );
+		$catalog  = Palladio_I18n_Languages::catalog();
+		$source   = Palladio_I18n_Languages::source();
+		$own_lang = Palladio_I18n_Translator::get_lang( $post_id );
+		$siblings = Palladio_I18n_Translator::siblings( $post_id, array( 'publish', 'draft', 'pending', 'future', 'private' ) );
 
-		printf(
-			'<span title="%1$s">%2$s %3$s</span>%4$s',
-			esc_attr( $catalog[ $lang ] ?? $lang ),
-			self::flag( $lang ), // phpcs:ignore WordPress.Security.EscapeOutput -- emoji statica.
-			esc_html( strtoupper( $lang ) ),
-			$is_src ? ' <span class="description">(' . esc_html__( 'orig.', 'palladio' ) . ')</span>' : ''
-		);
-	}
-
-	/**
-	 * Dropdown "Tutte le lingue" negli elenchi dei CPT del plugin.
-	 *
-	 * @param string $post_type CPT dell'elenco corrente.
-	 * @return void
-	 */
-	public function lang_filter_dropdown( $post_type ) {
-		if ( ! in_array( $post_type, $this->post_types, true ) ) {
-			return;
-		}
-
-		$catalog = Palladio_I18n_Languages::catalog();
-		$current = isset( $_GET['palladio_lang'] ) ? sanitize_key( wp_unslash( $_GET['palladio_lang'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-
-		echo '<select name="palladio_lang">';
-		echo '<option value="">' . esc_html__( 'Tutte le lingue', 'palladio' ) . '</option>';
+		$parts = array();
 		foreach ( Palladio_I18n_Languages::active() as $lang ) {
-			printf(
-				'<option value="%1$s" %2$s>%3$s %4$s</option>',
-				esc_attr( $lang ),
-				selected( $current, $lang, false ),
-				self::flag( $lang ), // phpcs:ignore WordPress.Security.EscapeOutput -- emoji statica.
-				esc_html( $catalog[ $lang ] ?? strtoupper( $lang ) )
+			$flag  = self::flag( $lang );
+			$label = $catalog[ $lang ] ?? strtoupper( $lang );
+
+			if ( $lang === $own_lang ) {
+				$parts[] = sprintf( '<span title="%s">%s %s</span>', esc_attr( $label . ' — ' . __( 'originale', 'palladio' ) ), $flag, esc_html( strtoupper( $lang ) ) );
+				continue;
+			}
+
+			if ( ! empty( $siblings[ $lang ] ) ) {
+				$sid    = (int) $siblings[ $lang ];
+				$status = get_post_status( $sid );
+				$badge  = ( 'publish' === $status ) ? '' : ' <span class="description">(' . esc_html__( 'bozza', 'palladio' ) . ')</span>';
+				$parts[] = sprintf(
+					'<a href="%s" title="%s">%s %s</a>%s',
+					esc_url( get_edit_post_link( $sid ) ),
+					esc_attr( sprintf( /* translators: %s: lingua. */ __( 'Modifica la versione %s', 'palladio' ), $label ) ),
+					$flag,
+					esc_html( strtoupper( $lang ) ),
+					$badge
+				);
+				continue;
+			}
+
+			$parts[] = sprintf(
+				'<a href="%s" title="%s" style="opacity:.55;">%s +</a>',
+				esc_url( $this->create_url( $post_id, $lang ) ),
+				esc_attr( sprintf( /* translators: %s: lingua. */ __( 'Crea la versione %s', 'palladio' ), $label ) ),
+				$flag
 			);
 		}
-		echo '</select>';
+
+		echo wp_kses_post( implode( ' &nbsp; ', $parts ) );
+
+		if ( $own_lang !== $source ) {
+			// Riga di una versione (visibile solo in ricerche dirette).
+			echo ' <span class="description">(' . esc_html( $catalog[ $own_lang ] ?? $own_lang ) . ')</span>';
+		}
 	}
 
 	/**
-	 * Applica il filtro lingua all'elenco admin.
+	 * Gli elenchi mostrano solo le pagine in lingua sorgente: le versioni
+	 * vivono sulla riga dell'originale (colonna Lingue).
 	 *
 	 * @param WP_Query $query Query.
 	 * @return void
 	 */
-	public function apply_lang_filter( $query ) {
+	public function restrict_list_to_source( $query ) {
 		if ( ! is_admin() || ! $query->is_main_query() ) {
+			return;
+		}
+
+		global $pagenow;
+		if ( 'edit.php' !== $pagenow ) {
 			return;
 		}
 		if ( ! in_array( (string) $query->get( 'post_type' ), $this->post_types, true ) ) {
 			return;
 		}
-
-		$lang = isset( $_GET['palladio_lang'] ) ? sanitize_key( wp_unslash( $_GET['palladio_lang'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( '' === $lang ) {
+		// La ricerca copre tutte le lingue (per raggiungere anche le versioni).
+		if ( $query->is_search() ) {
 			return;
 		}
 
-		if ( $lang === Palladio_I18n_Languages::source() ) {
-			// La sorgente include i post senza lingua impostata.
-			$meta_query = array(
-				'relation' => 'OR',
-				array( 'key' => Palladio_I18n_Translator::LANG_META, 'value' => $lang ),
-				array( 'key' => Palladio_I18n_Translator::LANG_META, 'compare' => 'NOT EXISTS' ),
-			);
-		} else {
-			$meta_query = array(
-				array( 'key' => Palladio_I18n_Translator::LANG_META, 'value' => $lang ),
-			);
-		}
+		$meta_query = array(
+			'relation' => 'OR',
+			array( 'key' => Palladio_I18n_Translator::LANG_META, 'value' => Palladio_I18n_Languages::source() ),
+			array( 'key' => Palladio_I18n_Translator::LANG_META, 'compare' => 'NOT EXISTS' ),
+		);
 
 		$existing = $query->get( 'meta_query' );
 		if ( ! empty( $existing ) ) {
