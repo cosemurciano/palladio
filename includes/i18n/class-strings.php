@@ -45,7 +45,7 @@ class Palladio_I18n_Strings {
 	 *
 	 * @var array<string,bool>
 	 */
-	private $seen = array();
+	private static $seen = array();
 
 	/**
 	 * Registra gli hook.
@@ -53,6 +53,14 @@ class Palladio_I18n_Strings {
 	 * @return void
 	 */
 	public function register() {
+		// Reset una tantum del catalogo registrato: le prime versioni vi
+		// avevano annotato anche etichette admin (registrazioni CPT ecc.)
+		// perché il filtro girava prima della risoluzione della query.
+		if ( '2' !== get_option( 'palladio_strings_catalog_v' ) ) {
+			delete_option( self::CATALOG_OPTION );
+			update_option( 'palladio_strings_catalog_v', '2', false );
+		}
+
 		if ( is_admin() ) {
 			add_action( 'admin_menu', array( $this, 'menu' ), 997 );
 			add_action( 'admin_post_palladio_save_strings', array( $this, 'save' ) );
@@ -144,9 +152,37 @@ class Palladio_I18n_Strings {
 		}
 
 		// Non tradotta: annotala nel catalogo per l'elenco in admin.
-		$this->seen[ $text ] = true;
+		self::$seen[ $text ] = true;
 
 		return $translation;
+	}
+
+	/**
+	 * Traduce un testo NON gettext (es. valori delle Impostazioni: etichetta
+	 * CTA, titolo e testo del form) nella lingua della pagina corrente.
+	 *
+	 * @param string $text Testo nella lingua sorgente.
+	 * @return string
+	 */
+	public static function translate_text( $text ) {
+		$text = (string) $text;
+		if ( '' === $text || is_admin() || ! did_action( 'wp' ) ) {
+			return $text;
+		}
+
+		$current = Palladio_I18n_Languages::current();
+		if ( $current === Palladio_I18n_Languages::source() ) {
+			return $text;
+		}
+
+		$dict = self::dictionary();
+		if ( isset( $dict[ $current ][ $text ] ) ) {
+			return $dict[ $current ][ $text ];
+		}
+
+		self::$seen[ $text ] = true;
+
+		return $text;
 	}
 
 	/**
@@ -155,7 +191,7 @@ class Palladio_I18n_Strings {
 	 * @return void
 	 */
 	public function flush_catalog() {
-		if ( ! $this->seen ) {
+		if ( ! self::$seen ) {
 			return;
 		}
 
@@ -163,7 +199,7 @@ class Palladio_I18n_Strings {
 		$catalog = is_array( $catalog ) ? $catalog : array();
 		$dirty   = false;
 
-		foreach ( array_keys( $this->seen ) as $text ) {
+		foreach ( array_keys( self::$seen ) as $text ) {
 			if ( ! isset( $catalog[ $text ] ) && count( $catalog ) < self::CATALOG_MAX ) {
 				$catalog[ $text ] = 1;
 				$dirty            = true;
@@ -584,6 +620,7 @@ class Palladio_I18n_Strings {
 				'Apri menu mobile'                     => 'Open mobile menu',
 				'Chiudi menu mobile'                   => 'Close mobile menu',
 				'Risultati della ricerca per "%s"'     => 'Search results for "%s"',
+				'Lascia i tuoi recapiti: ti ricontattiamo per una visita in loco o per qualsiasi domanda.' => 'Leave your contact details: we will get back to you for an on-site visit or any question.',
 			),
 			'de' => array(
 				'Richiedi una visita'                  => 'Besichtigung anfragen',
@@ -716,6 +753,7 @@ class Palladio_I18n_Strings {
 				'Apri menu mobile'                     => 'Mobiles Menü öffnen',
 				'Chiudi menu mobile'                   => 'Mobiles Menü schließen',
 				'Risultati della ricerca per "%s"'     => 'Suchergebnisse für "%s"',
+				'Lascia i tuoi recapiti: ti ricontattiamo per una visita in loco o per qualsiasi domanda.' => 'Hinterlassen Sie Ihre Kontaktdaten: Wir melden uns für eine Besichtigung vor Ort oder bei Fragen.',
 			),
 			'fr' => array(
 				'Richiedi una visita'                  => 'Demander une visite',
@@ -848,6 +886,7 @@ class Palladio_I18n_Strings {
 				'Apri menu mobile'                     => 'Ouvrir le menu mobile',
 				'Chiudi menu mobile'                   => 'Fermer le menu mobile',
 				'Risultati della ricerca per "%s"'     => 'Résultats de recherche pour « %s »',
+				'Lascia i tuoi recapiti: ti ricontattiamo per una visita in loco o per qualsiasi domanda.' => 'Laissez vos coordonnées : nous vous recontactons pour une visite sur place ou pour toute question.',
 			),
 		);
 	}

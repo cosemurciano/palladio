@@ -258,7 +258,7 @@ class Palladio_I18n_Languages {
 	 * @return string
 	 */
 	public static function language_home_url( $lang ) {
-		// Se un edificio è la homepage, punta alla sua versione in lingua.
+		// Se un edificio è la homepage, punta alla home di lingua canonica.
 		$home_building = function_exists( 'palladio_home_building_id' ) ? palladio_home_building_id() : 0;
 		if ( $home_building && class_exists( 'Palladio_I18n_Translator' ) ) {
 			if ( $lang === Palladio_I18n_Translator::get_lang( $home_building ) ) {
@@ -266,7 +266,7 @@ class Palladio_I18n_Languages {
 			}
 			$sibling = Palladio_I18n_Translator::sibling_in( $home_building, $lang, array( 'publish' ) );
 			if ( $sibling ) {
-				return (string) get_permalink( $sibling );
+				return (string) home_url( '/' . $lang . '/' );
 			}
 		}
 
@@ -286,12 +286,28 @@ class Palladio_I18n_Languages {
 			return '';
 		}
 
-		if ( $lang === Palladio_I18n_Translator::get_lang( $post_id ) ) {
-			return (string) get_permalink( $post_id );
+		$target = ( $lang === Palladio_I18n_Translator::get_lang( $post_id ) )
+			? (int) $post_id
+			: Palladio_I18n_Translator::sibling_in( $post_id, $lang, array( 'publish' ) );
+
+		if ( ! $target ) {
+			return '';
 		}
 
-		$sibling = Palladio_I18n_Translator::sibling_in( $post_id, $lang, array( 'publish' ) );
-		return $sibling ? (string) get_permalink( $sibling ) : '';
+		// L'edificio homepage (e le sue versioni) vive alla radice: l'URL
+		// canonico è / per la sorgente e /{lang}/ per le altre lingue,
+		// non il permalink della scheda.
+		$home = function_exists( 'palladio_home_building_id' ) ? palladio_home_building_id() : 0;
+		if ( $home ) {
+			$home_in_lang = ( $lang === self::source() )
+				? $home
+				: Palladio_I18n_Translator::sibling_in( $home, $lang, array( 'publish' ) );
+			if ( $home_in_lang && $target === (int) $home_in_lang ) {
+				return $lang === self::source() ? (string) home_url( '/' ) : (string) home_url( '/' . $lang . '/' );
+			}
+		}
+
+		return (string) get_permalink( $target );
 	}
 
 	/**
