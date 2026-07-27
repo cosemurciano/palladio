@@ -176,7 +176,34 @@ class Palladio_I18n_Strings {
 	}
 
 	/**
-	 * Catalogo delle stringhe da tradurre: seed + incontrate sul frontend.
+	 * Stringhe da NON tradurre: pannello di amministrazione, email interne
+	 * all'agenzia, etichette dei selettori dell'editor. Restano in italiano
+	 * e non compaiono nell'elenco dei Testi statici.
+	 *
+	 * @return string[]
+	 */
+	private static function denylist() {
+		return array(
+			// Email interne all'agenzia (lead).
+			'Nuovo lead Palladio: %s', 'Gestisci il lead: %s', 'Nome: %s', 'Email: %s',
+			'Telefono: %s', 'Messaggio:', 'Edificio: %s', 'Unità: %s',
+			'(nessuna unità)', '(richiesta generica)',
+			// Etichette del selettore icone (editor Territorio).
+			'Dimora / Residenziale', 'Mondo / Turismo internazionale', 'Ospitalità / Hôtellerie',
+			'Lavoro da remoto', 'Cultura / Museo', 'Crescita / Mercato', 'Sole / Clima',
+			'Mare / Costa', 'Aereo / Collegamenti', 'Chiave / Investimento',
+			// Registrazioni admin del tema (menu locations, aree widget).
+			'Navigazione principale', 'Navigazione principale mobile', 'Menu informazioni',
+			'Menu laterale del sito', 'Menu mobile', 'Menu fascia App Sidebar',
+			'Area widget', 'Widget pagina', 'Footer widgets', 'Introduzione App Sidebar',
+			'Aggiungi i tuoi widget nella sezione "Page Widgets" per visualizzarli qui.',
+			'Use the Widgets area in the WordPress admin to customize this sidebar.',
+		);
+	}
+
+	/**
+	 * Catalogo delle stringhe da tradurre: seed + incontrate sul frontend,
+	 * senza le voci del pannello di amministrazione.
 	 *
 	 * @return string[]
 	 */
@@ -188,10 +215,27 @@ class Palladio_I18n_Strings {
 			$catalog = array_merge( $catalog, array_keys( $recorded ) );
 		}
 
-		$catalog = array_values( array_unique( $catalog ) );
+		$catalog = array_values( array_unique( array_diff( $catalog, self::denylist() ) ) );
 		sort( $catalog, SORT_NATURAL | SORT_FLAG_CASE );
 
 		return $catalog;
+	}
+
+	/**
+	 * Rimuove dal catalogo registrato le voci admin finite lì per errore.
+	 *
+	 * @return void
+	 */
+	private static function purge_catalog() {
+		$recorded = get_option( self::CATALOG_OPTION, array() );
+		if ( ! is_array( $recorded ) ) {
+			return;
+		}
+
+		$clean = array_diff_key( $recorded, array_flip( self::denylist() ) );
+		if ( count( $clean ) !== count( $recorded ) ) {
+			update_option( self::CATALOG_OPTION, $clean, false );
+		}
 	}
 
 	// -------------------------------------------------------------------------
@@ -223,6 +267,8 @@ class Palladio_I18n_Strings {
 		if ( ! current_user_can( self::CAP ) ) {
 			wp_die( esc_html__( 'Permesso negato.', 'palladio' ) );
 		}
+
+		self::purge_catalog();
 
 		$catalog_langs = Palladio_I18n_Languages::catalog();
 		$active        = Palladio_I18n_Languages::active();
@@ -466,6 +512,78 @@ class Palladio_I18n_Strings {
 				'Guarda il walkthrough'                => 'Watch the walkthrough',
 				'Avvia il virtual tour'                => 'Start the virtual tour',
 				'Lingua'                               => 'Language',
+				'Il film dell’unità'                   => 'The film of the unit',
+				'Cammina nell’unità'                   => 'Walk through the unit',
+				'Capitolo %s'                          => 'Chapter %s',
+				'Capitoli della timeline'              => 'Timeline chapters',
+				'I dati, con precisione'               => 'The data, precisely',
+				'Questa unità fa parte di'             => 'This unit is part of',
+				'Nella stessa storia'                  => 'In the same story',
+				'Unità sorelle'                        => 'Sister units',
+				'L’edificio'                           => 'The building',
+				'Il dossier'                           => 'The dossier',
+				'Tutto, per iscritto'                  => 'Everything, in writing',
+				'Planimetrie quotate, prezzi, millesimi e note sul vincolo. Lascia i tuoi contatti: nessuna telefonata se non la chiedi tu.' => 'Dimensioned floor plans, prices, ownership shares and notes on the heritage listing. Leave your contact details: no phone calls unless you ask for one.',
+				'Prezzo su richiesta'                  => 'Price on request',
+				'Non disponibile'                      => 'Not available',
+				'%s m²'                                => '%s m²',
+				'%s camere'                            => '%s bedrooms',
+				'Risparmi %1$s (−%2$s%%)'              => 'You save %1$s (−%2$s%%)',
+				'Classe energetica'                    => 'Energy class',
+				'Consegna'                             => 'Delivery',
+				'Esposizione'                          => 'Exposure',
+				'Millesimi'                            => 'Ownership shares',
+				'Spese condominiali'                   => 'Service charges',
+				'Superficie commerciale'               => 'Commercial area',
+				'Superficie coperta'                   => 'Covered area',
+				'Superficie totale'                    => 'Total area',
+				'Terrazze'                             => 'Terraces',
+				'Giardino'                             => 'Garden',
+				'Stanze'                               => 'Rooms',
+				'Anno'                                 => 'Year',
+				'Uso attuale'                          => 'Current use',
+				'Piani'                                => 'Floors',
+				'Unità in vendita'                     => 'Units for sale',
+				'Unità'                                => 'Units',
+				'Scopri le residenze'                  => 'Discover the residences',
+				'Gli scenari'                          => 'The scenarios',
+				'Soluzioni e opportunità'              => 'Solutions and opportunities',
+				'Scenario'                             => 'Scenario',
+				'Più unità, un unico progetto abitativo o di business: i dati restano quelli delle unità, cambia solo il prezzo del pacchetto.' => 'Several units, one living or business project: the data stays that of the units — only the package price changes.',
+				'Tutta la galleria — %s fotografie →'  => 'The full gallery — %s photographs →',
+				'Mappa della posizione'                => 'Location map',
+				'Il lessico della pietra'              => 'The lexicon of stone',
+				'Le parole per capirlo'                => 'The words to understand it',
+				'L’araldica'                           => 'Heraldry',
+				'Tre blasoni, una dimora'              => 'Three coats of arms, one residence',
+				'Il prossimo capitolo'                 => 'The next chapter',
+				'La storia continua'                   => 'The story continues',
+				'con chi la abiterà.'                  => 'with those who will live it.',
+				'La posizione'                         => 'The location',
+				'Nel cuore del centro storico'         => 'In the heart of the historic centre',
+				'La città'                             => 'The city',
+				'Lecce, la Firenze del Sud'            => 'Lecce, the Florence of the South',
+				'Un territorio in crescita'            => 'A growing territory',
+				'Il Salento, destinazione in piena espansione' => 'Salento, a destination in full expansion',
+				'Un territorio, molti mercati'         => 'One territory, many markets',
+				'Cinque ragioni per investire qui'     => 'Five reasons to invest here',
+				'Investire o vivere, qui'              => 'Invest or live, here',
+				'Un valore che cresce,'                => 'A value that grows,',
+				'una vita che rallenta.'               => 'a life that slows down.',
+				'Nessun edificio pubblicato.'          => 'No buildings published.',
+				'Nessuna unità pubblicata al momento.' => 'No units published at the moment.',
+				'Nessuno scenario pubblicato al momento.' => 'No scenarios published at the moment.',
+				'Ho letto e accetto l’<a href="%s" target="_blank" rel="noopener">informativa sulla privacy</a> e autorizzo il trattamento dei miei dati per rispondere alla richiesta.' => 'I have read and accept the <a href="%s" target="_blank" rel="noopener">privacy policy</a> and authorise the processing of my data to answer this request.',
+				'Questo contenuto è stato rimosso definitivamente.' => 'This content has been permanently removed.',
+				'Cerca'                                => 'Search',
+				'Torna su'                             => 'Back to top',
+				'Condividi'                            => 'Share',
+				'Vai ai commenti'                      => 'Go to comments',
+				'Apri il menù principale'              => 'Open the main menu',
+				'Chiudi il menù principale'            => 'Close the main menu',
+				'Apri menu mobile'                     => 'Open mobile menu',
+				'Chiudi menu mobile'                   => 'Close mobile menu',
+				'Risultati della ricerca per "%s"'     => 'Search results for "%s"',
 			),
 			'de' => array(
 				'Richiedi una visita'                  => 'Besichtigung anfragen',
@@ -526,6 +644,78 @@ class Palladio_I18n_Strings {
 				'Guarda il walkthrough'                => 'Walkthrough ansehen',
 				'Avvia il virtual tour'                => 'Virtuellen Rundgang starten',
 				'Lingua'                               => 'Sprache',
+				'Il film dell’unità'                   => 'Der Film der Einheit',
+				'Cammina nell’unità'                   => 'Durch die Einheit gehen',
+				'Capitolo %s'                          => 'Kapitel %s',
+				'Capitoli della timeline'              => 'Kapitel der Timeline',
+				'I dati, con precisione'               => 'Die Daten, präzise',
+				'Questa unità fa parte di'             => 'Diese Einheit gehört zu',
+				'Nella stessa storia'                  => 'In derselben Geschichte',
+				'Unità sorelle'                        => 'Schwester-Einheiten',
+				'L’edificio'                           => 'Das Gebäude',
+				'Il dossier'                           => 'Das Dossier',
+				'Tutto, per iscritto'                  => 'Alles, schriftlich',
+				'Planimetrie quotate, prezzi, millesimi e note sul vincolo. Lascia i tuoi contatti: nessuna telefonata se non la chiedi tu.' => 'Bemaßte Grundrisse, Preise, Miteigentumsanteile und Hinweise zum Denkmalschutz. Hinterlassen Sie Ihre Kontaktdaten: kein Anruf, wenn Sie ihn nicht wünschen.',
+				'Prezzo su richiesta'                  => 'Preis auf Anfrage',
+				'Non disponibile'                      => 'Nicht verfügbar',
+				'%s m²'                                => '%s m²',
+				'%s camere'                            => '%s Schlafzimmer',
+				'Risparmi %1$s (−%2$s%%)'              => 'Sie sparen %1$s (−%2$s%%)',
+				'Classe energetica'                    => 'Energieklasse',
+				'Consegna'                             => 'Übergabe',
+				'Esposizione'                          => 'Ausrichtung',
+				'Millesimi'                            => 'Miteigentumsanteile',
+				'Spese condominiali'                   => 'Nebenkosten',
+				'Superficie commerciale'               => 'Kommerzielle Fläche',
+				'Superficie coperta'                   => 'Überdachte Fläche',
+				'Superficie totale'                    => 'Gesamtfläche',
+				'Terrazze'                             => 'Terrassen',
+				'Giardino'                             => 'Garten',
+				'Stanze'                               => 'Zimmer',
+				'Anno'                                 => 'Jahr',
+				'Uso attuale'                          => 'Aktuelle Nutzung',
+				'Piani'                                => 'Etagen',
+				'Unità in vendita'                     => 'Einheiten zum Verkauf',
+				'Unità'                                => 'Einheiten',
+				'Scopri le residenze'                  => 'Die Residenzen entdecken',
+				'Gli scenari'                          => 'Die Szenarien',
+				'Soluzioni e opportunità'              => 'Lösungen und Chancen',
+				'Scenario'                             => 'Szenario',
+				'Più unità, un unico progetto abitativo o di business: i dati restano quelli delle unità, cambia solo il prezzo del pacchetto.' => 'Mehrere Einheiten, ein Wohn- oder Geschäftsprojekt: Die Daten bleiben die der Einheiten — nur der Paketpreis ändert sich.',
+				'Tutta la galleria — %s fotografie →'  => 'Die ganze Galerie — %s Fotografien →',
+				'Mappa della posizione'                => 'Lagekarte',
+				'Il lessico della pietra'              => 'Das Lexikon des Steins',
+				'Le parole per capirlo'                => 'Die Worte, um ihn zu verstehen',
+				'L’araldica'                           => 'Die Heraldik',
+				'Tre blasoni, una dimora'              => 'Drei Wappen, ein Haus',
+				'Il prossimo capitolo'                 => 'Das nächste Kapitel',
+				'La storia continua'                   => 'Die Geschichte geht weiter',
+				'con chi la abiterà.'                  => 'mit denen, die hier wohnen werden.',
+				'La posizione'                         => 'Die Lage',
+				'Nel cuore del centro storico'         => 'Im Herzen der Altstadt',
+				'La città'                             => 'Die Stadt',
+				'Lecce, la Firenze del Sud'            => 'Lecce, das Florenz des Südens',
+				'Un territorio in crescita'            => 'Eine wachsende Region',
+				'Il Salento, destinazione in piena espansione' => 'Der Salento, eine Destination im Aufschwung',
+				'Un territorio, molti mercati'         => 'Eine Region, viele Märkte',
+				'Cinque ragioni per investire qui'     => 'Fünf Gründe, hier zu investieren',
+				'Investire o vivere, qui'              => 'Investieren oder wohnen, hier',
+				'Un valore che cresce,'                => 'Ein Wert, der wächst,',
+				'una vita che rallenta.'               => 'ein Leben, das langsamer wird.',
+				'Nessun edificio pubblicato.'          => 'Keine Gebäude veröffentlicht.',
+				'Nessuna unità pubblicata al momento.' => 'Derzeit keine Einheiten veröffentlicht.',
+				'Nessuno scenario pubblicato al momento.' => 'Derzeit keine Szenarien veröffentlicht.',
+				'Ho letto e accetto l’<a href="%s" target="_blank" rel="noopener">informativa sulla privacy</a> e autorizzo il trattamento dei miei dati per rispondere alla richiesta.' => 'Ich habe die <a href="%s" target="_blank" rel="noopener">Datenschutzerklärung</a> gelesen und akzeptiert und willige in die Verarbeitung meiner Daten zur Beantwortung der Anfrage ein.',
+				'Questo contenuto è stato rimosso definitivamente.' => 'Dieser Inhalt wurde dauerhaft entfernt.',
+				'Cerca'                                => 'Suchen',
+				'Torna su'                             => 'Nach oben',
+				'Condividi'                            => 'Teilen',
+				'Vai ai commenti'                      => 'Zu den Kommentaren',
+				'Apri il menù principale'              => 'Hauptmenü öffnen',
+				'Chiudi il menù principale'            => 'Hauptmenü schließen',
+				'Apri menu mobile'                     => 'Mobiles Menü öffnen',
+				'Chiudi menu mobile'                   => 'Mobiles Menü schließen',
+				'Risultati della ricerca per "%s"'     => 'Suchergebnisse für "%s"',
 			),
 			'fr' => array(
 				'Richiedi una visita'                  => 'Demander une visite',
@@ -586,6 +776,78 @@ class Palladio_I18n_Strings {
 				'Guarda il walkthrough'                => 'Voir la visite guidée',
 				'Avvia il virtual tour'                => 'Lancer la visite virtuelle',
 				'Lingua'                               => 'Langue',
+				'Il film dell’unità'                   => 'Le film de l’unité',
+				'Cammina nell’unità'                   => 'Parcourez l’unité',
+				'Capitolo %s'                          => 'Chapitre %s',
+				'Capitoli della timeline'              => 'Chapitres de la timeline',
+				'I dati, con precisione'               => 'Les données, avec précision',
+				'Questa unità fa parte di'             => 'Cette unité fait partie de',
+				'Nella stessa storia'                  => 'Dans la même histoire',
+				'Unità sorelle'                        => 'Unités sœurs',
+				'L’edificio'                           => 'Le bâtiment',
+				'Il dossier'                           => 'Le dossier',
+				'Tutto, per iscritto'                  => 'Tout, par écrit',
+				'Planimetrie quotate, prezzi, millesimi e note sul vincolo. Lascia i tuoi contatti: nessuna telefonata se non la chiedi tu.' => 'Plans cotés, prix, millièmes et notes sur le classement. Laissez vos coordonnées : aucun appel si vous ne le demandez pas.',
+				'Prezzo su richiesta'                  => 'Prix sur demande',
+				'Non disponibile'                      => 'Non disponible',
+				'%s m²'                                => '%s m²',
+				'%s camere'                            => '%s chambres',
+				'Risparmi %1$s (−%2$s%%)'              => 'Vous économisez %1$s (−%2$s%%)',
+				'Classe energetica'                    => 'Classe énergétique',
+				'Consegna'                             => 'Livraison',
+				'Esposizione'                          => 'Exposition',
+				'Millesimi'                            => 'Millièmes',
+				'Spese condominiali'                   => 'Charges de copropriété',
+				'Superficie commerciale'               => 'Surface commerciale',
+				'Superficie coperta'                   => 'Surface couverte',
+				'Superficie totale'                    => 'Surface totale',
+				'Terrazze'                             => 'Terrasses',
+				'Giardino'                             => 'Jardin',
+				'Stanze'                               => 'Pièces',
+				'Anno'                                 => 'Année',
+				'Uso attuale'                          => 'Usage actuel',
+				'Piani'                                => 'Étages',
+				'Unità in vendita'                     => 'Unités à vendre',
+				'Unità'                                => 'Unités',
+				'Scopri le residenze'                  => 'Découvrez les résidences',
+				'Gli scenari'                          => 'Les scénarios',
+				'Soluzioni e opportunità'              => 'Solutions et opportunités',
+				'Scenario'                             => 'Scénario',
+				'Più unità, un unico progetto abitativo o di business: i dati restano quelli delle unità, cambia solo il prezzo del pacchetto.' => 'Plusieurs unités, un seul projet d’habitation ou d’activité : les données restent celles des unités, seul le prix du lot change.',
+				'Tutta la galleria — %s fotografie →'  => 'Toute la galerie — %s photographies →',
+				'Mappa della posizione'                => 'Carte de localisation',
+				'Il lessico della pietra'              => 'Le lexique de la pierre',
+				'Le parole per capirlo'                => 'Les mots pour le comprendre',
+				'L’araldica'                           => 'L’héraldique',
+				'Tre blasoni, una dimora'              => 'Trois blasons, une demeure',
+				'Il prossimo capitolo'                 => 'Le prochain chapitre',
+				'La storia continua'                   => 'L’histoire continue',
+				'con chi la abiterà.'                  => 'avec ceux qui l’habiteront.',
+				'La posizione'                         => 'L’emplacement',
+				'Nel cuore del centro storico'         => 'Au cœur du centre historique',
+				'La città'                             => 'La ville',
+				'Lecce, la Firenze del Sud'            => 'Lecce, la Florence du Sud',
+				'Un territorio in crescita'            => 'Un territoire en croissance',
+				'Il Salento, destinazione in piena espansione' => 'Le Salento, une destination en pleine expansion',
+				'Un territorio, molti mercati'         => 'Un territoire, de nombreux marchés',
+				'Cinque ragioni per investire qui'     => 'Cinq raisons d’investir ici',
+				'Investire o vivere, qui'              => 'Investir ou vivre, ici',
+				'Un valore che cresce,'                => 'Une valeur qui grandit,',
+				'una vita che rallenta.'               => 'une vie qui ralentit.',
+				'Nessun edificio pubblicato.'          => 'Aucun bâtiment publié.',
+				'Nessuna unità pubblicata al momento.' => 'Aucune unité publiée pour le moment.',
+				'Nessuno scenario pubblicato al momento.' => 'Aucun scénario publié pour le moment.',
+				'Ho letto e accetto l’<a href="%s" target="_blank" rel="noopener">informativa sulla privacy</a> e autorizzo il trattamento dei miei dati per rispondere alla richiesta.' => 'J’ai lu et j’accepte la <a href="%s" target="_blank" rel="noopener">politique de confidentialité</a> et j’autorise le traitement de mes données pour répondre à ma demande.',
+				'Questo contenuto è stato rimosso definitivamente.' => 'Ce contenu a été définitivement supprimé.',
+				'Cerca'                                => 'Rechercher',
+				'Torna su'                             => 'Retour en haut',
+				'Condividi'                            => 'Partager',
+				'Vai ai commenti'                      => 'Aller aux commentaires',
+				'Apri il menù principale'              => 'Ouvrir le menu principal',
+				'Chiudi il menù principale'            => 'Fermer le menu principal',
+				'Apri menu mobile'                     => 'Ouvrir le menu mobile',
+				'Chiudi menu mobile'                   => 'Fermer le menu mobile',
+				'Risultati della ricerca per "%s"'     => 'Résultats de recherche pour « %s »',
 			),
 		);
 	}
