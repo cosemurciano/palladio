@@ -54,7 +54,6 @@ class Palladio_Leads_List_Table extends WP_List_Table {
 			'motivo'     => __( 'Vorrei', 'palladio' ),
 			'note'       => __( 'Messaggio', 'palladio' ),
 			'pagina'     => __( 'Pagina', 'palladio' ),
-			'lang'       => __( 'Lingua', 'palladio' ),
 			'source'     => __( 'Fonte', 'palladio' ),
 			'stato'      => __( 'Stato', 'palladio' ),
 			'score'      => __( 'Score', 'palladio' ),
@@ -302,24 +301,6 @@ class Palladio_Leads_List_Table extends WP_List_Table {
 	 * Colonna Pagina: link alla pagina di provenienza.
 	 *
 	 * @param object $item Riga.
-	 * @return string
-	 */
-	public function column_lang( $item ) {
-		// Normalizza anche i vecchi valori locale (it_IT → it).
-		$lang = strtolower( substr( (string) ( $item['lang'] ?? '' ), 0, 2 ) );
-		if ( '' === $lang ) {
-			return '—';
-		}
-
-		$flag = class_exists( 'Palladio_Admin_Translations' ) ? Palladio_Admin_Translations::flag( $lang ) : '';
-
-		return esc_html( trim( $flag . ' ' . strtoupper( $lang ) ) );
-	}
-
-	/**
-	 * Colonna pagina di provenienza.
-	 *
-	 * @param array $item Lead.
 	 * @return string
 	 */
 	public function column_pagina( $item ) {

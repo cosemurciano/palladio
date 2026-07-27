@@ -609,6 +609,18 @@ function palladio_render_video( $video, $id = 'palladio-video', $fallback_url = 
 			</div>
 			<?php if ( '' !== $caption ) : ?><figcaption id="<?php echo esc_attr( $id ); ?>-didascalia"><?php echo esc_html( $caption ); ?></figcaption><?php endif; ?>
 		</figure>
+		<?php
+		// Nota di valore sui servizi post-acquisto del partner (tradotta per
+		// lingua dai Testi statici; personalizzabile o rimovibile via filtro).
+		$partner_note = apply_filters(
+			'palladio/video/partner_note',
+			__( 'Acquistare un palazzo storico nel Salento è solo l’inizio. Acquistando una delle nostre unità potete usufruire, se necessario, dei servizi dei partner di Mediterranea Asset: gestione completa della proprietà (utenze, imposte, manutenzioni e ispezioni periodiche), coordinamento della ristrutturazione con professionisti selezionati e gestione delle locazioni. Un supporto costante e trasparente, con un unico referente dedicato, che trasforma un investimento complesso in un’esperienza semplice e vi permette di vivere il Salento senza pensieri.', 'palladio' ),
+			$id
+		);
+		if ( $partner_note ) :
+			?>
+			<p class="pll-e-video__partner" id="<?php echo esc_attr( $id ); ?>-partner"><?php echo esc_html( $partner_note ); ?></p>
+		<?php endif; ?>
 	</section>
 	<?php
 }
