@@ -64,6 +64,7 @@ class Palladio_I18n_Urls {
 		add_action( 'init', array( $this, 'add_rewrite_rules' ), 20 );
 		add_filter( 'query_vars', array( $this, 'query_vars' ) );
 		add_filter( 'request', array( $this, 'resolve_lang_home' ) );
+		add_filter( 'redirect_canonical', array( $this, 'keep_lang_home_url' ) );
 		add_filter( 'post_type_link', array( $this, 'localize_permalink' ), 10, 3 );
 		add_filter( 'post_type_archive_link', array( $this, 'localize_archive_link' ), 10, 2 );
 	}
@@ -140,14 +141,31 @@ class Palladio_I18n_Urls {
 			$sibling = Palladio_I18n_Translator::sibling_in( $home, sanitize_key( $vars['lang'] ), array( 'publish' ) );
 			if ( $sibling ) {
 				return array(
-					'post_type' => 'pll_edificio',
-					'p'         => $sibling,
-					'lang'      => sanitize_key( $vars['lang'] ),
+					'post_type'          => 'pll_edificio',
+					'p'                  => $sibling,
+					'lang'               => sanitize_key( $vars['lang'] ),
+					// Flag conservato: segnala che /{lang}/ è l'URL canonico
+					// di questa richiesta (niente redirect verso la scheda).
+					'palladio_lang_home' => 1,
 				);
 			}
 		}
 
 		return $vars;
+	}
+
+	/**
+	 * /{lang}/ È l'URL canonico della home di lingua: blocca il redirect
+	 * di WordPress verso il permalink della scheda.
+	 *
+	 * @param string|false $redirect_url URL proposto.
+	 * @return string|false
+	 */
+	public function keep_lang_home_url( $redirect_url ) {
+		if ( get_query_var( 'palladio_lang_home' ) ) {
+			return false;
+		}
+		return $redirect_url;
 	}
 
 	/**

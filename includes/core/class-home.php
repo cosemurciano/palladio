@@ -34,6 +34,46 @@ class Palladio_Core_Home {
 		add_action( 'init', array( $this, 'maybe_migrate_legacy_option' ), 20 );
 		add_filter( 'wp_dropdown_pages', array( $this, 'add_buildings_to_front_dropdown' ), 10, 2 );
 		add_action( 'pre_get_posts', array( $this, 'fix_front_page_query' ) );
+		add_action( 'template_redirect', array( $this, 'canonical_home_redirect' ), 1 );
+	}
+
+	/**
+	 * La scheda dell'edificio homepage vive alla radice: il suo permalink
+	 * CPT (/edificio/slug/) fa 301 su /, e le versioni in lingua sulla home
+	 * di lingua /{lang}/ — un solo URL indicizzato, niente duplicati.
+	 *
+	 * @return void
+	 */
+	public function canonical_home_redirect() {
+		if ( ! is_singular( 'pll_edificio' ) || is_front_page() ) {
+			return;
+		}
+		// /{lang}/ è già l'URL canonico della richiesta corrente.
+		if ( get_query_var( 'palladio_lang_home' ) ) {
+			return;
+		}
+
+		$home = function_exists( 'palladio_home_building_id' ) ? palladio_home_building_id() : 0;
+		if ( ! $home ) {
+			return;
+		}
+
+		$id = (int) get_queried_object_id();
+		if ( $id === $home ) {
+			wp_safe_redirect( home_url( '/' ), 301 );
+			exit;
+		}
+
+		if ( class_exists( 'Palladio_I18n_Translator' ) ) {
+			$lang = Palladio_I18n_Translator::get_lang( $id );
+			if (
+				$lang !== Palladio_I18n_Languages::source()
+				&& Palladio_I18n_Translator::sibling_in( $home, $lang, array( 'publish' ) ) === $id
+			) {
+				wp_safe_redirect( home_url( '/' . $lang . '/' ), 301 );
+				exit;
+			}
+		}
 	}
 
 	/**

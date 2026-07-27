@@ -138,6 +138,16 @@ class Palladio_Admin_Fields {
 			'order'          => 'ASC',
 			'no_found_rows'  => true,
 		) );
+
+		// Solo gli edifici (e quindi le unità) nella LINGUA dello scenario:
+		// senza filtro comparivano duplicati (originale + versioni in lingua).
+		if ( class_exists( 'Palladio_I18n_Translator' ) ) {
+			$scenario_lang = Palladio_I18n_Translator::get_lang( $post->ID );
+			$buildings     = array_values( array_filter( $buildings, static function ( $b ) use ( $scenario_lang ) {
+				return Palladio_I18n_Translator::get_lang( $b->ID ) === $scenario_lang;
+			} ) );
+		}
+
 		$building_ids = wp_list_pluck( $buildings, 'ID' );
 
 		$somma = 0.0;

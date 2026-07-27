@@ -73,7 +73,19 @@ class Palladio_Admin_Settings {
 	 */
 	public static function get( $key ) {
 		$config = self::config();
-		return isset( $config[ $key ] ) ? (string) $config[ $key ] : '';
+		$value  = isset( $config[ $key ] ) ? (string) $config[ $key ] : '';
+
+		// I testi visibili al pubblico (CTA, titolo e testo del form) passano
+		// dal dizionario dei Testi statici sulla pagina in lingua.
+		if (
+			! is_admin()
+			&& in_array( $key, array( 'dossier_label', 'contact_heading', 'contact_text' ), true )
+			&& class_exists( 'Palladio_I18n_Strings' )
+		) {
+			$value = Palladio_I18n_Strings::translate_text( $value );
+		}
+
+		return $value;
 	}
 
 	/**
