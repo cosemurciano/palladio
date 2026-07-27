@@ -773,3 +773,23 @@
 }
 
 .palladio-contact__channel-icon svg { display: block; }
+
+/* ---------------------------------------------------------------------------
+ * Sezione contatti: àncora che si ferma PRIMA del form (margine per header
+ * sticky) e messaggio di esito ben visibile
+ * ------------------------------------------------------------------------- */
+#palladio-contact,
+#palladio-lead-form {
+	scroll-margin-top: 6.5rem;
+}
+
+.palladio-contact .palladio-notice {
+	font-size: 1.05rem;
+	padding: 1rem 1.25rem;
+	margin-bottom: 1.5rem;
+	border-left-width: 4px;
+	border-left-style: solid;
+}
+
+.palladio-contact .palladio-notice--ok { border-left-color: #1a6b41; }
+.palladio-contact .palladio-notice--error { border-left-color: #7a1f1f; }
