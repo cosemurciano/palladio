@@ -726,6 +726,7 @@ class Palladio_I18n_Strings {
 				'Riepilogo della tua richiesta'        => 'Summary of your request',
 				'I nostri contatti'                    => 'Our contact details',
 				'A presto,'                            => 'Kind regards,',
+				'Acquistare un palazzo storico nel Salento è solo l’inizio. Acquistando una delle nostre unità potete usufruire, se necessario, dei servizi dei partner di Mediterranea Asset: gestione completa della proprietà (utenze, imposte, manutenzioni e ispezioni periodiche), coordinamento della ristrutturazione con professionisti selezionati e gestione delle locazioni. Un supporto costante e trasparente, con un unico referente dedicato, che trasforma un investimento complesso in un’esperienza semplice e vi permette di vivere il Salento senza pensieri.' => 'Buying a historic palazzo in Salento is only the beginning. When you purchase one of our units you can rely, if needed, on the services of our partner Mediterranea Asset: complete property management (utilities, taxes, maintenance and regular inspections), renovation coordination with hand-picked professionals, and rental management. Constant, transparent support with a single dedicated contact — turning a complex investment into a simple experience, so you can enjoy Salento with complete peace of mind.',
 			),
 			'de' => array(
 				'Richiedi una visita'                  => 'Besichtigung anfragen',
@@ -878,6 +879,7 @@ class Palladio_I18n_Strings {
 				'Riepilogo della tua richiesta'        => 'Zusammenfassung Ihrer Anfrage',
 				'I nostri contatti'                    => 'Unsere Kontaktdaten',
 				'A presto,'                            => 'Mit freundlichen Grüßen,',
+				'Acquistare un palazzo storico nel Salento è solo l’inizio. Acquistando una delle nostre unità potete usufruire, se necessario, dei servizi dei partner di Mediterranea Asset: gestione completa della proprietà (utenze, imposte, manutenzioni e ispezioni periodiche), coordinamento della ristrutturazione con professionisti selezionati e gestione delle locazioni. Un supporto costante e trasparente, con un unico referente dedicato, che trasforma un investimento complesso in un’esperienza semplice e vi permette di vivere il Salento senza pensieri.' => 'Der Kauf eines historischen Palazzo im Salento ist erst der Anfang. Mit dem Erwerb einer unserer Einheiten können Sie bei Bedarf auf die Leistungen unseres Partners Mediterranea Asset zählen: komplette Objektbetreuung (Versorgung, Steuern, Instandhaltung und regelmäßige Kontrollen), Koordination der Renovierung mit ausgewählten Fachleuten sowie Vermietungsmanagement. Eine konstante, transparente Betreuung mit einem festen Ansprechpartner — so wird aus einer komplexen Investition eine einfache Erfahrung, und Sie genießen den Salento ganz ohne Sorgen.',
 			),
 			'fr' => array(
 				'Richiedi una visita'                  => 'Demander une visite',
@@ -1030,6 +1032,7 @@ class Palladio_I18n_Strings {
 				'Riepilogo della tua richiesta'        => 'Récapitulatif de votre demande',
 				'I nostri contatti'                    => 'Nos coordonnées',
 				'A presto,'                            => 'À bientôt,',
+				'Acquistare un palazzo storico nel Salento è solo l’inizio. Acquistando una delle nostre unità potete usufruire, se necessario, dei servizi dei partner di Mediterranea Asset: gestione completa della proprietà (utenze, imposte, manutenzioni e ispezioni periodiche), coordinamento della ristrutturazione con professionisti selezionati e gestione delle locazioni. Un supporto costante e trasparente, con un unico referente dedicato, che trasforma un investimento complesso in un’esperienza semplice e vi permette di vivere il Salento senza pensieri.' => 'Acheter un palazzo historique dans le Salento n’est que le début. En acquérant l’une de nos unités, vous pouvez bénéficier, si nécessaire, des services de notre partenaire Mediterranea Asset : gestion complète de la propriété (charges, impôts, entretien et inspections régulières), coordination de la rénovation avec des professionnels sélectionnés et gestion locative. Un accompagnement constant et transparent, avec un interlocuteur dédié — pour transformer un investissement complexe en une expérience simple et vivre le Salento en toute sérénité.',
 			),
 		);
 	}

@@ -1769,3 +1769,14 @@ body.pll-lightbox-open { overflow: hidden; }
 	text-transform: uppercase;
 	color: var(--pll-e-taupe);
 }
+
+/* Nota partner sotto il video: presenza discreta, in linea con la pagina. */
+.pll-e-video__partner {
+	max-width: 44rem;
+	margin: 1.75rem 0 0;
+	padding-left: 1.25rem;
+	border-left: 2px solid var(--pll-e-gold-2);
+	font-size: 0.95rem;
+	line-height: 1.7;
+	color: var(--pll-e-taupe);
+}
