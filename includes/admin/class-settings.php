@@ -52,6 +52,8 @@ class Palladio_Admin_Settings {
 			'agency_emails'   => '',
 			'agency_phone'    => '',
 			'agency_whatsapp' => '',
+			// Mittente (From) di notifiche e risposta automatica.
+			'sender_email'    => '',
 		);
 
 		$config = get_option( self::OPTION, array() );
@@ -197,6 +199,13 @@ class Palladio_Admin_Settings {
 							<p class="description"><?php esc_html_e( 'Una o più email, separate da virgola o a capo. Se vuoto: email di contatto dell’edificio, poi email amministratore. Tutte le richieste restano comunque archiviate in Palladio → Lead.', 'palladio' ); ?></p>
 						</td>
 					</tr>
+					<tr>
+						<th scope="row"><label for="pll-set-sender"><?php esc_html_e( 'Mittente delle email (From)', 'palladio' ); ?></label></th>
+						<td>
+							<input type="email" id="pll-set-sender" name="sender_email" class="regular-text" value="<?php echo esc_attr( $config['sender_email'] ); ?>" placeholder="vendita@palazzosambiasi.it">
+							<p class="description"><?php esc_html_e( 'Indirizzo mittente per le notifiche all’agenzia e la risposta automatica al cliente (es. vendita@…). Vuoto = mittente di default di WordPress. Usa un indirizzo del dominio del sito per non finire in spam.', 'palladio' ); ?></p>
+						</td>
+					</tr>
 				</table>
 
 				<h2><?php esc_html_e( 'Contatti agenzia (mostrati accanto al form)', 'palladio' ); ?></h2>
@@ -256,6 +265,7 @@ class Palladio_Admin_Settings {
 			'agency_emails'   => isset( $_POST['agency_emails'] ) ? sanitize_textarea_field( wp_unslash( $_POST['agency_emails'] ) ) : '',
 			'agency_phone'    => isset( $_POST['agency_phone'] ) ? sanitize_text_field( wp_unslash( $_POST['agency_phone'] ) ) : '',
 			'agency_whatsapp' => isset( $_POST['agency_whatsapp'] ) ? sanitize_text_field( wp_unslash( $_POST['agency_whatsapp'] ) ) : '',
+			'sender_email'    => isset( $_POST['sender_email'] ) ? sanitize_email( wp_unslash( $_POST['sender_email'] ) ) : '',
 		);
 
 		update_option( self::OPTION, $config );

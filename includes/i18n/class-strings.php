@@ -225,8 +225,27 @@ class Palladio_I18n_Strings {
 	}
 
 	/**
-	 * Traduce un testo NON gettext (es. valori delle Impostazioni: etichetta
-	 * CTA, titolo e testo del form) nella lingua della pagina corrente.
+	 * Traduce un testo NON gettext in una lingua ESPLICITA (senza guardie di
+	 * contesto: usabile anche in admin-post, es. email di risposta automatica).
+	 *
+	 * @param string $text Testo nella lingua sorgente.
+	 * @param string $lang Lingua di destinazione.
+	 * @return string
+	 */
+	public static function translate_text_in( $text, $lang ) {
+		$text = (string) $text;
+		$lang = sanitize_key( $lang );
+		if ( '' === $text || '' === $lang || $lang === Palladio_I18n_Languages::source() ) {
+			return $text;
+		}
+
+		$dict = self::dictionary();
+
+		return isset( $dict[ $lang ][ $text ] ) ? $dict[ $lang ][ $text ] : $text;
+	}
+
+	/**
+	 * Traduce un testo NON gettext nella lingua della pagina corrente.
 	 *
 	 * @param string $text Testo nella lingua sorgente.
 	 * @return string
@@ -701,6 +720,12 @@ class Palladio_I18n_Strings {
 				'Primo piano'                          => 'First floor',
 				'Secondo piano'                        => 'Second floor',
 				'Piano nobile'                         => 'Piano nobile',
+				'Abbiamo ricevuto la tua richiesta'    => 'We have received your request',
+				'Gentile %s,'                          => 'Dear %s,',
+				'grazie per averci contattato: la tua richiesta è stata ricevuta correttamente e verrai ricontattato nel minor tempo possibile.' => 'thank you for contacting us: your request has been received and we will get back to you as soon as possible.',
+				'Riepilogo della tua richiesta'        => 'Summary of your request',
+				'I nostri contatti'                    => 'Our contact details',
+				'A presto,'                            => 'Kind regards,',
 			),
 			'de' => array(
 				'Richiedi una visita'                  => 'Besichtigung anfragen',
@@ -847,6 +872,12 @@ class Palladio_I18n_Strings {
 				'Primo piano'                          => 'Erste Etage',
 				'Secondo piano'                        => 'Zweite Etage',
 				'Piano nobile'                         => 'Piano nobile',
+				'Abbiamo ricevuto la tua richiesta'    => 'Wir haben Ihre Anfrage erhalten',
+				'Gentile %s,'                          => 'Guten Tag %s,',
+				'grazie per averci contattato: la tua richiesta è stata ricevuta correttamente e verrai ricontattato nel minor tempo possibile.' => 'vielen Dank für Ihre Nachricht: Ihre Anfrage ist bei uns eingegangen und wir melden uns schnellstmöglich bei Ihnen.',
+				'Riepilogo della tua richiesta'        => 'Zusammenfassung Ihrer Anfrage',
+				'I nostri contatti'                    => 'Unsere Kontaktdaten',
+				'A presto,'                            => 'Mit freundlichen Grüßen,',
 			),
 			'fr' => array(
 				'Richiedi una visita'                  => 'Demander une visite',
@@ -993,6 +1024,12 @@ class Palladio_I18n_Strings {
 				'Primo piano'                          => 'Premier étage',
 				'Secondo piano'                        => 'Deuxième étage',
 				'Piano nobile'                         => 'Piano nobile',
+				'Abbiamo ricevuto la tua richiesta'    => 'Nous avons bien reçu votre demande',
+				'Gentile %s,'                          => 'Bonjour %s,',
+				'grazie per averci contattato: la tua richiesta è stata ricevuta correttamente e verrai ricontattato nel minor tempo possibile.' => 'merci de nous avoir contactés : votre demande a bien été reçue et nous vous recontacterons dans les plus brefs délais.',
+				'Riepilogo della tua richiesta'        => 'Récapitulatif de votre demande',
+				'I nostri contatti'                    => 'Nos coordonnées',
+				'A presto,'                            => 'À bientôt,',
 			),
 		);
 	}

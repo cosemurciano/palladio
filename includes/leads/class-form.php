@@ -266,6 +266,7 @@ class Palladio_Leads_Form {
 			<input type="hidden" name="utm_source" value="<?php echo esc_attr( $this->utm( 'utm_source' ) ); ?>">
 			<input type="hidden" name="utm_medium" value="<?php echo esc_attr( $this->utm( 'utm_medium' ) ); ?>">
 			<input type="hidden" name="utm_campaign" value="<?php echo esc_attr( $this->utm( 'utm_campaign' ) ); ?>">
+			<input type="hidden" name="lang" value="<?php echo esc_attr( class_exists( 'Palladio_I18n_Languages' ) ? Palladio_I18n_Languages::current() : '' ); ?>">
 			<?php wp_nonce_field( 'palladio_lead', 'palladio_lead_nonce' ); ?>
 
 			<?php // Honeypot anti-spam: deve restare vuoto. ?>
@@ -377,7 +378,8 @@ class Palladio_Leads_Form {
 			'utm_source'     => isset( $_POST['utm_source'] ) ? sanitize_text_field( wp_unslash( $_POST['utm_source'] ) ) : '',
 			'utm_medium'     => isset( $_POST['utm_medium'] ) ? sanitize_text_field( wp_unslash( $_POST['utm_medium'] ) ) : '',
 			'utm_campaign'   => isset( $_POST['utm_campaign'] ) ? sanitize_text_field( wp_unslash( $_POST['utm_campaign'] ) ) : '',
-			'lang'           => get_locale(),
+			// Lingua della PAGINA da cui arriva la richiesta (it/en/de/fr).
+			'lang'           => isset( $_POST['lang'] ) && '' !== $_POST['lang'] ? sanitize_key( wp_unslash( $_POST['lang'] ) ) : substr( get_locale(), 0, 2 ),
 			'nome'           => $nome,
 			'email'          => $email,
 			'telefono'       => isset( $_POST['telefono'] ) ? sanitize_text_field( wp_unslash( $_POST['telefono'] ) ) : '',
@@ -468,12 +470,116 @@ class Palladio_Leads_Form {
 			sprintf( __( 'Gestisci il lead: %s', 'palladio' ), admin_url( 'edit.php?post_type=pll_edificio&page=palladio-leads' ) ),
 		);
 
-		$headers = array();
+		$headers = $this->from_headers();
 		if ( is_email( $data['email'] ) ) {
 			$headers[] = 'Reply-To: ' . $data['nome'] . ' <' . $data['email'] . '>';
 		}
 
 		wp_mail( $recipient, $subject, implode( "\n", $lines ), $headers );
+
+		// Risposta automatica al cliente, nella lingua della pagina.
+		$this->send_auto_reply( $data, $unit_label );
+	}
+
+	/**
+	 * Header From configurato in Impostazioni (es. vendita@dominio.it).
+	 *
+	 * @return string[]
+	 */
+	private function from_headers() {
+		$sender = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'sender_email' ) : '';
+		if ( ! is_email( $sender ) ) {
+			return array();
+		}
+
+		return array( 'From: ' . wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ) . ' <' . $sender . '>' );
+	}
+
+	/**
+	 * Traduce un testo nella lingua del lead (identità se sorgente).
+	 *
+	 * @param string $text Testo sorgente.
+	 * @param string $lang Lingua del lead.
+	 * @return string
+	 */
+	private function t( $text, $lang ) {
+		return class_exists( 'Palladio_I18n_Strings' ) ? Palladio_I18n_Strings::translate_text_in( $text, $lang ) : $text;
+	}
+
+	/**
+	 * Email automatica di cortesia al cliente: riepilogo dei dati inseriti,
+	 * contatti dell'agenzia e promessa di ricontatto — nella lingua della
+	 * pagina da cui è partita la richiesta.
+	 *
+	 * @param array  $data       Dati del lead.
+	 * @param string $unit_label Etichetta unità (per il riepilogo).
+	 * @return void
+	 */
+	private function send_auto_reply( $data, $unit_label ) {
+		if ( ! is_email( $data['email'] ) ) {
+			return;
+		}
+
+		$lang = (string) ( $data['lang'] ?? '' );
+		$site = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
+
+		$subject = $this->t( 'Abbiamo ricevuto la tua richiesta', $lang ) . ' — ' . $site;
+
+		$lines   = array();
+		$lines[] = sprintf( $this->t( 'Gentile %s,', $lang ), $data['nome'] );
+		$lines[] = $this->t( 'grazie per averci contattato: la tua richiesta è stata ricevuta correttamente e verrai ricontattato nel minor tempo possibile.', $lang );
+		$lines[] = '';
+		$lines[] = $this->t( 'Riepilogo della tua richiesta', $lang ) . ':';
+		$lines[] = '· ' . $this->t( 'Nome e cognome', $lang ) . ': ' . $data['nome'];
+		$lines[] = '· ' . $this->t( 'Email', $lang ) . ': ' . $data['email'];
+		if ( '' !== $data['telefono'] ) {
+			$lines[] = '· ' . $this->t( 'Telefono', $lang ) . ': ' . $data['telefono'];
+		}
+		if ( ! empty( $data['unita_ids'] ) ) {
+			$lines[] = '· ' . $this->t( 'Unità', $lang ) . ': ' . $unit_label;
+		}
+		if ( '' !== $data['motivo'] ) {
+			// Ogni motivo tradotto singolarmente nella lingua del cliente.
+			$motivi  = array_map( function ( $m ) use ( $lang ) {
+				return $this->t( trim( $m ), $lang );
+			}, explode( ',', $data['motivo'] ) );
+			$lines[] = '· ' . $this->t( 'Vorrei', $lang ) . ': ' . implode( ', ', $motivi );
+		}
+		if ( '' !== trim( (string) $data['note'] ) ) {
+			$lines[] = '· ' . $this->t( 'Messaggio', $lang ) . ': ' . $data['note'];
+		}
+
+		// Contatti dell'agenzia.
+		$emails   = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::agency_emails() : array();
+		$phone    = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'agency_phone' ) : '';
+		$whatsapp = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'agency_whatsapp' ) : '';
+		$sender   = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'sender_email' ) : '';
+
+		if ( $emails || $phone || $whatsapp ) {
+			$lines[] = '';
+			$lines[] = $this->t( 'I nostri contatti', $lang ) . ':';
+			foreach ( $emails as $agency_email ) {
+				$lines[] = '· ' . $this->t( 'Email', $lang ) . ': ' . $agency_email;
+			}
+			if ( $phone ) {
+				$lines[] = '· ' . $this->t( 'Telefono', $lang ) . ': ' . $phone;
+			}
+			if ( $whatsapp ) {
+				$lines[] = '· WhatsApp: ' . $whatsapp;
+			}
+			$lines[] = $this->t( 'Visite private su appuntamento.', $lang );
+		}
+
+		$lines[] = '';
+		$lines[] = $this->t( 'A presto,', $lang );
+		$lines[] = $site;
+
+		$headers = $this->from_headers();
+		if ( is_email( $sender ) ) {
+			$headers[] = 'Reply-To: ' . $site . ' <' . $sender . '>';
+		}
+
+		wp_mail( $data['email'], $subject, implode( "\n", $lines ), $headers );
 	}
 
 	/**
@@ -535,7 +641,9 @@ class Palladio_Leads_Form {
 	 * @return void
 	 */
 	private function redirect_back( $url, $status ) {
-		$url = add_query_arg( 'palladio_lead', $status, $url ) . '#palladio-lead-form';
+		// Àncora alla sezione contatti: l'utente atterra sul titolo con il
+		// messaggio di esito ben visibile PRIMA del form.
+		$url = add_query_arg( 'palladio_lead', $status, $url ) . '#palladio-contact';
 		wp_safe_redirect( $url );
 		exit;
 	}
