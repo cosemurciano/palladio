@@ -241,6 +241,20 @@ class Palladio_I18n_Translator {
 			}
 		}
 
+		// Scenario: le unità aggregate puntano alle versioni della stessa
+		// lingua (se esistono), non a quelle della lingua sorgente.
+		if ( 'pll_scenario' === $src->post_type ) {
+			$unit_ids = json_decode( (string) get_post_meta( $new_id, '_pll_scenario_unita', true ), true );
+			if ( is_array( $unit_ids ) && $unit_ids ) {
+				$mapped = array();
+				foreach ( $unit_ids as $uid ) {
+					$sibling  = self::sibling_in( absint( $uid ), $lang, array( 'publish', 'draft', 'pending', 'future', 'private' ) );
+					$mapped[] = $sibling ? $sibling : absint( $uid );
+				}
+				update_post_meta( $new_id, '_pll_scenario_unita', wp_json_encode( array_values( array_unique( $mapped ) ) ) );
+			}
+		}
+
 		// Copia meta title/description di All in One SEO sul clone (verranno
 		// poi tradotti dalla traduzione AI).
 		self::copy_aioseo( $source_id, $new_id );

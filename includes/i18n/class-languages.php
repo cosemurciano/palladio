@@ -196,7 +196,29 @@ class Palladio_I18n_Languages {
 	}
 
 	/**
-	 * Limita gli archivi dei CPT alla lingua corrente.
+	 * Meta query che limita i post a una lingua (la sorgente include i post
+	 * senza lingua impostata).
+	 *
+	 * @param string $lang Lingua.
+	 * @return array
+	 */
+	public static function lang_meta_query( $lang ) {
+		if ( $lang === self::source() ) {
+			return array(
+				'relation' => 'OR',
+				array( 'key' => Palladio_I18n_Translator::LANG_META, 'value' => $lang ),
+				array( 'key' => Palladio_I18n_Translator::LANG_META, 'compare' => 'NOT EXISTS' ),
+			);
+		}
+
+		return array(
+			array( 'key' => Palladio_I18n_Translator::LANG_META, 'value' => $lang ),
+		);
+	}
+
+	/**
+	 * Limita TUTTI gli archivi dei CPT (edifici, unità, scenari) e le
+	 * tassonomie alla lingua corrente.
 	 *
 	 * @param WP_Query $query Query.
 	 * @return void
@@ -205,25 +227,22 @@ class Palladio_I18n_Languages {
 		if ( ! $query->is_main_query() ) {
 			return;
 		}
-		if ( ! $query->is_post_type_archive( 'pll_edificio' ) && ! $query->is_tax( array( 'pll_tipologia', 'pll_piano', 'pll_stato' ) ) ) {
+		if (
+			! $query->is_post_type_archive( array( 'pll_edificio', 'pll_unita', 'pll_scenario' ) )
+			&& ! $query->is_tax( array( 'pll_tipologia', 'pll_piano', 'pll_stato' ) )
+		) {
 			return;
 		}
 
-		$current = self::current();
-		$source  = self::source();
-
-		if ( $current === $source ) {
-			// Sorgente: mostra i post in lingua sorgente o senza lingua impostata.
-			$meta_query = array(
-				'relation' => 'OR',
-				array( 'key' => Palladio_I18n_Translator::LANG_META, 'value' => $source ),
-				array( 'key' => Palladio_I18n_Translator::LANG_META, 'compare' => 'NOT EXISTS' ),
-			);
-		} else {
-			$meta_query = array(
-				array( 'key' => Palladio_I18n_Translator::LANG_META, 'value' => $current ),
-			);
+		// pre_get_posts scatta prima dell'azione 'wp': la lingua si legge
+		// dalla query stessa (rewrite /{lang}/... o ?lang=), non da current().
+		$lang = sanitize_key( (string) $query->get( 'lang' ) );
+		if ( '' === $lang && isset( $_GET['lang'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$lang = sanitize_key( wp_unslash( $_GET['lang'] ) );
 		}
+		$current = ( $lang && self::is_active( $lang ) ) ? $lang : self::source();
+
+		$meta_query = self::lang_meta_query( $current );
 
 		$existing = $query->get( 'meta_query' );
 		if ( ! empty( $existing ) ) {
