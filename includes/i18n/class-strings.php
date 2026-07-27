@@ -71,6 +71,61 @@ class Palladio_I18n_Strings {
 		add_filter( 'gettext', array( $this, 'translate' ), 20, 3 );
 		add_action( 'shutdown', array( $this, 'flush_catalog' ) );
 		add_action( 'wp', array( $this, 'maybe_switch_locale' ) );
+
+		// Termini delle tassonomie del plugin (tipologia, piano, stato di
+		// vendita) tradotti alla resa: i nomi restano unici in italiano
+		// nell'admin, il frontend li mostra nella lingua della pagina.
+		add_filter( 'get_term', array( $this, 'translate_term' ), 20, 2 );
+		add_filter( 'get_the_terms', array( $this, 'translate_terms' ), 20, 3 );
+		add_filter( 'get_terms', array( $this, 'translate_terms' ), 20 );
+	}
+
+	/**
+	 * Tassonomie i cui nomi termine vengono tradotti sul frontend.
+	 *
+	 * @var string[]
+	 */
+	private $taxonomies = array( 'pll_tipologia', 'pll_piano', 'pll_stato' );
+
+	/**
+	 * Traduce il nome di un termine (frontend, lingua ≠ sorgente).
+	 *
+	 * @param WP_Term|mixed $term     Termine.
+	 * @param string        $taxonomy Tassonomia.
+	 * @return WP_Term|mixed
+	 */
+	public function translate_term( $term, $taxonomy = '' ) {
+		if ( ! $term instanceof WP_Term ) {
+			return $term;
+		}
+		$taxonomy = $taxonomy ? $taxonomy : $term->taxonomy;
+		if ( ! in_array( $taxonomy, $this->taxonomies, true ) ) {
+			return $term;
+		}
+
+		$term->name = self::translate_text( $term->name );
+
+		return $term;
+	}
+
+	/**
+	 * Traduce i nomi di un elenco di termini.
+	 *
+	 * @param array|mixed $terms Termini.
+	 * @return array|mixed
+	 */
+	public function translate_terms( $terms ) {
+		if ( ! is_array( $terms ) ) {
+			return $terms;
+		}
+
+		foreach ( $terms as $term ) {
+			if ( $term instanceof WP_Term ) {
+				$this->translate_term( $term );
+			}
+		}
+
+		return $terms;
 	}
 
 	/**
@@ -621,6 +676,19 @@ class Palladio_I18n_Strings {
 				'Chiudi menu mobile'                   => 'Close mobile menu',
 				'Risultati della ricerca per "%s"'     => 'Search results for "%s"',
 				'Lascia i tuoi recapiti: ti ricontattiamo per una visita in loco o per qualsiasi domanda.' => 'Leave your contact details: we will get back to you for an on-site visit or any question.',
+				'Disponibile'                          => 'Available',
+				'Riservata'                            => 'Reserved',
+				'In trattativa'                        => 'Under negotiation',
+				'Venduta'                              => 'Sold',
+				'Non in vendita'                       => 'Not for sale',
+				'Appartamento'                         => 'Apartment',
+				'Locale commerciale'                   => 'Commercial space',
+				'Deposito'                             => 'Storage',
+				'Box'                                  => 'Garage',
+				'Piano terra'                          => 'Ground floor',
+				'Primo piano'                          => 'First floor',
+				'Secondo piano'                        => 'Second floor',
+				'Piano nobile'                         => 'Piano nobile',
 			),
 			'de' => array(
 				'Richiedi una visita'                  => 'Besichtigung anfragen',
@@ -754,6 +822,19 @@ class Palladio_I18n_Strings {
 				'Chiudi menu mobile'                   => 'Mobiles Menü schließen',
 				'Risultati della ricerca per "%s"'     => 'Suchergebnisse für "%s"',
 				'Lascia i tuoi recapiti: ti ricontattiamo per una visita in loco o per qualsiasi domanda.' => 'Hinterlassen Sie Ihre Kontaktdaten: Wir melden uns für eine Besichtigung vor Ort oder bei Fragen.',
+				'Disponibile'                          => 'Verfügbar',
+				'Riservata'                            => 'Reserviert',
+				'In trattativa'                        => 'In Verhandlung',
+				'Venduta'                              => 'Verkauft',
+				'Non in vendita'                       => 'Nicht zum Verkauf',
+				'Appartamento'                         => 'Wohnung',
+				'Locale commerciale'                   => 'Gewerbefläche',
+				'Deposito'                             => 'Lagerraum',
+				'Box'                                  => 'Garage',
+				'Piano terra'                          => 'Erdgeschoss',
+				'Primo piano'                          => 'Erste Etage',
+				'Secondo piano'                        => 'Zweite Etage',
+				'Piano nobile'                         => 'Piano nobile',
 			),
 			'fr' => array(
 				'Richiedi una visita'                  => 'Demander une visite',
@@ -887,6 +968,19 @@ class Palladio_I18n_Strings {
 				'Chiudi menu mobile'                   => 'Fermer le menu mobile',
 				'Risultati della ricerca per "%s"'     => 'Résultats de recherche pour « %s »',
 				'Lascia i tuoi recapiti: ti ricontattiamo per una visita in loco o per qualsiasi domanda.' => 'Laissez vos coordonnées : nous vous recontactons pour une visite sur place ou pour toute question.',
+				'Disponibile'                          => 'Disponible',
+				'Riservata'                            => 'Réservée',
+				'In trattativa'                        => 'En négociation',
+				'Venduta'                              => 'Vendue',
+				'Non in vendita'                       => 'Pas à vendre',
+				'Appartamento'                         => 'Appartement',
+				'Locale commerciale'                   => 'Local commercial',
+				'Deposito'                             => 'Dépôt',
+				'Box'                                  => 'Garage',
+				'Piano terra'                          => 'Rez-de-chaussée',
+				'Primo piano'                          => 'Premier étage',
+				'Secondo piano'                        => 'Deuxième étage',
+				'Piano nobile'                         => 'Piano nobile',
 			),
 		);
 	}
