@@ -116,8 +116,25 @@ class Palladio_I18n_Strings {
 			return $translation;
 		}
 
+		// La lingua è nota solo a query principale risolta.
+		if ( ! did_action( 'wp' ) ) {
+			return $translation;
+		}
+
+		// Guardia anti-rientro: la risoluzione della lingua può passare a sua
+		// volta da stringhe gettext degli stessi domini.
+		static $running = false;
+		if ( $running ) {
+			return $translation;
+		}
+		$running = true;
+
 		$current = Palladio_I18n_Languages::current();
-		if ( $current === Palladio_I18n_Languages::source() ) {
+		$source  = Palladio_I18n_Languages::source();
+
+		$running = false;
+
+		if ( $current === $source ) {
 			return $translation;
 		}
 
