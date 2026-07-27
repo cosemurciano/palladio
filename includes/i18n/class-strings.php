@@ -78,6 +78,7 @@ class Palladio_I18n_Strings {
 		add_filter( 'get_term', array( $this, 'translate_term' ), 20, 2 );
 		add_filter( 'get_the_terms', array( $this, 'translate_terms' ), 20, 3 );
 		add_filter( 'get_terms', array( $this, 'translate_terms' ), 20 );
+		add_filter( 'wp_get_object_terms', array( $this, 'translate_terms' ), 20 );
 	}
 
 	/**
@@ -103,7 +104,18 @@ class Palladio_I18n_Strings {
 			return $term;
 		}
 
-		$term->name = self::translate_text( $term->name );
+		// Le istanze WP_Term sono condivise (cache): traduci una sola volta
+		// per richiesta, così il nome già tradotto non rientra nel catalogo.
+		static $done = array();
+		if ( isset( $done[ $term->term_id ] ) ) {
+			return $term;
+		}
+
+		$translated = self::translate_text( $term->name );
+		if ( $translated !== $term->name ) {
+			$term->name = $translated;
+		}
+		$done[ $term->term_id ] = true;
 
 		return $term;
 	}

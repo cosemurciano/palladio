@@ -179,6 +179,13 @@ class Palladio_Core_Redirects {
 			return;
 		}
 
+		// Niente cache sui redirect: un 301 senza header di cache viene
+		// memorizzato per sempre dal browser — se poi il contenuto torna
+		// (es. pagina ripubblicata), l'utente resterebbe rediretto anche
+		// quando il server non redirige più. Il valore SEO del 301 sta nel
+		// codice di stato, non nella sua cacheabilità.
+		nocache_headers();
+
 		// wp_redirect (non "safe"): le destinazioni sono configurate dall'admin
 		// e possono puntare anche a un altro dominio.
 		wp_redirect( $target, $code, 'Palladio' ); // phpcs:ignore WordPress.Security.SafeRedirect
