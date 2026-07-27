@@ -56,7 +56,7 @@ class Palladio_I18n_Machine {
 	 * @return bool
 	 */
 	private static function is_rich_key( $key ) {
-		return in_array( (string) $key, array( 'body', 'text', 'definition', 'note', 'notes', 'blazon', 'lead', 'city_text', 'vincoli_note' ), true );
+		return in_array( (string) $key, array( 'body', 'text', 'definition', 'note', 'notes', 'blazon', 'lead', 'city_text', 'vincoli_note', 'partner' ), true );
 	}
 
 	/**
