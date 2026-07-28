@@ -138,7 +138,7 @@ class Palladio_Frontend_Schema {
 		}
 		echo '<meta property="og:url" content="' . esc_url( $url ) . '">' . "\n";
 		echo '<meta property="og:site_name" content="' . esc_attr( get_bloginfo( 'name' ) ) . '">' . "\n";
-		echo '<meta property="og:locale" content="' . esc_attr( str_replace( '-', '_', get_locale() ) ) . '">' . "\n";
+		echo '<meta property="og:locale" content="' . esc_attr( str_replace( '-', '_', $post_id ? $this->page_language( $post_id ) : get_locale() ) ) . '">' . "\n";
 		if ( $image ) {
 			echo '<meta property="og:image" content="' . esc_url( $image ) . '">' . "\n";
 			echo '<meta name="twitter:card" content="summary_large_image">' . "\n";
@@ -317,7 +317,7 @@ class Palladio_Frontend_Schema {
 			'@id'       => trailingslashit( $url ) . '#unita',
 			'name'      => get_the_title( $unit_id ),
 			'url'       => $url,
-			'floorSize' => ( '' !== (string) $mq ) ? array(
+			'floorSize' => ( '' !== (string) $mq && (float) $mq > 0 ) ? array(
 				'@type'    => 'QuantitativeValue',
 				'value'    => (float) $mq,
 				'unitCode' => 'MTK',
@@ -349,7 +349,8 @@ class Palladio_Frontend_Schema {
 			$node += array(
 				'description'            => $this->description( $unit_id ),
 				'image'                  => array_values( array_unique( $images ) ),
-				'numberOfRooms'          => ( '' !== (string) palladio_meta( $unit_id, 'vani' ) ) ? (float) palladio_meta( $unit_id, 'vani' ) : null,
+				// D4: "Vani/stanze" -> numberOfRooms; omesso se vuoto o zero.
+				'numberOfRooms'          => ( (float) palladio_meta( $unit_id, 'vani' ) > 0 ) ? (float) palladio_meta( $unit_id, 'vani' ) : null,
 				'numberOfBedrooms'       => absint( palladio_meta( $unit_id, 'camere' ) ) ?: null,
 				'numberOfBathroomsTotal' => absint( palladio_meta( $unit_id, 'bagni' ) ) ?: null,
 				'floorLevel'             => $piano,
@@ -396,7 +397,9 @@ class Palladio_Frontend_Schema {
 		$props = array();
 		foreach ( $map as $key => $conf ) {
 			$value = palladio_meta( $unit_id, $key );
-			if ( '' === (string) $value ) {
+			// Un campo non compilato non deve diventare un "0" pubblico:
+			// escludi vuoti, null e valori numerici a zero.
+			if ( '' === (string) $value || ( is_numeric( $value ) && 0.0 === (float) $value ) ) {
 				continue;
 			}
 			$props[] = $this->clean( array(
@@ -408,6 +411,19 @@ class Palladio_Frontend_Schema {
 		}
 
 		return $props;
+	}
+
+	/**
+	 * Tag BCP47 della LINGUA DELLA PAGINA (non il locale del sito).
+	 *
+	 * @param int $post_id ID post.
+	 * @return string
+	 */
+	private function page_language( $post_id ) {
+		$map  = array( 'it' => 'it-IT', 'en' => 'en-US', 'de' => 'de-DE', 'fr' => 'fr-FR' );
+		$lang = class_exists( 'Palladio_I18n_Translator' ) ? Palladio_I18n_Translator::get_lang( $post_id ) : 'it';
+
+		return isset( $map[ $lang ] ) ? $map[ $lang ] : str_replace( '_', '-', get_locale() );
 	}
 
 	/**
@@ -447,7 +463,7 @@ class Palladio_Frontend_Schema {
 			'url'          => $url,
 			'name'         => get_the_title( $post_id ),
 			'description'  => $this->description( $post_id ),
-			'inLanguage'   => str_replace( '_', '-', get_locale() ),
+			'inLanguage'   => $this->page_language( $post_id ),
 			'datePosted'   => get_the_date( 'c', $post_id ),
 			'dateModified' => get_the_modified_date( 'c', $post_id ),
 			'image'        => get_the_post_thumbnail_url( $post_id, 'full' ) ?: null,
@@ -616,7 +632,7 @@ class Palladio_Frontend_Schema {
 			'url'                => get_permalink( $post_id ),
 			'name'               => get_the_title( $post_id ),
 			'description'        => $this->description( $post_id ),
-			'inLanguage'         => str_replace( '_', '-', get_locale() ),
+			'inLanguage'         => $this->page_language( $post_id ),
 			'datePublished'      => get_the_date( 'c', $post_id ),
 			'dateModified'       => get_the_modified_date( 'c', $post_id ),
 			'primaryImageOfPage' => get_the_post_thumbnail_url( $post_id, 'full' ) ?: null,
@@ -646,7 +662,7 @@ class Palladio_Frontend_Schema {
 				'url'                => get_permalink( $post_id ),
 				'name'               => get_the_title( $post_id ),
 				'description'        => $this->description( $post_id ),
-				'inLanguage'         => str_replace( '_', '-', get_locale() ),
+				'inLanguage'         => $this->page_language( $post_id ),
 				'datePublished'      => get_the_date( 'c', $post_id ),
 				'dateModified'       => get_the_modified_date( 'c', $post_id ),
 				'primaryImageOfPage' => get_the_post_thumbnail_url( $post_id, 'full' ) ?: null,

@@ -34,7 +34,7 @@ while ( have_posts() ) :
 		$facts[] = array( (string) absint( $anno ), __( 'Anno', 'palladio' ) );
 	}
 	if ( $mq = palladio_meta( $building_id, 'mq_totali' ) ) { // phpcs:ignore
-		$facts[] = array( number_format_i18n( (float) $mq, 0 ) . ' m²', __( 'Superficie', 'palladio' ) );
+		$facts[] = array( palladio_format_number( (float) $mq, 0 ) . ' m²', __( 'Superficie', 'palladio' ) );
 	}
 	if ( $piani = palladio_meta( $building_id, 'num_piani' ) ) { // phpcs:ignore
 		$facts[] = array( (string) absint( $piani ), __( 'Piani', 'palladio' ) );
@@ -176,7 +176,7 @@ while ( have_posts() ) :
 						printf(
 							/* translators: 1: n residenze, 2: min, 3: max. */
 							esc_html( _n( '%1$s residenza · %2$s – %3$s', '%1$s residenze · %2$s – %3$s', (int) $range['count'], 'palladio' ) ),
-							esc_html( number_format_i18n( (int) $range['count'] ) ),
+							esc_html( palladio_format_number( (int) $range['count'] ) ),
 							esc_html( palladio_format_price( $range['min'] ) ),
 							esc_html( palladio_format_price( $range['max'] ) )
 						);
