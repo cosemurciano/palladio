@@ -104,6 +104,7 @@ final class Palladio {
 				'admin_content'       => 'Palladio_Admin_Content',
 				'leads_store'         => 'Palladio_Leads_Store',
 				'leads_form'          => 'Palladio_Leads_Form',
+				'leads_telegram'      => 'Palladio_Leads_Telegram',
 				'admin_regia'         => 'Palladio_Admin_Regia',
 				'i18n_languages'      => 'Palladio_I18n_Languages',
 				'i18n_urls'           => 'Palladio_I18n_Urls',
