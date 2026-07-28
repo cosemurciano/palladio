@@ -182,6 +182,42 @@ function palladio_editorial( $post_id ) {
 }
 
 /**
+ * Numero di unità pubblicate in vendita di un edificio (conteggio DINAMICO:
+ * stato "Disponibile"; senza stati assegnati, tutte le pubblicate). Nessun
+ * valore manuale da aggiornare quando si aggiungono unità.
+ *
+ * @param int $building_id ID edificio.
+ * @return int
+ */
+function palladio_building_units_for_sale_count( $building_id ) {
+	$args = array(
+		'post_type'      => 'pll_unita',
+		'post_status'    => 'publish',
+		'post_parent'    => (int) $building_id,
+		'posts_per_page' => -1,
+		'fields'         => 'ids',
+		'no_found_rows'  => true,
+		'tax_query'      => array( // phpcs:ignore WordPress.DB.SlowDBQuery
+			array(
+				'taxonomy' => 'pll_stato',
+				'field'    => 'slug',
+				'terms'    => 'disponibile',
+			),
+		),
+	);
+
+	$available = get_posts( $args );
+	if ( $available ) {
+		return count( $available );
+	}
+
+	// Fallback: nessuna unità marcata "disponibile" — conta le pubblicate.
+	unset( $args['tax_query'] );
+
+	return count( get_posts( $args ) );
+}
+
+/**
  * Fascia prezzi delle unità in vendita di un edificio.
  *
  * @param int $building_id ID edificio.

@@ -39,8 +39,11 @@ while ( have_posts() ) :
 	if ( $piani = palladio_meta( $building_id, 'num_piani' ) ) { // phpcs:ignore
 		$facts[] = array( (string) absint( $piani ), __( 'Piani', 'palladio' ) );
 	}
-	if ( $uv = palladio_meta( $building_id, 'num_unita_vendita' ) ) { // phpcs:ignore
-		$facts[] = array( (string) absint( $uv ), __( 'Unità in vendita', 'palladio' ) );
+	// Contatore dinamico: unità pubblicate con stato "Disponibile" (niente
+	// più valore manuale da tenere allineato).
+	$uv = palladio_building_units_for_sale_count( $building_id );
+	if ( $uv > 0 ) {
+		$facts[] = array( (string) $uv, __( 'Unità in vendita', 'palladio' ) );
 	}
 
 	?>
