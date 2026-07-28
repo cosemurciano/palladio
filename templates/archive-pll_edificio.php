@@ -28,7 +28,7 @@ get_header();
 				the_post();
 				$building_id = get_the_ID();
 				$claim       = palladio_meta( $building_id, 'claim' );
-				$uv          = palladio_meta( $building_id, 'num_unita_vendita' );
+				$uv          = palladio_building_units_for_sale_count( $building_id );
 				?>
 				<article class="palladio-building-card">
 					<a class="palladio-building-card__link" href="<?php the_permalink(); ?>">

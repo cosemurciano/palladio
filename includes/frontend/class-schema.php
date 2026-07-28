@@ -288,7 +288,7 @@ class Palladio_Frontend_Schema {
 				'latitude'  => (float) $lat,
 				'longitude' => (float) $lng,
 			) : null,
-			'numberOfAvailableAccommodationUnits' => absint( palladio_meta( $building_id, 'num_unita_vendita' ) ) ?: null,
+			'numberOfAvailableAccommodationUnits' => function_exists( 'palladio_building_units_for_sale_count' ) ? ( palladio_building_units_for_sale_count( $building_id ) ?: null ) : null,
 		) );
 	}
 
@@ -310,7 +310,10 @@ class Palladio_Frontend_Schema {
 		$piano = get_the_terms( $unit_id, 'pll_piano' );
 		$piano = ( ! empty( $piano ) && ! is_wp_error( $piano ) ) ? $piano[0]->name : '';
 
-		$mq = palladio_meta( $unit_id, 'mq_commerciali' );
+		// D5: floorSize = superficie COPERTA; la superficie totale (inclusi
+		// gli esterni) viaggia come additionalProperty "Superficie totale".
+		$coperti = (float) palladio_meta( $unit_id, 'mq_coperti' );
+		$mq      = $coperti > 0 ? $coperti : palladio_meta( $unit_id, 'mq_commerciali' );
 
 		$node = array(
 			'@type'     => $type,
@@ -384,7 +387,7 @@ class Palladio_Frontend_Schema {
 	private function unit_properties( $unit_id ) {
 		$map = array(
 			'codice'             => array( __( 'Codice', 'palladio' ), '' ),
-			'mq_coperti'         => array( __( 'Superficie coperta', 'palladio' ), 'MTK' ),
+			'mq_commerciali'     => array( __( 'Superficie totale', 'palladio' ), 'MTK' ),
 			'terrazza_mq'        => array( __( 'Terrazza', 'palladio' ), 'MTK' ),
 			'giardino_mq'        => array( __( 'Giardino', 'palladio' ), 'MTK' ),
 			'esposizione'        => array( __( 'Esposizione', 'palladio' ), '' ),

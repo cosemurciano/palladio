@@ -316,6 +316,36 @@ class Palladio_I18n_Languages {
 	 * @return void
 	 */
 	public function hreflang() {
+		// Archivi dei CPT (unità, scenari, edifici): alternate verso gli
+		// archivi localizzati /{lang}/{base}/ + x-default sulla sorgente.
+		$archive_types = array( 'pll_unita', 'pll_scenario', 'pll_edificio' );
+		if ( is_post_type_archive( $archive_types ) && class_exists( 'Palladio_I18n_Urls' ) ) {
+			$post_type = (string) get_query_var( 'post_type' );
+			if ( is_array( get_query_var( 'post_type' ) ) ) {
+				$post_type = (string) reset( get_query_var( 'post_type' ) );
+			}
+			if ( ! in_array( $post_type, $archive_types, true ) ) {
+				return;
+			}
+
+			$source = self::source();
+			$urls   = array();
+			foreach ( self::active() as $lang ) {
+				$base = Palladio_I18n_Urls::base_for( $post_type, $lang );
+				$urls[ $lang ] = ( $lang === $source )
+					? home_url( user_trailingslashit( '/' . $base ) )
+					: home_url( user_trailingslashit( '/' . $lang . '/' . $base ) );
+			}
+
+			foreach ( $urls as $lang => $url ) {
+				printf( '<link rel="alternate" hreflang="%1$s" href="%2$s" />' . "\n", esc_attr( $lang ), esc_url( $url ) );
+			}
+			if ( isset( $urls[ $source ] ) ) {
+				printf( '<link rel="alternate" hreflang="x-default" href="%s" />' . "\n", esc_url( $urls[ $source ] ) );
+			}
+			return;
+		}
+
 		if ( ! is_singular( $this->post_types ) ) {
 			return;
 		}
