@@ -27,7 +27,7 @@ while ( have_posts() ) :
 
 	$facts = array();
 	if ( $mq = palladio_meta( $unit_id, 'mq_commerciali' ) ) { // phpcs:ignore
-		$facts[] = array( number_format_i18n( (float) $mq, 0 ) . ' m²', __( 'Superficie', 'palladio' ) );
+		$facts[] = array( palladio_format_number( (float) $mq, 0 ) . ' m²', __( 'Superficie', 'palladio' ) );
 	}
 	if ( $camere = palladio_meta( $unit_id, 'camere' ) ) { // phpcs:ignore
 		$facts[] = array( (string) absint( $camere ), __( 'Camere', 'palladio' ) );
@@ -57,13 +57,13 @@ while ( have_posts() ) :
 	$fmt = static function ( $value, $type ) {
 		switch ( $type ) {
 			case 'mq':
-				return sprintf( __( '%s m²', 'palladio' ), number_format_i18n( (float) $value, 0 ) );
+				return sprintf( __( '%s m²', 'palladio' ), palladio_format_number( (float) $value, 0 ) );
 			case 'euro':
 				return palladio_format_price( $value );
 			case 'int':
 				return (string) absint( $value );
 			case 'num':
-				return number_format_i18n( (float) $value, ( (float) $value == (int) $value ) ? 0 : 1 );
+				return palladio_format_number( (float) $value, ( (float) $value == (int) $value ) ? 0 : 1 );
 			default:
 				return (string) $value;
 		}

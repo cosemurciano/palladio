@@ -232,7 +232,7 @@ function palladio_unit_eyebrow( $unit_id ) {
 	}
 	$mq = palladio_meta( $unit_id, 'mq_commerciali' );
 	if ( $mq ) {
-		$parts[] = number_format_i18n( (float) $mq, 0 ) . ' m²';
+		$parts[] = palladio_format_number( (float) $mq, 0 ) . ' m²';
 	}
 	$codice = palladio_meta( $unit_id, 'codice' );
 	if ( $codice ) {
@@ -271,8 +271,45 @@ function palladio_format_price( $value ) {
 		return esc_html__( 'Prezzo su richiesta', 'palladio' );
 	}
 
-	/* translators: %s: prezzo formattato. */
-	return sprintf( esc_html__( '€ %s', 'palladio' ), number_format_i18n( $value, 0 ) );
+	$formatted = palladio_format_number( $value, 0 );
+	$lang      = class_exists( 'Palladio_I18n_Languages' ) ? Palladio_I18n_Languages::current() : 'it';
+
+	// Posizione del simbolo secondo la convenzione della lingua:
+	// IT/EN prima del numero, DE/FR dopo.
+	if ( in_array( $lang, array( 'de', 'fr' ), true ) ) {
+		return $formatted . ' €';
+	}
+
+	return '€ ' . $formatted;
+}
+
+/**
+ * Formatta un numero secondo la LINGUA DELLA PAGINA (non il locale del
+ * sito): IT/DE migliaia col punto, EN con la virgola, FR con lo spazio
+ * stretto; decimali con virgola (punto in EN). Mai formati hardcoded.
+ *
+ * @param float|int|string $value    Valore numerico.
+ * @param int              $decimals Decimali.
+ * @return string
+ */
+function palladio_format_number( $value, $decimals = 0 ) {
+	$lang = class_exists( 'Palladio_I18n_Languages' ) ? Palladio_I18n_Languages::current() : 'it';
+
+	switch ( $lang ) {
+		case 'en':
+			$decimal   = '.';
+			$thousands = ',';
+			break;
+		case 'fr':
+			$decimal   = ',';
+			$thousands = "\u{202F}"; // Spazio stretto non separabile.
+			break;
+		default: // it, de.
+			$decimal   = ',';
+			$thousands = '.';
+	}
+
+	return number_format( (float) $value, (int) $decimals, $decimal, $thousands );
 }
 
 /**
@@ -333,7 +370,7 @@ function palladio_unit_quick_specs( $unit_id ) {
 		$specs[] = array(
 			'label' => __( 'Superficie', 'palladio' ),
 			/* translators: %s: metri quadri. */
-			'value' => sprintf( __( '%s m²', 'palladio' ), number_format_i18n( (float) $mq, 0 ) ),
+			'value' => sprintf( __( '%s m²', 'palladio' ), palladio_format_number( (float) $mq, 0 ) ),
 		);
 	}
 
@@ -801,14 +838,14 @@ function palladio_render_scenario_card_editorial( $scenario_id ) {
 	$eyebrow_parts = array();
 	if ( $totals['count'] ) {
 		/* translators: %s: numero unità. */
-		$eyebrow_parts[] = sprintf( _n( '%s unità', '%s unità', $totals['count'], 'palladio' ), number_format_i18n( $totals['count'] ) );
+		$eyebrow_parts[] = sprintf( _n( '%s unità', '%s unità', $totals['count'], 'palladio' ), palladio_format_number( $totals['count'] ) );
 	}
 	if ( $totals['mq'] > 0 ) {
-		$eyebrow_parts[] = number_format_i18n( $totals['mq'], 0 ) . ' m²';
+		$eyebrow_parts[] = palladio_format_number( $totals['mq'], 0 ) . ' m²';
 	}
 	if ( $totals['camere'] > 0 ) {
 		/* translators: %s: numero camere. */
-		$eyebrow_parts[] = sprintf( __( '%s camere', 'palladio' ), number_format_i18n( $totals['camere'] ) );
+		$eyebrow_parts[] = sprintf( __( '%s camere', 'palladio' ), palladio_format_number( $totals['camere'] ) );
 	}
 	?>
 	<a class="pll-e-sister pll-e-scenario-card" id="palladio-scenario-<?php echo esc_attr( $scenario_id ); ?>"
@@ -839,7 +876,7 @@ function palladio_render_scenario_card_editorial( $scenario_id ) {
 					<span class="pll-e-scenario-card__saving">
 						<?php
 						/* translators: 1: risparmio, 2: percentuale. */
-						printf( esc_html__( 'Risparmi %1$s (−%2$s%%)', 'palladio' ), esc_html( palladio_format_price( $totals['saving'] ) ), esc_html( number_format_i18n( $totals['saving_pct'] ) ) );
+						printf( esc_html__( 'Risparmi %1$s (−%2$s%%)', 'palladio' ), esc_html( palladio_format_price( $totals['saving'] ) ), esc_html( palladio_format_number( $totals['saving_pct'] ) ) );
 						?>
 					</span>
 				<?php endif; ?>

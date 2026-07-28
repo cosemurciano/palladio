@@ -32,16 +32,16 @@ while ( have_posts() ) :
 
 	$facts = array();
 	if ( $totals['count'] ) {
-		$facts[] = array( number_format_i18n( $totals['count'] ), __( 'Unità', 'palladio' ) );
+		$facts[] = array( palladio_format_number( $totals['count'] ), __( 'Unità', 'palladio' ) );
 	}
 	if ( $totals['mq'] > 0 ) {
-		$facts[] = array( number_format_i18n( $totals['mq'], 0 ) . ' m²', __( 'Superficie totale', 'palladio' ) );
+		$facts[] = array( palladio_format_number( $totals['mq'], 0 ) . ' m²', __( 'Superficie totale', 'palladio' ) );
 	}
 	if ( $totals['camere'] > 0 ) {
-		$facts[] = array( number_format_i18n( $totals['camere'] ), __( 'Camere', 'palladio' ) );
+		$facts[] = array( palladio_format_number( $totals['camere'] ), __( 'Camere', 'palladio' ) );
 	}
 	if ( $totals['bagni'] > 0 ) {
-		$facts[] = array( number_format_i18n( $totals['bagni'] ), __( 'Bagni', 'palladio' ) );
+		$facts[] = array( palladio_format_number( $totals['bagni'] ), __( 'Bagni', 'palladio' ) );
 	}
 	?>
 	<div class="palladio-editorial palladio-scenario-editorial">
@@ -57,7 +57,7 @@ while ( have_posts() ) :
 					<?php else : ?>
 						<?php esc_html_e( 'Scenario', 'palladio' ); ?>
 						<?php if ( $totals['count'] ) : ?>
-							· <?php /* translators: %s: numero unità. */ printf( esc_html( _n( '%s unità', '%s unità', $totals['count'], 'palladio' ) ), esc_html( number_format_i18n( $totals['count'] ) ) ); ?>
+							· <?php /* translators: %s: numero unità. */ printf( esc_html( _n( '%s unità', '%s unità', $totals['count'], 'palladio' ) ), esc_html( palladio_format_number( $totals['count'] ) ) ); ?>
 						<?php endif; ?>
 					<?php endif; ?>
 				</p>
@@ -81,7 +81,7 @@ while ( have_posts() ) :
 						<span class="pll-e-scenario-saving" id="palladio-scenario-risparmio">
 							<?php
 							/* translators: 1: risparmio, 2: percentuale. */
-							printf( esc_html__( 'Risparmi %1$s (−%2$s%%)', 'palladio' ), esc_html( palladio_format_price( $totals['saving'] ) ), esc_html( number_format_i18n( $totals['saving_pct'] ) ) );
+							printf( esc_html__( 'Risparmi %1$s (−%2$s%%)', 'palladio' ), esc_html( palladio_format_price( $totals['saving'] ) ), esc_html( palladio_format_number( $totals['saving_pct'] ) ) );
 							?>
 						</span>
 					<?php endif; ?>
@@ -113,22 +113,22 @@ while ( have_posts() ) :
 					<p class="pll-e-kicker"><?php esc_html_e( 'Lo scenario in numeri', 'palladio' ); ?></p>
 					<h2 class="pll-e-h"><?php esc_html_e( 'I dati, aggregati', 'palladio' ); ?></h2>
 					<dl class="pll-e-tech__grid">
-						<div class="pll-e-tech__row"><dt><?php esc_html_e( 'Unità comprese', 'palladio' ); ?></dt><dd><?php echo esc_html( number_format_i18n( $totals['count'] ) ); ?></dd></div>
+						<div class="pll-e-tech__row"><dt><?php esc_html_e( 'Unità comprese', 'palladio' ); ?></dt><dd><?php echo esc_html( palladio_format_number( $totals['count'] ) ); ?></dd></div>
 						<?php if ( $totals['mq'] > 0 ) : ?>
-							<div class="pll-e-tech__row"><dt><?php esc_html_e( 'Superficie complessiva', 'palladio' ); ?></dt><dd><?php echo esc_html( number_format_i18n( $totals['mq'], 0 ) ); ?> m²</dd></div>
+							<div class="pll-e-tech__row"><dt><?php esc_html_e( 'Superficie complessiva', 'palladio' ); ?></dt><dd><?php echo esc_html( palladio_format_number( $totals['mq'], 0 ) ); ?> m²</dd></div>
 						<?php endif; ?>
 						<?php if ( $totals['camere'] > 0 ) : ?>
-							<div class="pll-e-tech__row"><dt><?php esc_html_e( 'Camere totali', 'palladio' ); ?></dt><dd><?php echo esc_html( number_format_i18n( $totals['camere'] ) ); ?></dd></div>
+							<div class="pll-e-tech__row"><dt><?php esc_html_e( 'Camere totali', 'palladio' ); ?></dt><dd><?php echo esc_html( palladio_format_number( $totals['camere'] ) ); ?></dd></div>
 						<?php endif; ?>
 						<?php if ( $totals['bagni'] > 0 ) : ?>
-							<div class="pll-e-tech__row"><dt><?php esc_html_e( 'Bagni totali', 'palladio' ); ?></dt><dd><?php echo esc_html( number_format_i18n( $totals['bagni'] ) ); ?></dd></div>
+							<div class="pll-e-tech__row"><dt><?php esc_html_e( 'Bagni totali', 'palladio' ); ?></dt><dd><?php echo esc_html( palladio_format_number( $totals['bagni'] ) ); ?></dd></div>
 						<?php endif; ?>
 						<?php if ( $totals['saving'] > 0 ) : ?>
 							<div class="pll-e-tech__row"><dt><?php esc_html_e( 'Somma prezzi unità', 'palladio' ); ?></dt><dd><s><?php echo esc_html( palladio_format_price( $totals['sum'] ) ); ?></s></dd></div>
 						<?php endif; ?>
 						<div class="pll-e-tech__row"><dt><?php esc_html_e( 'Prezzo dello scenario', 'palladio' ); ?></dt><dd><?php echo esc_html( palladio_format_price( $totals['price'] ) ); ?></dd></div>
 						<?php if ( $totals['saving'] > 0 ) : ?>
-							<div class="pll-e-tech__row pll-e-tech__row--saving"><dt><?php esc_html_e( 'Il tuo vantaggio', 'palladio' ); ?></dt><dd><?php echo esc_html( palladio_format_price( $totals['saving'] ) ); ?> <small>(−<?php echo esc_html( number_format_i18n( $totals['saving_pct'] ) ); ?>%)</small></dd></div>
+							<div class="pll-e-tech__row pll-e-tech__row--saving"><dt><?php esc_html_e( 'Il tuo vantaggio', 'palladio' ); ?></dt><dd><?php echo esc_html( palladio_format_price( $totals['saving'] ) ); ?> <small>(−<?php echo esc_html( palladio_format_number( $totals['saving_pct'] ) ); ?>%)</small></dd></div>
 						<?php endif; ?>
 					</dl>
 				</div>

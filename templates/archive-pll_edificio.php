@@ -48,7 +48,7 @@ get_header();
 								<p class="palladio-building-card__meta">
 									<?php
 									/* translators: %s: numero di unità in vendita. */
-									printf( esc_html( _n( '%s unità in vendita', '%s unità in vendita', (int) $uv, 'palladio' ) ), esc_html( number_format_i18n( (int) $uv ) ) );
+									printf( esc_html( _n( '%s unità in vendita', '%s unità in vendita', (int) $uv, 'palladio' ) ), esc_html( palladio_format_number( (int) $uv ) ) );
 									?>
 								</p>
 							<?php endif; ?>
