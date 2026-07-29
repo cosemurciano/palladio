@@ -236,6 +236,13 @@ class Palladio_Admin_Settings {
 
 				<?php submit_button( __( 'Salva impostazioni', 'palladio' ) ); ?>
 			</form>
+
+			<?php
+			/**
+			 * Sezioni aggiuntive della pagina Impostazioni (es. SEO pagine elenco).
+			 */
+			do_action( 'palladio/settings/after' );
+			?>
 		</div>
 		<?php
 	}
