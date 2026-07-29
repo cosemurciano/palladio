@@ -726,6 +726,7 @@ class Palladio_I18n_Strings {
 				'Riepilogo della tua richiesta'        => 'Summary of your request',
 				'I nostri contatti'                    => 'Our contact details',
 				'A presto,'                            => 'Kind regards,',
+				'Pagina %d'                            => 'Page %d',
 				'Acquistando le nostre unità immobiliari potete usufruire dei servizi dei nostri partner Mediterranea Asset: gestione completa della proprietà (utenze, imposte, manutenzioni e ispezioni periodiche), coordinamento della ristrutturazione con professionisti selezionati e gestione delle locazioni. Un supporto costante e trasparente, con un unico referente dedicato, che trasforma un investimento complesso in un’esperienza semplice e vi permette di vivere Lecce e il Salento senza pensieri.' => 'By purchasing one of our property units you can take advantage of the services of our partner Mediterranea Asset: complete property management (utilities, taxes, maintenance and regular inspections), renovation coordination with hand-picked professionals, and rental management. Constant, transparent support with a single dedicated contact — turning a complex investment into a simple experience, so you can enjoy Lecce and Salento with complete peace of mind.',
 			),
 			'de' => array(
@@ -879,6 +880,7 @@ class Palladio_I18n_Strings {
 				'Riepilogo della tua richiesta'        => 'Zusammenfassung Ihrer Anfrage',
 				'I nostri contatti'                    => 'Unsere Kontaktdaten',
 				'A presto,'                            => 'Mit freundlichen Grüßen,',
+				'Pagina %d'                            => 'Seite %d',
 				'Acquistando le nostre unità immobiliari potete usufruire dei servizi dei nostri partner Mediterranea Asset: gestione completa della proprietà (utenze, imposte, manutenzioni e ispezioni periodiche), coordinamento della ristrutturazione con professionisti selezionati e gestione delle locazioni. Un supporto costante e trasparente, con un unico referente dedicato, che trasforma un investimento complesso in un’esperienza semplice e vi permette di vivere Lecce e il Salento senza pensieri.' => 'Mit dem Kauf einer unserer Wohneinheiten können Sie die Leistungen unseres Partners Mediterranea Asset nutzen: komplette Objektbetreuung (Versorgung, Steuern, Instandhaltung und regelmäßige Kontrollen), Koordination der Renovierung mit ausgewählten Fachleuten sowie Vermietungsmanagement. Eine konstante, transparente Betreuung mit einem festen Ansprechpartner — so wird aus einer komplexen Investition eine einfache Erfahrung, und Sie genießen Lecce und den Salento ganz ohne Sorgen.',
 			),
 			'fr' => array(
@@ -1032,6 +1034,7 @@ class Palladio_I18n_Strings {
 				'Riepilogo della tua richiesta'        => 'Récapitulatif de votre demande',
 				'I nostri contatti'                    => 'Nos coordonnées',
 				'A presto,'                            => 'À bientôt,',
+				'Pagina %d'                            => 'Page %d',
 				'Acquistando le nostre unità immobiliari potete usufruire dei servizi dei nostri partner Mediterranea Asset: gestione completa della proprietà (utenze, imposte, manutenzioni e ispezioni periodiche), coordinamento della ristrutturazione con professionisti selezionati e gestione delle locazioni. Un supporto costante e trasparente, con un unico referente dedicato, che trasforma un investimento complesso in un’esperienza semplice e vi permette di vivere Lecce e il Salento senza pensieri.' => 'En achetant l’une de nos unités immobilières, vous pouvez bénéficier des services de notre partenaire Mediterranea Asset : gestion complète de la propriété (charges, impôts, entretien et inspections régulières), coordination de la rénovation avec des professionnels sélectionnés et gestion locative. Un accompagnement constant et transparent, avec un interlocuteur dédié — pour transformer un investissement complexe en une expérience simple et vivre Lecce et le Salento en toute sérénité.',
 			),
 		);
