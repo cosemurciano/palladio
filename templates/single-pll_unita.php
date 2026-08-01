@@ -69,7 +69,7 @@ while ( have_posts() ) :
 		}
 	};
 
-	$hero    = get_the_post_thumbnail_url( $unit_id, 'full' );
+	$hero    = get_the_post_thumbnail_url( $unit_id, 'palladio-hero' );
 	$eyebrow = $ed['eyebrow'] ? $ed['eyebrow'] : trim( ( $building_id ? get_the_title( $building_id ) : '' ) . ( $piano ? ' · ' . $piano : '' ), ' ·' );
 	$lead    = $ed['lead'] ? $ed['lead'] : ( has_excerpt() ? get_the_excerpt() : '' );
 	?>
@@ -78,7 +78,7 @@ while ( have_posts() ) :
 
 		<header class="pll-e-hero">
 			<?php if ( $hero ) : ?>
-				<img class="pll-e-hero__img" src="<?php echo esc_url( $hero ); ?>" alt="">
+				<img class="pll-e-hero__img" src="<?php echo esc_url( $hero ); ?>" alt="" fetchpriority="high">
 			<?php endif; ?>
 			<div class="pll-e-hero__inner">
 				<p class="pll-e-eyebrow"><?php echo esc_html( $eyebrow ); ?></p>

@@ -22,7 +22,7 @@ while ( have_posts() ) :
 	the_post();
 	$building_id = get_the_ID();
 	$claim       = palladio_meta( $building_id, 'claim' );
-	$hero        = get_the_post_thumbnail_url( $building_id, 'full' );
+	$hero        = get_the_post_thumbnail_url( $building_id, 'palladio-hero' );
 	$ed          = palladio_editorial( $building_id );
 
 	$loc_parts = array_filter( array( palladio_meta( $building_id, 'indirizzo' ), palladio_meta( $building_id, 'sottotitolo' ) ) );
@@ -51,7 +51,7 @@ while ( have_posts() ) :
 
 		<header class="pll-e-hero">
 			<?php if ( $hero ) : ?>
-				<img class="pll-e-hero__img" src="<?php echo esc_url( $hero ); ?>" alt="">
+				<img class="pll-e-hero__img" src="<?php echo esc_url( $hero ); ?>" alt="" fetchpriority="high">
 			<?php endif; ?>
 			<div class="pll-e-hero__inner">
 				<p class="pll-e-eyebrow"><?php echo esc_html( $location ); ?></p>
@@ -106,7 +106,7 @@ while ( have_posts() ) :
 			<section class="pll-e-scrolly" id="palladio-timeline" data-palladio-scrolly>
 				<div class="pll-e-scrolly__media" id="palladio-timeline-media" aria-hidden="true">
 					<?php foreach ( $chapters as $i => $t ) : ?>
-						<?php $timg = palladio_image_url( $t['image'] ?? 0, 'full' ); ?>
+						<?php $timg = palladio_image_url( $t['image'] ?? 0, 'palladio-hero' ); ?>
 						<span class="pll-e-scrolly__frame<?php echo 0 === $i ? ' is-active' : ''; ?>" data-scrolly-frame="<?php echo esc_attr( $i ); ?>"<?php if ( $timg ) : ?> style="background-image:url('<?php echo esc_url( $timg ); ?>')"<?php endif; ?>></span>
 					<?php endforeach; ?>
 				</div>
@@ -203,7 +203,7 @@ while ( have_posts() ) :
 		<?php
 		$ambient_frames = array();
 		foreach ( $ed['ambient_images'] as $ai ) {
-			$aurl = palladio_image_url( $ai['image'] ?? 0, 'full' );
+			$aurl = palladio_image_url( $ai['image'] ?? 0, 'palladio-hero' );
 			if ( $aurl ) {
 				$ambient_frames[] = array( 'url' => $aurl, 'caption' => (string) ( $ai['caption'] ?? '' ) );
 			}
