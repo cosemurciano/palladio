@@ -36,6 +36,73 @@ class Palladio_Frontend_Schema {
 	public function register() {
 		add_action( 'wp_head', array( $this, 'meta_tags' ), 4 );
 		add_action( 'wp_head', array( $this, 'output_jsonld' ), 30 );
+		add_filter( 'aioseo_schema_output', array( $this, 'fix_aioseo_schema' ) );
+	}
+
+	/**
+	 * Corregge il grafo emesso da AIOSEO per coerenza con la pagina:
+	 * - inLanguage: AIOSEO usa la lingua di installazione di WordPress
+	 *   (es. en-US) anche sulle pagine italiane; qui viene allineata alla
+	 *   lingua reale della pagina corrente.
+	 * - Breadcrumb degli archivi: il titolo vuoto "Archives for " viene
+	 *   sostituito con l'etichetta dell'archivio.
+	 *
+	 * @param array $graphs Nodi schema di AIOSEO.
+	 * @return array
+	 */
+	public function fix_aioseo_schema( $graphs ) {
+		if ( ! is_array( $graphs ) ) {
+			return $graphs;
+		}
+
+		$map  = array( 'it' => 'it-IT', 'en' => 'en-US', 'de' => 'de-DE', 'fr' => 'fr-FR' );
+		$lang = class_exists( 'Palladio_I18n_Languages' ) ? Palladio_I18n_Languages::current() : '';
+		$bcp  = isset( $map[ $lang ] ) ? $map[ $lang ] : '';
+
+		$archive_label = '';
+		if ( is_post_type_archive() ) {
+			$obj = get_queried_object();
+			if ( $obj instanceof WP_Post_Type ) {
+				$archive_label = (string) $obj->labels->name;
+			}
+		}
+
+		foreach ( $graphs as $i => $node ) {
+			$graphs[ $i ] = $this->fix_aioseo_node( $node, $bcp, $archive_label );
+		}
+
+		return $graphs;
+	}
+
+	/**
+	 * Applica ricorsivamente le correzioni a un nodo schema di AIOSEO.
+	 *
+	 * @param mixed  $node          Nodo (o sotto-struttura) del grafo.
+	 * @param string $bcp           Lingua BCP47 della pagina ('' = non toccare).
+	 * @param string $archive_label Etichetta archivio ('' = non toccare i nomi).
+	 * @return mixed
+	 */
+	private function fix_aioseo_node( $node, $bcp, $archive_label ) {
+		if ( ! is_array( $node ) ) {
+			return $node;
+		}
+
+		if ( '' !== $bcp && isset( $node['inLanguage'] ) ) {
+			$node['inLanguage'] = $bcp;
+		}
+
+		if ( '' !== $archive_label && isset( $node['name'] ) && is_string( $node['name'] )
+			&& preg_match( '/^Archives?(\s+for)?\s*$/i', trim( $node['name'] ) ) ) {
+			$node['name'] = $archive_label;
+		}
+
+		foreach ( $node as $key => $value ) {
+			if ( is_array( $value ) ) {
+				$node[ $key ] = $this->fix_aioseo_node( $value, $bcp, $archive_label );
+			}
+		}
+
+		return $node;
 	}
 
 	/**
