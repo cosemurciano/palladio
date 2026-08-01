@@ -25,9 +25,9 @@ while ( have_posts() ) :
 	$ed          = palladio_editorial( $scenario_id );
 	$lead        = $ed['lead'] ? $ed['lead'] : ( has_excerpt() ? get_the_excerpt() : '' );
 
-	$hero = get_the_post_thumbnail_url( $scenario_id, 'full' );
+	$hero = get_the_post_thumbnail_url( $scenario_id, 'palladio-hero' );
 	if ( ! $hero && $totals['units'] ) {
-		$hero = get_the_post_thumbnail_url( $totals['units'][0], 'full' );
+		$hero = get_the_post_thumbnail_url( $totals['units'][0], 'palladio-hero' );
 	}
 
 	$facts = array();
@@ -48,7 +48,7 @@ while ( have_posts() ) :
 
 		<header class="pll-e-hero pll-e-scenario-hero" id="palladio-scenario-hero">
 			<?php if ( $hero ) : ?>
-				<img class="pll-e-hero__img" src="<?php echo esc_url( $hero ); ?>" alt="">
+				<img class="pll-e-hero__img" src="<?php echo esc_url( $hero ); ?>" alt="" fetchpriority="high">
 			<?php endif; ?>
 			<div class="pll-e-hero__inner">
 				<p class="pll-e-eyebrow" id="palladio-scenario-eyebrow">

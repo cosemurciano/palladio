@@ -21,7 +21,7 @@ while ( have_posts() ) :
 	the_post();
 	$territorio_id = get_the_ID();
 	$ed            = palladio_editorial( $territorio_id );
-	$hero          = get_the_post_thumbnail_url( $territorio_id, 'full' );
+	$hero          = get_the_post_thumbnail_url( $territorio_id, 'palladio-hero' );
 	$lead          = $ed['lead'] ? $ed['lead'] : get_the_excerpt();
 
 	$dossier_label = class_exists( 'Palladio_Admin_Settings' ) ? Palladio_Admin_Settings::get( 'dossier_label' ) : __( 'Richiedi una visita', 'palladio' );
@@ -31,7 +31,7 @@ while ( have_posts() ) :
 
 		<header class="pll-e-hero pll-e-territorio-hero" id="palladio-territorio-hero">
 			<?php if ( $hero ) : ?>
-				<img class="pll-e-hero__img" src="<?php echo esc_url( $hero ); ?>" alt="">
+				<img class="pll-e-hero__img" src="<?php echo esc_url( $hero ); ?>" alt="" fetchpriority="high">
 			<?php endif; ?>
 			<div class="pll-e-hero__inner">
 				<?php if ( $ed['eyebrow'] ) : ?>
@@ -51,7 +51,7 @@ while ( have_posts() ) :
 
 		<?php // LA POSIZIONE — mappa come tavola d'archivio. ?>
 		<?php
-		$map_img = palladio_image_url( $ed['map_image'], 'full' );
+		$map_img = palladio_image_url( $ed['map_image'], 'palladio-hero' );
 		if ( $ed['map_embed'] || $map_img ) :
 			?>
 			<section class="pll-e-section pll-e-wrap" id="palladio-territorio-mappa">
