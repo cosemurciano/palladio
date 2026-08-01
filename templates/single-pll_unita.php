@@ -240,15 +240,6 @@ while ( have_posts() ) :
 			</section>
 		<?php endif; ?>
 
-		<section class="pll-e-dossier" id="dossier">
-			<div class="pll-e-wrap pll-e-section">
-				<p class="pll-e-kicker"><?php esc_html_e( 'Il dossier', 'palladio' ); ?></p>
-				<h2 class="pll-e-h"><?php esc_html_e( 'Tutto, per iscritto', 'palladio' ); ?></h2>
-				<p class="pll-e-prose"><?php esc_html_e( 'Planimetrie quotate, prezzi, millesimi e note sul vincolo. Lascia i tuoi contatti: nessuna telefonata se non la chiedi tu.', 'palladio' ); ?></p>
-				<?php do_action( 'palladio/unita/after_contact', $unit_id ); ?>
-			</div>
-		</section>
-
 	</div>
 	<?php
 endwhile;

@@ -237,6 +237,24 @@ class Palladio_Admin_Settings {
 				<?php submit_button( __( 'Salva impostazioni', 'palladio' ) ); ?>
 			</form>
 
+			<h2><?php esc_html_e( 'Indirizzi per i motori di ricerca', 'palladio' ); ?></h2>
+			<table class="form-table" role="presentation">
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Sitemap del plugin', 'palladio' ); ?></th>
+					<td>
+						<code><a href="<?php echo esc_url( home_url( '/palladio-sitemap.xml' ) ); ?>" target="_blank" rel="noopener"><?php echo esc_html( home_url( '/palladio-sitemap.xml' ) ); ?></a></code>
+						<p class="description"><?php esc_html_e( 'Generata automaticamente con tutte le pagine pubblicate, le versioni in lingua (hreflang) e le immagini. Da inviare in Google Search Console; è già referenziata in robots.txt.', 'palladio' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Guida per le AI (llms.txt)', 'palladio' ); ?></th>
+					<td>
+						<code><a href="<?php echo esc_url( home_url( '/llms.txt' ) ); ?>" target="_blank" rel="noopener"><?php echo esc_html( home_url( '/llms.txt' ) ); ?></a></code>
+						<p class="description"><?php esc_html_e( 'Indice Markdown per la navigazione agentica: unità in vendita con prezzi, scenari, contatti e versioni in lingua, sempre aggiornato.', 'palladio' ); ?></p>
+					</td>
+				</tr>
+			</table>
+
 			<?php
 			/**
 			 * Sezioni aggiuntive della pagina Impostazioni (es. SEO pagine elenco).
